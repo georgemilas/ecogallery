@@ -1,0 +1,9 @@
+{
+  // Prefer the modern C# LSP. These settings are no-ops if unsupported.
+  "dotnet.server.enableDecompilationSupport": true,
+  "dotnet.server.enableSourceLinkSupport": true,
+
+  // Back-compat if using OmniSharp backend.
+  "omnisharp.enableDecompilationSupport": true,
+  "omnisharp.enableSourceLinkSupport": true
+}
