@@ -1,4 +1,4 @@
-namespace PicturesLib.model;
+namespace PicturesLib.model.configuration;
 
 public class DatabaseConfiguration
 {
@@ -9,7 +9,7 @@ public class DatabaseConfiguration
     public string Password { get; set; } = string.Empty;
     public int MaxPoolSize { get; set; } = 100;
     public int MinPoolSize { get; set; } = 0;
-    public int ConnectionLifetime { get; set; } = 300; // seconds
+    public int ConnectionLifetime { get; set; } = 300; // seconds = 5 minutes
     public int CommandTimeout { get; set; } = 30; // seconds
     public bool Pooling { get; set; } = true;
     public string SslMode { get; set; } = "Prefer"; // Disable, Allow, Prefer, Require

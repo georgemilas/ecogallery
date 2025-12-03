@@ -1,8 +1,9 @@
-using PicturesLib.model;
+using PicturesLib.model.configuration;
 using PicturesLib.service;
 using System.Data;
+using System.Data.Common;
 
-namespace PicturesLib;
+namespace PicturesLib.service.database;
 
 /// <summary>
 /// Examples demonstrating how to use the PostgreSQL database service

@@ -2,10 +2,14 @@ using WeatherLib.service;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using PicturesLib.service;
+using PicturesLib.model;
 using System.Threading;
+using PicturesLib.model.configuration;
+using PicturesLib.service.thumbnail;
 
 
 var configuration = new ConfigurationBuilder()
@@ -13,52 +17,30 @@ var configuration = new ConfigurationBuilder()
     .AddJsonFile("PicturesConsole/appsettings.json", optional: false, reloadOnChange: true)   //must run from solution folder 
     .Build();
 
-string? dataFolder = configuration["WeatherData:Folder"];
-if (dataFolder == null)
-{
-    throw new Exception("Could not read data folder, is WeatherData:Folder set in appsettings.json?");
-}
-
-string? picturesFolder = configuration["PicturesData:Folder"];
-if (picturesFolder == null)
-{
-    throw new Exception("Could not read pictures folder, is PicturesData:Folder set in appsettings.json?");
-}
-
 // Setup Dependency injection to enable future testability  
 var serviceProvider = new ServiceCollection()
-    .AddSingleton<IWeatherService, WeatherService>()
-    .AddSingleton<IResidioReportService, ResidioReportService>()
+    .Configure<PicturesDataConfiguration>(configuration.GetSection(PicturesDataConfiguration.SectionName))
+//    .AddSingleton<IWeatherService, WeatherService>()
+//    .AddSingleton<IResidioReportService, ResidioReportService>()
     .BuildServiceProvider();
 
-var reportOptions = new Option<string?>(new[] { "--file", "-f" }, "Output file path to save the weather report JSON");
-var rootCommand = new RootCommand("Weather report console application");
-rootCommand.AddOption(reportOptions);
-
-// Default handler: generate weather report once and exit
-rootCommand.SetHandler((string? filePath) =>
+var picturesConfig = serviceProvider.GetRequiredService<IOptions<PicturesDataConfiguration>>().Value;
+if (string.IsNullOrWhiteSpace(picturesConfig.Folder))
 {
-    var service = serviceProvider.GetRequiredService<IResidioReportService>();
-    var report = service.GetWeatherReport(dataFolder);
-    var json = service.SerializeWeatherReport(report);
+    throw new InvalidOperationException("PicturesData:Folder is required in appsettings.json");
+}
 
-    if (!string.IsNullOrWhiteSpace(filePath))
-    {
-        File.WriteAllText(filePath, json);
-        Console.WriteLine($"Weather report saved to: {filePath}");
-    }
-    else
-    {
-        Console.WriteLine(json);
-    }
-}, reportOptions);
+var rootCommand = new RootCommand("Pictures background services console application");
 
 // Command to run the thumbnail background service and keep the app running
-var heightOption = new Option<int>(new[] {"--height", "-h"}, () => 290, "Thumbnail height in pixels");
 var watchCommand = new Command("thumbnails", "Run the thumbnail processor as a background service");
-watchCommand.AddOption(heightOption);
-watchCommand.SetHandler(async (int height) =>
+var watchFolderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
+var watchHeightOption = new Option<int>(new[] {"--height", "-h"}, () => 290, "Thumbnail height in pixels");
+watchCommand.AddOption(watchFolderOption);
+watchCommand.AddOption(watchHeightOption);
+watchCommand.SetHandler(async (string folder, int height) =>
 {
+    picturesConfig.Folder = folder;
     using var cts = new CancellationTokenSource();
     Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
 
@@ -66,15 +48,42 @@ watchCommand.SetHandler(async (int height) =>
         .ConfigureServices(services =>
         {
             // Use the factory method to create a thumbnail-specific observer
-            services.AddSingleton(sp => ThumbnailProcessorFactory.CreateThumbnailProcessor(new DirectoryInfo(picturesFolder), height));
-            services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<FileObserverService>());
+            services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessor(picturesConfig, height));
         })
         .Build();
 
-    Console.WriteLine($"Starting thumbnail processor on '{picturesFolder}' with height={height}. Press Ctrl+C to stop.");
+    Console.WriteLine($"Starting thumbnail processor on '{picturesConfig.Folder}' with height={height}. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, heightOption);
-
+}, watchFolderOption, watchHeightOption);
 rootCommand.AddCommand(watchCommand);
+
+
+// Command to run the thumbnail cleanup background service and keep the app running
+var cleanupCommand = new Command("cleanup", "Run the thumbnail cleanup as a background service");
+var cleanupFolderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
+var cleanupHeightOption = new Option<int>(new[] {"--height", "-h"}, () => 290, "Thumbnail height in pixels");
+cleanupCommand.AddOption(cleanupFolderOption);
+cleanupCommand.AddOption(cleanupHeightOption);
+cleanupCommand.SetHandler(async (string folder, int height) =>
+{
+    picturesConfig.Folder = folder;
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
+
+    var host = Host.CreateDefaultBuilder()
+        .ConfigureServices(services =>
+        {
+            services.AddSingleton<IHostedService>(sp => ThumbnailCleanup.CreateProcessor(picturesConfig, height));
+        })
+        .Build();
+
+    Console.WriteLine($"Starting thumbnail cleanup processor for pictures on '{picturesConfig.Folder}' with height={height}. Press Ctrl+C to stop.");
+    await host.RunAsync(cts.Token);
+}, cleanupFolderOption, cleanupHeightOption);
+rootCommand.AddCommand(cleanupCommand);
+
+
+
+
 
 return await rootCommand.InvokeAsync(args);
