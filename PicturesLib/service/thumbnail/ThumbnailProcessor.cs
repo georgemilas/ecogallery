@@ -2,6 +2,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using PicturesLib.model.configuration;
 using PicturesLib.service.fileProcessor;
+using System.Text;
 
 namespace PicturesLib.service.thumbnail;
 
@@ -47,13 +48,14 @@ public class ThumbnailProcessor : EmptyProcessor
                                                         folder.Contains(prefix, StringComparison.OrdinalIgnoreCase)) ||
                 _configuration.SkipContains.Any(skipPart => filePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
     }
-    public override async Task OnFileCreated(string filePath)
+    public override async Task<int> OnFileCreated(string filePath)
     {
         string thumbPath = GetThumbnailPath(filePath);
-        if (File.Exists(thumbPath)) return;
+        if (File.Exists(thumbPath)) return 0;
 
         await BuildThumbnailAsync(_height, filePath, thumbPath);
         Console.WriteLine($"Created Thumbnail: {thumbPath}");
+        return 1;
     }
 
     public override async Task OnFileChanged(string filePath)
@@ -63,10 +65,10 @@ public class ThumbnailProcessor : EmptyProcessor
         Console.WriteLine($"Updated Thumbnail: {thumbPath}");
     }
 
-    public override async Task OnFileDeleted(string filePath)
+    public override async Task<int> OnFileDeleted(string filePath)
     {
         string thumbnailPath = GetThumbnailPath(filePath);
-        await CleanupThumbnail(thumbnailPath);
+        return await CleanupThumbnail(thumbnailPath);
     }
 
     public override async Task OnFileRenamed(string oldPath, string newPath, bool newValid)
@@ -82,16 +84,13 @@ public class ThumbnailProcessor : EmptyProcessor
         }
     }
 
-    ///<summary>
-    /// need to find the original file path from the skip file path and ensure its thumbnail is deleted
-    /// </summary>
-    public override async Task OnEnsureCleanup(string skipFilePath)
+    public override async Task<int> OnEnsureCleanup(string skipFilePath)
     {
         string skipFolder = Path.GetDirectoryName(skipFilePath) ?? string.Empty;
         string skipFileName = Path.GetFileName(skipFilePath);
 
         //avoid recursion into created thumbnails
-        if (skipFilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return;
+        if (skipFilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return 0;
 
         //identify the type of prefix or suffix we are dealing with 
         var fileNameStartWith = _configuration.SkipPrefix.Where(prefix => skipFileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
@@ -101,13 +100,14 @@ public class ThumbnailProcessor : EmptyProcessor
         var folderContainsSuffix = _configuration.SkipSuffix.Where(suffix => skipFolder.Contains(suffix, StringComparison.OrdinalIgnoreCase));
         var filePathContains = _configuration.SkipContains.Where(skipPart => skipFilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
 
+        int totalDeleted = 0;
         if (fileNameStartWith.Any())
         {
             //it's a prefix to a file 
             var prefix = fileNameStartWith.First();
             var originalName = skipFileName.Replace(prefix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(skipFolder, originalName));
-            await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath);
         }
 
         if (fileNameEndsWith.Any())
@@ -116,7 +116,7 @@ public class ThumbnailProcessor : EmptyProcessor
             var suffix = fileNameEndsWith.First();
             var originalName = skipFileName.Replace(suffix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(skipFolder, originalName));
-            await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath);
         }
 
         //Console.WriteLine($"Ensuring cleanup for folder contains suffixOrPrefix {suffixOrPrefix}: {skipFileName}");                
@@ -126,7 +126,7 @@ public class ThumbnailProcessor : EmptyProcessor
             var suffix = folderContainsSuffix.First();
             var originalPath = skipFolder.Replace(suffix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(originalPath, skipFileName));
-            await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath);
         }
 
         if (folderContainsPrefix.Any())
@@ -135,7 +135,7 @@ public class ThumbnailProcessor : EmptyProcessor
             var prefix = folderContainsPrefix.First();
             var originalPath = skipFolder.Replace(prefix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(originalPath, skipFileName));
-            await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath);
         }
 
         // if (filePathContains.Any())
@@ -151,9 +151,10 @@ public class ThumbnailProcessor : EmptyProcessor
         //     */
         // }
         
+        return totalDeleted;
     }
 
-    private Task CleanupThumbnail(string thumbnailPath)
+    private async Task<int> CleanupThumbnail(string thumbnailPath)
     {
         if (File.Exists(thumbnailPath))
         {
@@ -167,8 +168,9 @@ public class ThumbnailProcessor : EmptyProcessor
                 Directory.Delete(directory, recursive: true);
                 Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
             }
+            return 1;
         }
-        return Task.CompletedTask;
+        return 0;
     }
 
     private async Task BuildThumbnailAsync(int height, string filePath, string thumbPath)

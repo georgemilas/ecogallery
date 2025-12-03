@@ -59,8 +59,8 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
     public async Task<bool> AlbumImageExistsAsync(string filePath)
     {
         AlbumImage image = CreateAlbumImageFromPath(filePath);
-        var sql = "SELECT * FROM album_image WHERE image_path = @ImagePath";
-        var albumImages = await _db.QueryAsync(sql, reader => AlbumImage.CreateImageFromDataReader(reader), image);
+        var sql = "SELECT * FROM album_image WHERE image_path = @image_path";
+        var albumImages = await _db.QueryAsync(sql, reader => CreateAlbumImageFromDataReader(reader), image);
         return albumImages.Any();                 
     }
 
@@ -68,16 +68,16 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
     {
         AlbumImage image = CreateAlbumImageFromPath(filePath);
         var sql = @"INSERT INTO album_image (image_name, image_path, album_name, image_type, last_updated) 
-            VALUES (@ImageName, @ImagePath, @AlbumName, @ImageType, @LastUpdated)
+            VALUES (@image_name, @image_path, @album_name, @image_type, @last_updated)
             RETURNING id";        
-        image.Id = await _db.ExecuteScalarAsync<int>(sql, image);            
+        image.Id = await _db.ExecuteScalarAsync<long>(sql, image);            
         return image;                        
     }
 
     public async Task<int> DeleteAlbumImageAsync(string filePath)
     {
         AlbumImage image = CreateAlbumImageFromPath(filePath);
-        var sql = "DELETE FROM album_image WHERE image_path = @ImagePath";
+        var sql = "DELETE FROM album_image WHERE image_path = @image_path";
         return await _db.ExecuteAsync(sql, image);               
     }
 

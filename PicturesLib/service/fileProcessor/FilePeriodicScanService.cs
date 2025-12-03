@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Hosting;
 
 namespace PicturesLib.service.fileProcessor;
 
@@ -40,6 +41,7 @@ public class FilePeriodicScanService : BackgroundService
         _processing = true;
         try
         {
+            Stopwatch sw = Stopwatch.StartNew();    
             HashSet<string> previousFiles;
             lock (_setLock)
             {
@@ -48,18 +50,52 @@ public class FilePeriodicScanService : BackgroundService
             var currentFiles = GetSourceFiles().ToHashSet();            
             var newFiles = currentFiles.Except(previousFiles).ToList();
 
+
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = stoppingToken };
+            long actualNew = 0;
+            // await Parallel.ForEachAsync(newFiles, options, async (file, ct) =>
+            // {
+            //     //if (ct.IsCancellationRequested) break;
+            //     bool created = await InvokeHandlerSafe(async () =>
+            //     { 
+            //         int delta = await _processor.OnFileCreated(file);
+            //         Interlocked.Add(ref actualNew, delta);                    
+            //     }, $"created (scan): {file}");
+            //     if (!created) { lock (_setLock) { currentFiles.Remove(file); } }                
+            // });
+
             foreach (var file in newFiles)
             {
                 if (stoppingToken.IsCancellationRequested) break;
-                bool created = await InvokeHandlerSafe(() => _processor.OnFileCreated(file), $"created (scan): {file}");
-                if (!created) currentFiles.Remove(file);
+                bool created = await InvokeHandlerSafe(async () =>
+                { 
+                    int delta = await _processor.OnFileCreated(file);
+                    Interlocked.Add(ref actualNew, delta);                    
+                }, $"created (scan): {file}");
+                if (!created) { lock (_setLock) { currentFiles.Remove(file); } }                
             }
+
             var deletedFiles = previousFiles.Except(currentFiles).ToList();
+            long actualDeleted = 0;
+            // await Parallel.ForEachAsync(deletedFiles, options, async (file, ct) =>
+            // {
+            //     //if (ct.IsCancellationRequested) break;
+            //     await InvokeHandlerSafe(async () => 
+            //     { 
+            //         int delta = await _processor.OnFileDeleted(file);
+            //         Interlocked.Add(ref actualDeleted, delta);                    
+            //     }, $"deleted (scan): {file}");
+            // });
             foreach (var file in deletedFiles)
             {
                 if (stoppingToken.IsCancellationRequested) break;
-                await InvokeHandlerSafe(() => _processor.OnFileDeleted(file), $"deleted (scan): {file}");
+                await InvokeHandlerSafe(async () => 
+                { 
+                    int delta = await _processor.OnFileDeleted(file);
+                    Interlocked.Add(ref actualDeleted, delta);                    
+                }, $"deleted (scan): {file}");
             }
+
             lock (_setLock)
             {
                 _currentSourceFiles = currentFiles;
@@ -67,12 +103,30 @@ public class FilePeriodicScanService : BackgroundService
 
             //identify if we have a scenario where files or folders were renamed to now be skipped and before were not
             //so now we need to clean up the originals that were include and now should be excluded   
-            var skip = GetFilesToClean();    
-            foreach (var file in skip)
+            var skipFiles = GetFilesToClean();    
+            long actualCleanup = 0;
+            // await Parallel.ForEachAsync(skipFiles, options, async (file, ct) =>
+            // {
+            //     //if (ct.IsCancellationRequested) break;
+            //     await InvokeHandlerSafe(async () => 
+            //     { 
+            //         int cleaned = await _processor.OnEnsureCleanup(file);
+            //         Interlocked.Add(ref actualCleanup, cleaned);                    
+            //     }, $"cleanup (scan): {file}"); 
+            // });
+
+            foreach (var file in skipFiles)
             {
                 if (stoppingToken.IsCancellationRequested) break;
-                await InvokeHandlerSafe(() => _processor.OnEnsureCleanup(file), $"cleanup (scan): {file}"); 
+                await InvokeHandlerSafe(async () => 
+                { 
+                    int cleaned = await _processor.OnEnsureCleanup(file);
+                    Interlocked.Add(ref actualCleanup, cleaned);                    
+                }, $"cleanup (scan): {file}"); 
             }
+
+            sw.Stop();
+            Console.WriteLine($"Periodic scan completed in {sw.Elapsed.TotalSeconds} seconds ({sw.Elapsed.Minutes} minutes). New files: {actualNew}/{newFiles.Count}, Deleted files: {actualDeleted}/{deletedFiles.Count}, Cleanup: {actualCleanup}/{skipFiles.Count()}");
 
         }
         finally

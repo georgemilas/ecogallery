@@ -28,14 +28,14 @@ public class EmptyProcessor: IFileProcessor
         return false;
     }
 
-    public virtual async Task OnFileCreated(string thumbnailPath)
+    public virtual async Task<int> OnFileCreated(string thumbnailPath)
     {
-        await Task.CompletedTask;       
+        return 0;       
     }
     
-    public virtual async Task OnFileDeleted(string thumbnailPath)
+    public virtual async Task<int> OnFileDeleted(string thumbnailPath)
     {
-        await Task.CompletedTask;;
+        return 0;
     }
 
     public virtual async Task OnFileChanged(string thumbnailPath)
@@ -48,9 +48,9 @@ public class EmptyProcessor: IFileProcessor
         await Task.CompletedTask;
     }
      
-    public virtual async Task OnEnsureCleanup(string thumbnailPath)
+    public virtual async Task<int> OnEnsureCleanup(string thumbnailPath)
     {
-        await Task.CompletedTask;
+        return 0;
     }
 
     public virtual async Task OnScanStart(string skipFilePath)

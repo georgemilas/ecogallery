@@ -23,27 +23,39 @@ public class AlbumProcessor: EmptyProcessor
     public override DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
     protected virtual string thumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
 
+
+    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration)
+    {
+        IFileProcessor processor = new AlbumProcessor(configuration);
+        return new FileObserverService(processor,intervalMinutes: 2);
+    }
+
+
     /// <summary>
     /// create image record and ensure album record exists
     /// </summary>
-    private async Task CreateImageAndAlbumRecords(string filePath)
+    private async Task<int> CreateImageAndAlbumRecords(string filePath)
     {
         if (!await imageRepository.AlbumImageExistsAsync(filePath))
         {
             await albumRepository.EnsureAlbumExistsAsync(filePath);
             await imageRepository.AddNewImageAsync(filePath);
+            return 1;
         }
+        return 0;
     }
 
     /// <summary>
     /// delete image record and if album is empty delete album records recursively as well 
     /// </summary>
-    private async Task CleanupImageAndAlbumRecords(string filePath)
+    private async Task<int> CleanupImageAndAlbumRecords(string filePath)
     {
-        if (await imageRepository.DeleteAlbumImageAsync(filePath) > 0 && !await albumRepository.AlbumHasContentAsync(filePath))
+        int deletedCount = await imageRepository.DeleteAlbumImageAsync(filePath);
+        if (deletedCount > 0 && !await albumRepository.AlbumHasContentAsync(filePath))
         {
             await albumRepository.DeleteAlbumAsync(filePath);
         }
+        return deletedCount;    
     }
 
     public override bool ShouldSkipFile(string filePath)
@@ -59,9 +71,9 @@ public class AlbumProcessor: EmptyProcessor
     }
 
     
-    public override async Task OnFileCreated(string filePath)
+    public override async Task<int> OnFileCreated(string filePath)
     {
-        await CreateImageAndAlbumRecords(filePath);
+        return await CreateImageAndAlbumRecords(filePath);
     }
 
     public override async Task OnFileChanged(string filePath)
@@ -69,9 +81,9 @@ public class AlbumProcessor: EmptyProcessor
         await CreateImageAndAlbumRecords(filePath);
     }
 
-    public override async Task OnFileDeleted(string filePath)
+    public override async Task<int> OnFileDeleted(string filePath)
     {
-        await CleanupImageAndAlbumRecords(filePath);
+        return await CleanupImageAndAlbumRecords(filePath);
     }
     
     public override async Task OnFileRenamed(string oldPath, string newPath,  bool newValid)
@@ -79,20 +91,20 @@ public class AlbumProcessor: EmptyProcessor
         await CleanupImageAndAlbumRecords(oldPath);
         if (newValid)
         {
-            await CreateImageAndAlbumRecords(newPath);            
+            await CreateImageAndAlbumRecords(newPath);    
         }
     }
 
     ///<summary>
     /// need to find the original file path from the skip file path and ensure its records are deleted
     /// </summary> 
-    public override async Task OnEnsureCleanup(string skipFilePath)
+    public override async Task<int> OnEnsureCleanup(string skipFilePath)
     {
         string skipFolder = Path.GetDirectoryName(skipFilePath) ?? string.Empty;
         string skipFileName = Path.GetFileName(skipFilePath);
 
         //avoid recursion into created thumbnails
-        if (skipFilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return;
+        if (skipFilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return 0;
 
         //identify the type of prefix or suffix we are dealing with 
         var fileNameStartWith = _configuration.SkipPrefix.Where(prefix => skipFileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
@@ -102,13 +114,14 @@ public class AlbumProcessor: EmptyProcessor
         var folderContainsSuffix = _configuration.SkipSuffix.Where(suffix => skipFolder.Contains(suffix, StringComparison.OrdinalIgnoreCase));
         var filePathContains = _configuration.SkipContains.Where(skipPart => skipFilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
 
+        int totalDeleted = 0;
         if (fileNameStartWith.Any())
         {
             //it's a prefix to a file 
             var prefix = fileNameStartWith.First();
             var originalName = skipFileName.Replace(prefix, string.Empty);
             string originalPath = Path.Combine(skipFolder, originalName);
-            await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
         }
 
         if (fileNameEndsWith.Any())
@@ -117,7 +130,7 @@ public class AlbumProcessor: EmptyProcessor
             var suffix = fileNameEndsWith.First();
             var originalName = skipFileName.Replace(suffix, string.Empty);
             string originalPath = Path.Combine(skipFolder, originalName);
-            await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
         }
 
         //Console.WriteLine($"Ensuring cleanup for folder contains suffixOrPrefix {suffixOrPrefix}: {skipFileName}");                
@@ -127,7 +140,7 @@ public class AlbumProcessor: EmptyProcessor
             var suffix = folderContainsSuffix.First();
             var originalFolderPath = skipFolder.Replace(suffix, string.Empty);
             string originalPath = Path.Combine(originalFolderPath, skipFileName);
-            await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
         }
 
         if (folderContainsPrefix.Any())
@@ -136,7 +149,7 @@ public class AlbumProcessor: EmptyProcessor
             var prefix = folderContainsPrefix.First();
             var originalFolderPath = skipFolder.Replace(prefix, string.Empty);
             string originalPath = Path.Combine(originalFolderPath, skipFileName);
-            await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
         }
 
         // if (filePathContains.Any())
@@ -151,6 +164,8 @@ public class AlbumProcessor: EmptyProcessor
         //             which used to be included in website but now is "skip_blog" and it should not be on the website anymore
         //     */
         // }
+
+        return totalDeleted;
     }
 
     public override async Task OnScanStart(string skipFilePath)

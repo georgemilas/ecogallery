@@ -72,7 +72,7 @@ public class ThumbnailCleanup: EmptyProcessor
         return res;
     }
 
-    public override async Task OnFileCreated(string thumbnailPath)
+    public override async Task<int> OnFileCreated(string thumbnailPath)
     {
         //This thumbnail exists and it shouldn't so we are going to delete it 
         if (File.Exists(thumbnailPath))
@@ -81,13 +81,15 @@ public class ThumbnailCleanup: EmptyProcessor
             File.Delete(thumbnailPath);
             Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
             deleteEmptyFolder(thumbnailPath);
-        }       
+            return 1;
+        }
+        return 0;       
     }    
 
-    public override Task OnFileDeleted(string thumbnailPath)
+    public override async Task<int> OnFileDeleted(string thumbnailPath)
     {
         //the thumbnail was deleted either manualy or by the cleanup process so no action needed
-        return Task.CompletedTask;
+        return 0;
     }
 
     public override Task OnFileChanged(string thumbnailPath)
@@ -102,11 +104,11 @@ public class ThumbnailCleanup: EmptyProcessor
         await Task.CompletedTask;
     }
      
-    public override async Task OnEnsureCleanup(string thumbnailPath)
+    public override async Task<int> OnEnsureCleanup(string thumbnailPath)
     {
         //no additional cleanup needed on the _thumbnail folder itself as 
         //thumbnails should not be manually changed/renamed/moved etc.
-        await Task.CompletedTask;
+        return 0;
     }
 
    

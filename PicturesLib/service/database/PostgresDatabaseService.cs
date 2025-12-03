@@ -61,16 +61,20 @@ public class PostgresDatabaseService : IDatabaseService
         
         await using var connection = await GetConnectionAsync();
         await using var command = new NpgsqlCommand(sql, connection);
+        //Console.WriteLine($"Query Async Created command...{sql}");
         
         AddParameters(command, parameters);
+        //Console.WriteLine($"Query Async Added {command.Parameters.Count} params");
         
         var results = new List<T>();
         await using var reader = await command.ExecuteReaderAsync();
+        //Console.WriteLine("Query Async Executed reader async...");
         
         while (await reader.ReadAsync())
         {
             results.Add(mapper(reader));
         }
+        //Console.WriteLine("Query Async mapped Reader...");
         
         return results;
     }
@@ -93,10 +97,13 @@ public class PostgresDatabaseService : IDatabaseService
         
         await using var connection = await GetConnectionAsync();
         await using var command = new NpgsqlCommand(sql, connection);
+        //Console.WriteLine($"ExecScalar Async Created command...{sql}");
         
         AddParameters(command, parameters);
+        //Console.WriteLine($"ExecScalar Async Added {command.Parameters.Count} params");
         
         var result = await command.ExecuteScalarAsync();
+        //Console.WriteLine("ExecScalar Async Executed scalar async...");
         
         if (result == null || result == DBNull.Value)
             return default;
@@ -107,14 +114,47 @@ public class PostgresDatabaseService : IDatabaseService
     private static void AddParameters(NpgsqlCommand command, object? parameters)
     {
         if (parameters == null)
+        {
+            //Console.WriteLine("AddParameters: parameters is null");
             return;
+        }
 
+        //Console.WriteLine($"AddParameters: parameters type = {parameters.GetType().Name}");
         var properties = parameters.GetType().GetProperties();
+        //Console.WriteLine($"AddParameters: found {properties.Length} properties");
+        
         foreach (var prop in properties)
         {
             var value = prop.GetValue(parameters);
-            command.Parameters.AddWithValue($"@{prop.Name}", value ?? DBNull.Value);
+            var paramName = ToSnakeCase(prop.Name);
+            //Console.WriteLine($"Adding parameter: @{paramName} = {value}");
+            command.Parameters.AddWithValue($"@{paramName}", value ?? DBNull.Value);
         }
+    }
+
+    private static string ToSnakeCase(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return name;
+
+        var result = new System.Text.StringBuilder();
+        result.Append(char.ToLowerInvariant(name[0]));
+
+        for (int i = 1; i < name.Length; i++)
+        {
+            char c = name[i];
+            if (char.IsUpper(c))
+            {
+                result.Append('_');
+                result.Append(char.ToLowerInvariant(c));
+            }
+            else
+            {
+                result.Append(c);
+            }
+        }
+
+        return result.ToString();
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(Func<NpgsqlConnection, NpgsqlTransaction, Task<T>> operation)

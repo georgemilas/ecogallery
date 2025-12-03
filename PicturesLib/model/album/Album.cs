@@ -5,14 +5,13 @@ namespace PicturesLib.model.album;
 
 public record Album
 {
-    public long Id;   //Int64
-    public string AlbumName = string.Empty;
-    public string AlbumType = "folder";
-    public string FeatureImagePath = string.Empty; 
-    public DateTimeOffset LastUpdated;    
-    public string ParentAlbum => Path.GetDirectoryName(AlbumName) ?? string.Empty;        
-    public bool HasParentAlbum => ParentAlbum != string.Empty;        
-
+    public long Id { get; set; }   //Int64
+    public string AlbumName { get; set; } = string.Empty;
+    public string AlbumType { get; set; } = "folder";
+    public string FeatureImagePath { get; set; } = string.Empty; 
+    public DateTimeOffset LastUpdated { get; set; }    
+    public string ParentAlbum { get; set; } = string.Empty;        
+    public bool HasParentAlbum => !string.IsNullOrEmpty(ParentAlbum);
 }
 
 
