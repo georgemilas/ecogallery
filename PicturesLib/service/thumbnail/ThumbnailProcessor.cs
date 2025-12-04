@@ -3,6 +3,7 @@ using SixLabors.ImageSharp.Processing;
 using PicturesLib.model.configuration;
 using PicturesLib.service.fileProcessor;
 using System.Text;
+using FFMpegCore;
 
 namespace PicturesLib.service.thumbnail;
 
@@ -18,18 +19,31 @@ public class ThumbnailProcessor : EmptyProcessor
     }
 
     private readonly int _height;
+    protected readonly object _setLock = new();
     /// <summary>
     /// Process files from the pictures folder (picturesPath) and create thumbnails in picturesPath/_thumbnails/{height} folder
     /// </summary>
     public override DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
     protected virtual string thumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
-    protected virtual string thumbDir { get { return Path.Combine(thumbnailsBase, _height.ToString()); } }    
-    protected virtual string GetThumbnailPath(string sourceFilePath) => sourceFilePath.Replace(RootFolder.FullName, thumbDir);
+    protected virtual string thumbDir { get { return Path.Combine(thumbnailsBase, _height.ToString()); } }
+    protected virtual string GetThumbnailPath(string sourceFilePath)
+    {
+        if (Path.GetExtension(sourceFilePath).Equals(".mp4", StringComparison.OrdinalIgnoreCase))
+        {
+            sourceFilePath = Path.ChangeExtension(sourceFilePath, ".jpg");
+        }
+        return sourceFilePath.Replace(RootFolder.FullName, thumbDir);
+    }
     
-    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int height = 300)
+    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int height = 300, int degreeOfParallelism = -1)
     {
         IFileProcessor processor = new ThumbnailProcessor(configuration, height);
-        return new FileObserverService(processor,intervalMinutes: 2);
+        return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
+    }
+    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int height = 300)
+    {
+        IFileProcessor processor = new ThumbnailProcessor(configuration, height);
+        return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
     }
 
     
@@ -54,7 +68,7 @@ public class ThumbnailProcessor : EmptyProcessor
         if (File.Exists(thumbPath)) return 0;
 
         await BuildThumbnailAsync(_height, filePath, thumbPath);
-        Console.WriteLine($"Created Thumbnail: {thumbPath}");
+        //Console.WriteLine($"Created Thumbnail: {thumbPath}");
         return 1;
     }
 
@@ -159,14 +173,14 @@ public class ThumbnailProcessor : EmptyProcessor
         if (File.Exists(thumbnailPath))
         {
             File.Delete(thumbnailPath);
-            Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
+            //Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
 
             // Clean up empty directories
             var directory = Path.GetDirectoryName(thumbnailPath);
             if (directory != null && Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any())
             {
                 Directory.Delete(directory, recursive: true);
-                Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
+                //Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
             }
             return 1;
         }
@@ -181,7 +195,8 @@ public class ThumbnailProcessor : EmptyProcessor
             Directory.CreateDirectory(thumbPathFolder);
         }
 
-        // Retry open in case the file is still being written
+        //FileSystemWatcher may have kicked this off before the file is fully written to disk (ex: a large file being copied), so we may get an Exception
+        //therefor we retry with exponential backoff on failure to give time for the file to be fully written to disk and ready
         const int maxAttempts = 5;
         int attempt = 0;
         Exception? lastError = null;
@@ -189,30 +204,67 @@ public class ThumbnailProcessor : EmptyProcessor
         {
             try
             {
-                //FileSystemWatcher may have kicked this off before the file is fully written to disk (ex: a large file being copied), so we may get an Exception
-                //therefor we retry with exponential backoff on failure to give time for the file to be fully written to disk and ready
-                using var image = await Image.LoadAsync(filePath);
-                image.Mutate(x => x.Resize(new ResizeOptions
+                //Retry open in case the file is still being written   
+                if (Path.GetExtension(filePath).Equals(".mp4", StringComparison.OrdinalIgnoreCase))
                 {
-                    Size = new Size(0, height),
-                    Mode = ResizeMode.Max
-                }));
-                await image.SaveAsync(thumbPath);
-                return;
+                    await BuildVideoThumbnail(height, filePath, thumbPath);
+                }
+                else 
+                {
+                    await BuildImageThumbnail(height, filePath, thumbPath);
+                }      
+                return; // Success - exit immediately without Task.Delay
             }
             catch (IOException ex)
             {
-                lastError = ex;
+                Console.WriteLine($"BuildThumbnailAsync IOException on attempt {attempt + 1} for file {filePath}: {ex.Message}");
+                lastError = ex;                                
             }
             catch (UnauthorizedAccessException ex)
             {
-                lastError = ex;
+                Console.WriteLine($"BuildThumbnailAsync UnauthorizedAccessException on attempt {attempt + 1} for file {filePath}: {ex.Message}");
+                lastError = ex;                
             }
 
             attempt++;
-            await Task.Delay(attempt switch { 0 => 100, 1 => 250, 2 => 500, 3 => 1000, _ => 1500 });
+            if (attempt < maxAttempts)
+            {
+                await Task.Delay(attempt switch { 1 => 100, 2 => 250, 3 => 500, 4 => 1000, _ => 1500 });
+            }
         }
 
-        throw lastError ?? new IOException("Failed to build thumbnail due to unknown error.");
+        
+        if (lastError == null) 
+        {
+            return;
+        }
+        var lastErrorLocal = lastError;
+        lastError = null;
+        throw new Exception($"Failed to build thumbnail for file {filePath} after {maxAttempts} attempts.", lastErrorLocal);                
+    }
+
+    private async Task BuildImageThumbnail(int height, string filePath, string thumbPath)
+    {
+        using var image = await Image.LoadAsync(filePath);
+        image.Mutate(x => x.Resize(new ResizeOptions
+        {
+            Size = new Size(0, height),
+            Mode = ResizeMode.Max
+        }));
+        await image.SaveAsync(thumbPath);        
+    }
+
+    private async Task BuildVideoThumbnail(int height, string filePath, string thumbPath)
+    {
+        //thumbPath = Path.ChangeExtension(thumbPath, ".jpg");    //already done in GetThumbnailPath
+        await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), TimeSpan.Zero);  
+        
+        // // Get video info
+        // var mediaInfo = await FFProbe.AnalyseAsync(filePath);
+        // var duration = mediaInfo.Duration;
+
+        // // Extract frame from middle
+        // var midpoint = mediaInfo.Duration / 2;
+        // await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), midpoint);
     }
 }

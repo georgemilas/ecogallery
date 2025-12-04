@@ -4,14 +4,14 @@ using System.Collections.Concurrent;
 namespace PicturesLib.service.fileProcessor;
 
 /// <summary>
-/// File observer service that monitors a directory for file changes using FileSystemWatcher 
-/// and also runs periodic scans using FilePeriodicScanService to ensure no changes are missed.
-/// </summary>  
-public class FileObserverService : FilePeriodicScanService
+/// Use the Parallel version of the FileObserverService to process files faster using multiple threads
+/// - this is a backup version that processes files sequentially without parallelism 
+/// </summary>
+public class FileObserverServiceNotParallel : FilePeriodicScanServiceNotParallel
 {
     
-    public FileObserverService(IFileProcessor processor, int intervalMinutes = 2, int degreeOfParallelism = -1)
-        : base(processor, intervalMinutes, degreeOfParallelism)
+    public FileObserverServiceNotParallel(IFileProcessor processor, int intervalMinutes = 2)
+        : base(processor, intervalMinutes)
     {
             
     }
@@ -22,7 +22,7 @@ public class FileObserverService : FilePeriodicScanService
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Console.WriteLine($"Starting FileObserverService (Parallel {_degreeOfParallelism}) on folder: {_processor.RootFolder.FullName}");
+        Console.WriteLine($"Starting FileObserverService (Not Parallel) on folder: {_processor.RootFolder.FullName}");
         SetupFileSystemWatcher();
         await base.ExecuteAsync(stoppingToken);        
     }

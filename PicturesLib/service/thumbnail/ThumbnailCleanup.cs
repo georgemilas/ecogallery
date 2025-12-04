@@ -27,10 +27,15 @@ public class ThumbnailCleanup: EmptyProcessor
     protected virtual string thumbnailsBase { get { return Path.Combine(_configuration.RootFolder.FullName, "_thumbnails"); } }
     protected virtual string thumbDir { get { return Path.Combine(thumbnailsBase, _height.ToString()); } }    
     
-    public static FilePeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, int height = 300)
+    public static FilePeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, int height = 300, int degreeOfParallelism = -1)
     {
         IFileProcessor processor = new ThumbnailCleanup(configuration, height);
-        return new FilePeriodicScanService(processor, intervalMinutes: 2);        
+        return new FilePeriodicScanService(processor, intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);        
+    }
+    public static FilePeriodicScanServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int height = 300)
+    {
+        IFileProcessor processor = new ThumbnailCleanup(configuration, height);
+        return new FilePeriodicScanServiceNotParallel(processor,intervalMinutes: 2);
     }
 
 

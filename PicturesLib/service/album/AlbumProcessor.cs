@@ -3,6 +3,7 @@ using PicturesLib.model.album;
 using PicturesLib.service.database;
 using PicturesLib.service.fileProcessor;
 using PicturesLib.repository;
+using System.Collections.Concurrent;
 
 namespace PicturesLib.service.album;
 
@@ -24,21 +25,42 @@ public class AlbumProcessor: EmptyProcessor
     protected virtual string thumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
 
 
-    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration)
+    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int degreeOfParallelism = -1)
     {
         IFileProcessor processor = new AlbumProcessor(configuration);
-        return new FileObserverService(processor,intervalMinutes: 2);
+        return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-
+    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration)
+    {
+        IFileProcessor processor = new AlbumProcessor(configuration);
+        return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
+    }
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _albumLocks = new();
+    // Helper to get per-key semaphore
+    private SemaphoreSlim GetAlbumLock(string albumName)
+    {
+        return _albumLocks.GetOrAdd(albumName, _ => new SemaphoreSlim(1, 1));
+    }
 
     /// <summary>
     /// create image record and ensure album record exists
     /// </summary>
     private async Task<int> CreateImageAndAlbumRecords(string filePath)
     {
-        if (!await imageRepository.AlbumImageExistsAsync(filePath))
+        bool imageExists = await imageRepository.AlbumImageExistsAsync(filePath);
+        if (!imageExists)
         {
-            await albumRepository.EnsureAlbumExistsAsync(filePath);
+            Album album = albumRepository.CreateAlbumFromPath(filePath);
+            var semaphore = GetAlbumLock(album.AlbumName);
+            await semaphore.WaitAsync();
+            try
+            {
+                await albumRepository.EnsureAlbumExistsAsync(filePath);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
             await imageRepository.AddNewImageAsync(filePath);
             return 1;
         }

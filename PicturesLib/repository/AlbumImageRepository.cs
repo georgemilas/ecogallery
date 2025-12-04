@@ -68,7 +68,10 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
     {
         AlbumImage image = CreateAlbumImageFromPath(filePath);
         var sql = @"INSERT INTO album_image (image_name, image_path, album_name, image_type, last_updated) 
-            VALUES (@image_name, @image_path, @album_name, @image_type, @last_updated)
+                                     VALUES (@image_name, @image_path, @album_name, @image_type, @last_updated)
+            ON CONFLICT (image_path) DO UPDATE
+                    SET
+                        last_updated = EXCLUDED.last_updated                        
             RETURNING id";        
         image.Id = await _db.ExecuteScalarAsync<long>(sql, image);            
         return image;                        

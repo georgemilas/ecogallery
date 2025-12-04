@@ -30,15 +30,20 @@ if (string.IsNullOrWhiteSpace(picturesConfig.Folder))
 }
 
 var rootCommand = new RootCommand("Pictures background services console application");
+var folderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
+var heightOption = new Option<int>(new[] {"--height", "-h"}, () => 290, "Thumbnail height in pixels");
+var nonParallelOption = new Option<bool>(new[] {"--nonparallel", "-np"}, "Run thumbnail processing in non-parallel mode");
+var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Environment.ProcessorCount, "Degree of parallelism for thumbnail processing");
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail background service and keep the app running
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var thumbCommand = new Command("thumbnails", "Run the thumbnail building processor as a background service");
-var thumbFolderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
-var thumbHeightOption = new Option<int>(new[] {"--height", "-h"}, () => 290, "Thumbnail height in pixels");
-thumbCommand.AddOption(thumbFolderOption);
-thumbCommand.AddOption(thumbHeightOption);
-thumbCommand.SetHandler(async (string folder, int height) =>
+thumbCommand.AddOption(folderOption);
+thumbCommand.AddOption(heightOption);
+thumbCommand.AddOption(nonParallelOption);
+thumbCommand.AddOption(parallelDegreeOption);
+thumbCommand.SetHandler(async (string folder, int height, bool nonParallel, int parallelDegree) =>
 {
     picturesConfig.Folder = folder;
     using var cts = new CancellationTokenSource();
@@ -47,24 +52,32 @@ thumbCommand.SetHandler(async (string folder, int height) =>
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
-            services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessor(picturesConfig, height));
+            if (nonParallel)
+            {
+                services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessorNotParallel(picturesConfig, height));
+            }
+            else
+            {
+                services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessor(picturesConfig, height, parallelDegree));
+            }
         })
         .Build();
 
     Console.WriteLine($"Starting thumbnail processor on '{picturesConfig.Folder}' with height={height}. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, thumbFolderOption, thumbHeightOption);
+}, folderOption, heightOption, nonParallelOption, parallelDegreeOption);
 rootCommand.AddCommand(thumbCommand);
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail cleanup background service and keep the app running
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var cleanupCommand = new Command("cleanup", "Run the thumbnail cleanup processor as a background service");
-var cleanupFolderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
-var cleanupHeightOption = new Option<int>(new[] {"--height", "-h"}, () => 290, "Thumbnail height in pixels");
-cleanupCommand.AddOption(cleanupFolderOption);
-cleanupCommand.AddOption(cleanupHeightOption);
-cleanupCommand.SetHandler(async (string folder, int height) =>
+cleanupCommand.AddOption(folderOption);
+cleanupCommand.AddOption(heightOption);
+cleanupCommand.AddOption(nonParallelOption);
+cleanupCommand.AddOption(parallelDegreeOption);
+cleanupCommand.SetHandler(async (string folder, int height, bool nonParallel, int parallelDegree) =>
 {
     picturesConfig.Folder = folder;
     using var cts = new CancellationTokenSource();
@@ -73,22 +86,32 @@ cleanupCommand.SetHandler(async (string folder, int height) =>
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
-            services.AddSingleton<IHostedService>(sp => ThumbnailCleanup.CreateProcessor(picturesConfig, height));
+            if (nonParallel)
+            {
+                services.AddSingleton<IHostedService>(sp => ThumbnailCleanup.CreateProcessorNotParallel(picturesConfig, height));
+            }
+            else
+            {
+                services.AddSingleton<IHostedService>(sp => ThumbnailCleanup.CreateProcessor(picturesConfig, height, parallelDegree));
+            }
+            
         })
         .Build();
 
     Console.WriteLine($"Starting thumbnail cleanup processor for pictures on '{picturesConfig.Folder}' with height={height}. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, cleanupFolderOption, cleanupHeightOption);
+}, folderOption, heightOption, nonParallelOption, parallelDegreeOption);
 rootCommand.AddCommand(cleanupCommand);
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the album building background service and keep the app running
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var albumCommand = new Command("album", "Run the album building processor as a background service");
-var albumFolderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
-albumCommand.AddOption(albumFolderOption);
-albumCommand.SetHandler(async (string folder) =>
+albumCommand.AddOption(folderOption);
+albumCommand.AddOption(nonParallelOption);
+albumCommand.AddOption(parallelDegreeOption);
+albumCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree) =>
 {
     picturesConfig.Folder = folder;
     using var cts = new CancellationTokenSource();
@@ -97,13 +120,20 @@ albumCommand.SetHandler(async (string folder) =>
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
-            services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessor(picturesConfig));
+            if (nonParallel)
+            {
+                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessorNotParallel(picturesConfig));
+            }
+            else
+            {
+                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessor(picturesConfig, parallelDegree));
+            }            
         })
         .Build();
 
     Console.WriteLine($"Starting album buiding processor on '{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, albumFolderOption);
+}, folderOption, nonParallelOption, parallelDegreeOption);
 rootCommand.AddCommand(albumCommand);
 
 

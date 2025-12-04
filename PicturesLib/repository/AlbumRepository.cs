@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.IO;
+using System.Runtime.Serialization;
 using PicturesLib.model.album;
 using PicturesLib.model.configuration;
 using PicturesLib.service.database;
@@ -31,7 +32,10 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public Album CreateAlbumFromPath(string filePath)
     {
         var relativePath = filePath.Replace(RootFolder, string.Empty);
-        var albumName = Path.GetDirectoryName(relativePath) ?? string.Empty;
+        //exclude the file name or current folder 
+        //2025/vacation/florida/image.jpg  =>  albumName = 2025/vacation/florida  
+        //2025/vacation/florida  =>  albumName = 2025/vacation  
+        var albumName = Path.GetDirectoryName(relativePath) ?? string.Empty;  
         return new Album
         {
             AlbumName = albumName,   //includes the entire relative folder path  ex: 2025/vacation/Florida
@@ -90,11 +94,16 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public async Task<Album> AddNewAlbumAsync(string filePath)
     {
         Album album = CreateAlbumFromPath(filePath);
-        var sql = @"INSERT INTO album (album_name, album_type, feature_image_path, last_updated, parent_album) 
-            VALUES (@album_name, @album_type, @feature_image_path, @last_updated, @parent_album)
-            RETURNING id";        
+        //insert or update existing album record and use the last image as feature image
+        var sql = @"INSERT INTO album (album_name, album_type, feature_image_path, last_updated, parent_album)
+                               VALUES (@album_name, @album_type, @feature_image_path, @last_updated, @parent_album)
+                    ON CONFLICT (album_name) DO UPDATE
+                    SET
+                        feature_image_path = EXCLUDED.feature_image_path,
+                        last_updated = EXCLUDED.last_updated                        
+                    RETURNING id;";        
         album.Id = await _db.ExecuteScalarAsync<long>(sql, album);            
-        return album;                        
+        return album; 
     }
 
     public async Task<int> DeleteAlbumAsync(string filePath)
