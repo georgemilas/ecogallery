@@ -28,13 +28,20 @@ public class ThumbnailProcessor : EmptyProcessor
     protected virtual string thumbDir { get { return Path.Combine(thumbnailsBase, _height.ToString()); } }
     protected virtual string GetThumbnailPath(string sourceFilePath)
     {
-        if (Path.GetExtension(sourceFilePath).Equals(".mp4", StringComparison.OrdinalIgnoreCase))
+        if (IsMovieFile(sourceFilePath))
         {
             sourceFilePath = Path.ChangeExtension(sourceFilePath, ".jpg");
         }
         return sourceFilePath.Replace(RootFolder.FullName, thumbDir);
     }
-    
+
+    private bool IsMovieFile(string sourceFilePath)
+    {
+        var fileExt = Path.GetExtension(sourceFilePath);
+        return _configuration.MovieExtensions.Any(ext => ext.Equals(fileExt, StringComparison.OrdinalIgnoreCase));
+        //return fileExt.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int height = 300, int degreeOfParallelism = -1)
     {
         IFileProcessor processor = new ThumbnailProcessor(configuration, height);
@@ -205,7 +212,7 @@ public class ThumbnailProcessor : EmptyProcessor
             try
             {
                 //Retry open in case the file is still being written   
-                if (Path.GetExtension(filePath).Equals(".mp4", StringComparison.OrdinalIgnoreCase))
+                if (IsMovieFile(filePath))
                 {
                     await BuildVideoThumbnail(height, filePath, thumbPath);
                 }

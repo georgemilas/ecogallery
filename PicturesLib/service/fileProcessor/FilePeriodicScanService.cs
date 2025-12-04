@@ -76,7 +76,7 @@ public class FilePeriodicScanService : BackgroundService
                     if (rate != 0 && newFiles.Count > 0 ) 
                     {                            
                         var eta = TimeSpan.FromSeconds((newFiles.Count - actualNew) / rate);
-                        Console.Write($"\r{actualNew}/{newFiles.Count} files ({actualNew * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        Console.Write($"\r New: {actualNew}/{newFiles.Count} files ({actualNew * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
@@ -107,7 +107,7 @@ public class FilePeriodicScanService : BackgroundService
                     if (rate != 0 && deletedFiles.Count > 0 ) 
                     {
                         var eta = TimeSpan.FromSeconds((deletedFiles.Count - actualDeleted) / rate);
-                        Console.Write($"\r{actualDeleted}/{deletedFiles.Count} files ({actualDeleted * 100 / deletedFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        Console.Write($"\r Deleted: {actualDeleted}/{deletedFiles.Count} files ({actualDeleted * 100 / deletedFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
@@ -143,7 +143,7 @@ public class FilePeriodicScanService : BackgroundService
                     if (rate != 0 && skipFiles.Count() > 0 ) 
                     {
                         var eta = TimeSpan.FromSeconds((skipFiles.Count() - actualCleanup) / rate);
-                        Console.Write($"\r{actualCleanup}/{skipFiles.Count()} files ({actualCleanup * 100 / skipFiles.Count()}) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
+                        Console.Write($"\r Cleanup: {actualCleanup}/{skipFiles.Count()} files ({actualCleanup * 100 / skipFiles.Count()}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
@@ -151,7 +151,7 @@ public class FilePeriodicScanService : BackgroundService
             if (actualCleanup > 0) Console.WriteLine(); // New line after progress output
             
             sw.Stop();
-            Console.WriteLine($"Periodic scan (Parallel {_degreeOfParallelism})  completed in {sw.Elapsed.TotalSeconds} seconds ({sw.Elapsed.TotalMinutes} minutes). New files: {actualNew}/{newFiles.Count}, Deleted files: {actualDeleted}/{deletedFiles.Count}, Cleanup: {actualCleanup}/{skipFiles.Count()}");
+            Console.WriteLine($"Periodic scan (Parallel {_degreeOfParallelism}) completed in {sw.Elapsed:hh\\:mm\\:ss}. New files: {actualNew}/{newFiles.Count}, Deleted files: {actualDeleted}/{deletedFiles.Count}, Cleanup: {actualCleanup}/{skipFiles.Count()}");
 
         }
         finally
@@ -196,7 +196,7 @@ public class FilePeriodicScanService : BackgroundService
     }
 
     /// <summary>
-    /// for files or folders that are to be skipped (ex renamed from blog to skip_blog) we need to be clean the original   
+    /// for files or folders that are to be skipped (ex renamed from blog to skip_blog) we need to clean the original   
     /// </summary>
     protected IEnumerable<string> GetFilesToClean()
     {

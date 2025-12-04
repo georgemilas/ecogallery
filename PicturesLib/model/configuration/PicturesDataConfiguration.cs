@@ -12,7 +12,20 @@ public class PicturesDataConfiguration
     public List<string> ValueBasedRoleSuffix { get; set; } = new List<string> { "_custid_{X}", "-custid-{X}", " custid {X}"}; 
     public List<string> ValueBasedRolePrefix { get; set; } = new List<string> { "custid_{X}_", "custid-{X}-", "custid {X} "};
     public List<string> FeaturePhotoSuffixOrPrefix { get; set; } = new List<string> { "label", "feature" };
-    public List<string> Extensions { get; set; } = new List<string> { ".jpg", ".jpeg", ".png", ".webp", ".mp4" }; 
+    public List<string> ImageExtensions { get; set; } = new List<string> { ".jpg", ".jpeg", ".png", ".webp" }; 
+    public List<string> MovieExtensions { get; set; } = new List<string> { ".mp4" };
+
+    public List<string> Extensions 
+    { 
+        get 
+        { 
+            var all = new List<string>();
+            all.AddRange(ImageExtensions);
+            all.AddRange(MovieExtensions);
+            return all;
+        }
+    }
+
     public DirectoryInfo RootFolder => new DirectoryInfo(Folder);
 }
 
@@ -28,6 +41,7 @@ public class PicturesDataConfiguration
         "valueBasedRolePrefix":["custid_{X}_", "custid-{X}-", "custid {X} "],
         "valueBasedRoleSuffix":["_custid_{X}", "-custid-{X}", " custid {X}"],    
         "featurePhotoSuffixOrPrefix": ["label", "feature"],
-        "extensions": [ ".jpg", ".jpeg", ".png", ".webp" ]
+        "imageExtensions": [ ".jpg", ".jpeg", ".png", ".webp" ],
+        "movieExtensions": [ ".mp4" ]
   }
 */

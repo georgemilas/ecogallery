@@ -20,7 +20,7 @@ public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
         {
             options.SwaggerDoc(description.GroupName, new OpenApiInfo
             {
-                Title = "gmilas pictures",
+                Title = "gmpictures api",
                 Version = description.GroupName // Use GroupName instead of ApiVersion.ToString()
             });
         }

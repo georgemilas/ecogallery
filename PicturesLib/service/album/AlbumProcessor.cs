@@ -50,7 +50,7 @@ public class AlbumProcessor: EmptyProcessor
         bool imageExists = await imageRepository.AlbumImageExistsAsync(filePath);
         if (!imageExists)
         {
-            Album album = albumRepository.CreateAlbumFromPath(filePath);
+            Album album = Album.CreateFromPath(filePath, RootFolder.FullName);
             var semaphore = GetAlbumLock(album.AlbumName);
             await semaphore.WaitAsync();
             try
