@@ -1,34 +1,84 @@
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
-using WeatherLib.model;
-using WeatherLib.service;
+using Microsoft.Extensions.Options;
+using PicturesLib.model.album;
+using PicturesLib.model.configuration;
+using PicturesLib.repository;
 
 namespace WeatherApi.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/pictures")]
-public class PicturesController : ControllerBase
+[Route("api/v1/albums")]
+public class AlbumsController : ControllerBase
 {
-    private readonly IResidioReportService _reportService;
-    private readonly IConfiguration _configuration;
+    private readonly AlbumRepository _albumRepository;
+    private readonly PicturesDataConfiguration _picturesConfig;
 
-    public PicturesController(IResidioReportService reportService, IConfiguration configuration)
+    public AlbumsController(IOptions<PicturesDataConfiguration> picturesOptions)
     {
-        _reportService = reportService;
-        _configuration = configuration;
+        _picturesConfig = picturesOptions.Value;
+        _albumRepository = new AlbumRepository(_picturesConfig);
     }
 
+    // GET: /api/v1/albums
     [HttpGet]
-    public ActionResult<List<ResidioCityWeatherReport>> Get()
+    public async Task<ActionResult<List<AlbumContentHierarchical>>> GetRoot()
     {
-        string? dataFolder = _configuration["WeatherData:Folder"];
-        if (string.IsNullOrWhiteSpace(dataFolder))
-        {
-            return Problem("Could not read data folder, is WeatherData:Folder set in appsettings.json?", statusCode: 500);
-        }
+        var albumContent = await _albumRepository.GetRootAlbumContentHierarchical();
+        return Ok(albumContent);
+    }
 
-        var report = _reportService.GetWeatherReport(dataFolder);
-        return Ok(report);
+    // GET: /api/v1/albums/root/hierarchy
+    [HttpGet("root/hierarchy")]
+    public async Task<ActionResult<List<AlbumContentHierarchical>>> GetRootHierarchy()
+    {
+        var albumContent = await _albumRepository.GetRootAlbumContentHierarchical();
+        return Ok(albumContent);
+    }
+
+    // GET: /api/v1/albums/{albumName}
+    [HttpGet("{albumName}")]
+    public async Task<ActionResult<List<AlbumContentHierarchical>>> GetAlbumContentHierarchicalDefault(string albumName)
+    {
+        var albumContent = await _albumRepository.GetAlbumContentHierarchicalByName(albumName);
+        return Ok(albumContent);
+    }
+    // GET: /api/v1/albums/{albumName}/hierarchy
+    [HttpGet("{albumName}/hierarchy")]
+    public async Task<ActionResult<List<AlbumContentHierarchical>>> GetAlbumContentHierarchicalByName(string albumName)
+    {
+        var albumContent = await _albumRepository.GetAlbumContentHierarchicalByName(albumName);
+        return Ok(albumContent);
+    }
+    // GET: /api/v1/albums/{albumId}/hierarchy
+    [HttpGet("{albumId:long}/hierarchy")]
+    public async Task<ActionResult<List<AlbumContentHierarchical>>> GetAlbumContentHierarchicalById(long albumId)
+    {
+        var albumContent = await _albumRepository.GetAlbumContentHierarchicalById(albumId);
+        return Ok(albumContent);
+    }
+
+
+    // GET: /api/v1/albums/{albumName}/flatten
+    [HttpGet("{albumName}/flatten")]
+    public async Task<ActionResult<List<AlbumContentFlatten>>> GetAlbumContentFlattenByName(string albumName)
+    {
+        var albumContent = await _albumRepository.GetAlbumContentFlattenByName(albumName);
+        return Ok(albumContent);
+    }
+    // GET: /api/v1/albums/{albumId}/flatten
+    [HttpGet("{albumId:long}/flatten")]
+    public async Task<ActionResult<List<AlbumContentFlatten>>> GetAlbumContentFlattenById(long albumId)
+    {
+        var albumContent = await _albumRepository.GetAlbumContentFlattenById(albumId);
+        return Ok(albumContent);
+    }
+
+
+    protected void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _albumRepository?.Dispose();
+        }
     }
 }

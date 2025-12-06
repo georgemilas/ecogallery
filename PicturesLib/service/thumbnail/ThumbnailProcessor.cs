@@ -204,6 +204,7 @@ public class ThumbnailProcessor : EmptyProcessor
 
         //FileSystemWatcher may have kicked this off before the file is fully written to disk (ex: a large file being copied), so we may get an Exception
         //therefor we retry with exponential backoff on failure to give time for the file to be fully written to disk and ready
+        //and if we still fail the next iteration of FilePeriodicScanService will try again later
         const int maxAttempts = 5;
         int attempt = 0;
         Exception? lastError = null;

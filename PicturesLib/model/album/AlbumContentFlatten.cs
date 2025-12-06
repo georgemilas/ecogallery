@@ -9,7 +9,7 @@ public record AlbumContentFlatten
     public string ItemType { get; set; } = string.Empty;    //could be image or video
     public string ItemPath { get; set; } = string.Empty; 
     public string AlbumName { get; set; } = string.Empty; 
-    public DateTimeOffset LastUpdated { get; set; }    
+    public DateTimeOffset LastUpdatedUtc { get; set; }    
     
 
     public static AlbumContentFlatten CreateFromDataReader(DbDataReader reader)
@@ -21,7 +21,7 @@ public record AlbumContentFlatten
             ItemType = reader.GetString(reader.GetOrdinal("item_type")),
             ItemPath = reader.GetString(reader.GetOrdinal("item_path")),
             AlbumName = reader.GetString(reader.GetOrdinal("album_name")),
-            LastUpdated = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated"))
+            LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc"))
         };
     }
 

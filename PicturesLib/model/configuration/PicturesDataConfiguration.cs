@@ -15,17 +15,20 @@ public class PicturesDataConfiguration
     public List<string> ImageExtensions { get; set; } = new List<string> { ".jpg", ".jpeg", ".png", ".webp" }; 
     public List<string> MovieExtensions { get; set; } = new List<string> { ".mp4" };
 
+    private List<string> _extensions = new List<string>();
     public List<string> Extensions 
     { 
         get 
         { 
-            var all = new List<string>();
-            all.AddRange(ImageExtensions);
-            all.AddRange(MovieExtensions);
-            return all;
+            if (_extensions.Count > 0)
+            {
+                return _extensions;
+            }
+            _extensions.AddRange(ImageExtensions);
+            _extensions.AddRange(MovieExtensions);
+            return _extensions;
         }
     }
-
     public DirectoryInfo RootFolder => new DirectoryInfo(Folder);
 }
 

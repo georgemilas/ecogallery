@@ -29,22 +29,23 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         await _db.DisposeAsync();
     }
 
-    public async Task<bool> AlbumImageExistsAsync(string filePath)
+    public async Task<AlbumImage?> GetAlbumImageAsync(string filePath)
     {
-        AlbumImage image = AlbumImage.CreateFromPath(filePath, RootFolder);
+        AlbumImage image = AlbumImage.CreateFromFilePath(filePath, RootFolder);
         var sql = "SELECT * FROM album_image WHERE image_path = @image_path";
         var albumImages = await _db.QueryAsync(sql, reader => AlbumImage.CreateFromDataReader(reader), image);
-        return albumImages.Any();                 
+        return albumImages.FirstOrDefault();                 
     }
 
-    public async Task<AlbumImage> AddNewImageAsync(string filePath)
+    public async Task<AlbumImage> AddNewImageAsync(string filePath, Album? album = null)
     {
-        AlbumImage image = AlbumImage.CreateFromPath(filePath, RootFolder);
-        var sql = @"INSERT INTO album_image (image_name, image_path, album_name, image_type, last_updated) 
-                                     VALUES (@image_name, @image_path, @album_name, @image_type, @last_updated)
+        AlbumImage image = AlbumImage.CreateFromFilePath(filePath, RootFolder);
+        image.AlbumId = album?.Id ?? 0;
+        var sql = @"INSERT INTO album_image (image_name, image_path, image_type, last_updated_utc, album_name, album_id, image_timestamp_utc) 
+                                     VALUES (@image_name, @image_path, @image_type, @last_updated_utc, @album_name, @album_id, @image_timestamp_utc)
             ON CONFLICT (image_path) DO UPDATE
                     SET
-                        last_updated = EXCLUDED.last_updated                        
+                        last_updated_utc = EXCLUDED.last_updated_utc                        
             RETURNING id";        
         image.Id = await _db.ExecuteScalarAsync<long>(sql, image);            
         return image;                        
@@ -52,7 +53,7 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
 
     public async Task<int> DeleteAlbumImageAsync(string filePath)
     {
-        AlbumImage image = AlbumImage.CreateFromPath(filePath, RootFolder);
+        AlbumImage image = AlbumImage.CreateFromFilePath(filePath, RootFolder);
         var sql = "DELETE FROM album_image WHERE image_path = @image_path";
         return await _db.ExecuteAsync(sql, image);               
     }

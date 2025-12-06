@@ -45,26 +45,28 @@ public class AlbumProcessor: EmptyProcessor
     /// <summary>
     /// create image record and ensure album record exists
     /// </summary>
-    private async Task<int> CreateImageAndAlbumRecords(string filePath)
+    private async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath)
     {
-        bool imageExists = await imageRepository.AlbumImageExistsAsync(filePath);
-        if (!imageExists)
+        AlbumImage? albumImage = await imageRepository.GetAlbumImageAsync(filePath);
+        if (albumImage == null)
         {
-            Album album = Album.CreateFromPath(filePath, RootFolder.FullName);
+            Album album = Album.CreateFromFilePath(filePath, RootFolder.FullName);
+            //Console.WriteLine($"ran image get db: {filePath}");
+
             var semaphore = GetAlbumLock(album.AlbumName);
             await semaphore.WaitAsync();
             try
             {
-                await albumRepository.EnsureAlbumExistsAsync(filePath);
+                album = await albumRepository.EnsureAlbumExistsAsync(filePath);
             }
             finally
             {
                 semaphore.Release();
             }
-            await imageRepository.AddNewImageAsync(filePath);
-            return 1;
+            albumImage = await imageRepository.AddNewImageAsync(filePath, album);
+            return Tuple.Create(albumImage, 1);
         }
-        return 0;
+        return Tuple.Create(albumImage, 0);
     }
 
     /// <summary>
@@ -95,12 +97,13 @@ public class AlbumProcessor: EmptyProcessor
     
     public override async Task<int> OnFileCreated(string filePath)
     {
-        return await CreateImageAndAlbumRecords(filePath);
+        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath);
+        return count;  //number of records created (0 or 1)
     }
 
     public override async Task OnFileChanged(string filePath)
     {
-        await CreateImageAndAlbumRecords(filePath);
+        await CreateImageAndAlbumRecords(filePath);   
     }
 
     public override async Task<int> OnFileDeleted(string filePath)

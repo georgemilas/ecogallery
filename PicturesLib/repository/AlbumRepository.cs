@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Data.Common;
 using System.IO;
 using System.Runtime.Serialization;
@@ -32,55 +33,60 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     
 
 
-    public async Task EnsureAlbumExistsAsync(string filePath)
+    public async Task<Album> EnsureAlbumExistsAsync(string filePath)
     {
-        if (!await AlbumExistsAsync(filePath))
-        {
-            var album = Album.CreateFromPath(filePath, RootFolder);
+        var album = Album.CreateFromFilePath(filePath, RootFolder);
+        var dbalbum = await GetAlbumAsync(filePath);
+        //Console.WriteLine($"ran album get db: {filePath}");
+        if (dbalbum == null)
+        {            
             if (album.HasParentAlbum)
             {
-                await EnsureAlbumExistsAsync(album.AlbumName);  //esure a parent Album record exists for this current Album
+                var parent = await EnsureAlbumExistsAsync(album.AlbumName);  //esure a parent Album record exists for this current Album
+                album.ParentAlbumId = parent.Id;
             }
-            await AddNewAlbumAsync(filePath);      
+            return await AddNewAlbumAsync(album);      
         }
+        return dbalbum;
     }       
 
-    public async Task<bool> AlbumExistsAsync(string filePath)
+    public async Task<Album?> GetAlbumAsync(string filePath)
     {
-        Album album = Album.CreateFromPath(filePath, RootFolder);
+        Album album = Album.CreateFromFilePath(filePath, RootFolder);
         var sql = "SELECT * FROM album WHERE album_name = @album_name";
         var albums = await _db.QueryAsync(sql, reader => Album.CreateFromDataReader(reader), album);
-        return albums.Any();                 
+        return albums.FirstOrDefault();                 
     }
 
     public async Task<bool> AlbumHasContentAsync(string filePath)
     {
         //this checks if there are any images in this album or any sub-albums
-        Album album = Album.CreateFromPath(filePath, RootFolder);
+        Album album = Album.CreateFromFilePath(filePath, RootFolder);
         var sql = "SELECT count(*) FROM album_image WHERE album_name LIKE @pattern";
         var parameters = new { pattern = $"'{album.AlbumName}%'" };
         var contentCount = await _db.ExecuteScalarAsync<int>(sql, parameters);
         return contentCount > 0;                 
     }
 
-    public async Task<Album> AddNewAlbumAsync(string filePath)
+    public async Task<Album> AddNewAlbumAsync(Album album)
     {
-        Album album = Album.CreateFromPath(filePath, RootFolder);
+        //Console.WriteLine($"TRY save db: {album}");  
         //insert or update existing album record and use the last image as feature image
-        var sql = @"INSERT INTO album (album_name, album_type, feature_image_path, last_updated, parent_album)
-                               VALUES (@album_name, @album_type, @feature_image_path, @last_updated, @parent_album)
+        var sql = @"INSERT INTO album (album_name, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id)
+                               VALUES (@album_name, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id)
                     ON CONFLICT (album_name) DO UPDATE
                     SET
                         feature_image_path = EXCLUDED.feature_image_path,
-                        last_updated = EXCLUDED.last_updated                        
+                        last_updated_utc = EXCLUDED.last_updated_utc                        
                     RETURNING id;";        
-        album.Id = await _db.ExecuteScalarAsync<long>(sql, album);            
+        album.Id = await _db.ExecuteScalarAsync<long>(sql, album);    
+        //Console.WriteLine($"ran album save db: {album.AlbumName}");        
         return album; 
     }
 
     public async Task<int> DeleteAlbumAsync(string filePath)
     {
-        Album album = Album.CreateFromPath(filePath, RootFolder);
+        Album album = Album.CreateFromFilePath(filePath, RootFolder);
         var sql = "DELETE FROM album WHERE album_name = @album_name";
         var rowsAffected = await _db.ExecuteAsync(sql, album);
 
@@ -95,33 +101,78 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return rowsAffected;
     }
 
-    public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchical(string albumName)
+    public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalByName(string albumName)
     {
-        var parameters = new { album_name = $"'{albumName}'" };
-        var sql = @"SELECT pa.album_name as item_name, pa.album_type as item_type, ai.image_type as feature_item_type, pa.feature_image_path as feature_item_path, iai.image_type as inner_feature_item_type, a.feature_image_path as inner_feature_item_path, pa.last_updated  
-                        FROM album as pa 
-                        LEFT JOIN album_image ai on pa.feature_image_path = ai.image_path
-                        LEFT JOIN album a on pa.feature_image_path = a.album_name
-                        LEFT JOIN album_image iai on a.feature_image_path = iai.image_path
-                        WHERE pa.parent_album = @album_name
-                    UNION 
-                    SELECT image_name as item_name, image_type as item_type, image_type as feature_image_type, image_path, image_type, image_path, last_updated
-                        FROM album_image 
-                        WHERE album_name = @album_name  
-                    ORDER BY item_type";
+        var parameters = new { album_name = albumName };
+        var sql = "SELECT * FROM get_album_content_hierarchical_by_name(@album_name)";
         var albumContent = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), parameters);
         return albumContent;                 
     }    
 
-    public async Task<List<AlbumContentFlatten>> GetAlbumContentFlatten(string albumName)
+    public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalById(long albumId)
     {
-        var parameters = new { pattern = $"'{albumName}%'" };
-        var sql = @"SELECT image_name as item_name, image_type as item_type, image_path as item_path, album_name, last_updated
+        var parameters = new { album_id = albumId };
+        var sql = "SELECT * FROM get_album_content_hierarchical_by_id(@album_id)";
+        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), parameters);
+        return albumContent;                 
+    }    
+
+    public async Task<List<AlbumContentFlatten>> GetAlbumContentFlattenByName(string albumName)
+    {
+        // Escape backslashes for PostgreSQL LIKE pattern
+        var albumEscapedLikePattern = albumName.Replace(@"\", @"\\") + "%";
+        var parameters = new { pattern = albumEscapedLikePattern };
+        var sql = @"SELECT 
+                        id,
+                        image_name as item_name, 
+                        image_type as item_type, 
+                        image_path as item_path, 
+                        album_name, 
+                        last_updated
                     FROM album_image 
                     WHERE album_name LIKE @pattern";
         var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters);
         return albumContent;                 
     }  
+    public async Task<List<AlbumContentFlatten>> GetAlbumContentFlattenById(long albumId)
+    {
+        //first get the album name for the album id
+        var parameters = new { id = albumId };
+        var sql = "SELECT * FROM album WHERE id = @id";
+        var albums = await _db.QueryAsync(sql, reader => Album.CreateFromDataReader(reader), parameters);
+        if (!albums.Any())
+        {
+            return new List<AlbumContentFlatten>();
+        }
+        
+        //now run the query to get the images using album_image.album_name.startsWith(album.AlbumName)
+        var album = albums.First();   
+        // Escape backslashes for PostgreSQL LIKE pattern
+        var albumEscapedLikePattern = album.AlbumName.Replace(@"\", @"\\") + "%";
+        var parameters2 = new { pattern = albumEscapedLikePattern };
+        sql = @"SELECT 
+                        id,
+                        image_name as item_name, 
+                        image_type as item_type, 
+                        image_path as item_path, 
+                        album_name, 
+                        last_updated
+                    FROM album_image 
+                    WHERE album_name LIKE @pattern";
+        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters);
+        return albumContent;                 
+    }  
+
+
+    public async Task<List<AlbumContentHierarchical>> GetRootAlbumContentHierarchical()
+    {
+        var sql = "SELECT * FROM get_root_album_content_hierarchical()";
+        var albumContent = await _db.QueryAsync(
+            sql, 
+            reader => AlbumContentHierarchical.CreateFromDataReader(reader));
+        return albumContent;                 
+    }
+
 }
 
 

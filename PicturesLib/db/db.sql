@@ -1,14 +1,20 @@
----- PostgreSQL database schema for gmpictures ---------
------------------ public.album -------------------------
+---- PostgreSQL database schema for gmpictures --------------------------------
+
+
+------------------------------------------------------------------------------
+----------------- public.album -----------------------------------------------
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.album;
 
 CREATE TABLE
   public.album (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
     album_name character varying(500) NOT NULL,
     album_type character varying(20) NOT NULL,
-    last_updated timestamp with time zone NULL,
+    last_updated_utc timestamp with time zone NULL,
     feature_image_path character varying(500) NULL,
-    parent_album character varying(500) NULL
+    parent_album character varying(500) NULL,
+    parent_album_id bigint NULL
   );
 
 ALTER TABLE
@@ -20,8 +26,11 @@ ADD
 CREATE UNIQUE INDEX IF NOT EXISTS ux_album_album_name
 ON public.album (album_name);
 
+------------------------------------------------------------------------------
+----------------- public.album_image -----------------------------------------  
+------------------------------------------------------------------------------
 
------------------ public.album_image -------------------
+DROP TABLE IF EXISTS public.album_image;
 
 CREATE TABLE
   public.album_image (
@@ -29,8 +38,10 @@ CREATE TABLE
     image_name character varying(255) NOT NULL,
     image_path character varying(500) NOT NULL,
     image_type character varying(10) NOT NULL,
-    last_updated timestamp with time zone NOT NULL,
-    album_name character varying(500) NULL
+    last_updated_utc timestamp with time zone NOT NULL,
+    album_name character varying(500) NOT NULL,
+    album_id bigint NOT NULL,
+    image_timestamp_utc timestamp with time zone NOT NULL
   );
 
 ALTER TABLE

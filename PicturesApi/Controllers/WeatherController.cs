@@ -1,13 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
 using WeatherLib.model;
 using WeatherLib.service;
 
 namespace WeatherApi.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/weather")]
+[Route("api/v1/weather")]
 public class WeatherController : ControllerBase
 {
     private readonly IResidioReportService _reportService;
