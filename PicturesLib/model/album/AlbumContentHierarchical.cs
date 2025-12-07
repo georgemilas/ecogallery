@@ -15,6 +15,7 @@ public record AlbumContentHierarchical
     public string? InnerFeatureItemType { get; set; } = string.Empty;   //not null only if FeatureItemType is null
     public string? InnerFeatureItemPath { get; set; } = string.Empty;   //not null only if FeatureItemType is null
     public DateTimeOffset LastUpdatedUtc { get; set; }    
+    public DateTimeOffset ItemTimestampUtc { get; set; }
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
     {
@@ -29,7 +30,8 @@ public record AlbumContentHierarchical
             FeatureItemPath = reader.GetString(reader.GetOrdinal("feature_item_path")),
             InnerFeatureItemType = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_type")) ? null :  reader.GetString(reader.GetOrdinal("inner_feature_item_type")),
             InnerFeatureItemPath = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_path")) ? null : reader.GetString(reader.GetOrdinal("inner_feature_item_path")),
-            LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc"))
+            LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
+            ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc"))
         };
     }
 

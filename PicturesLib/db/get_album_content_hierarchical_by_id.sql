@@ -11,24 +11,26 @@ RETURNS TABLE (
     feature_item_path VARCHAR,
     inner_feature_item_type VARCHAR,
     inner_feature_item_path VARCHAR,
-    last_updated_utc TIMESTAMP WITH TIME ZONE
+    last_updated_utc TIMESTAMP WITH TIME ZONE,
+    item_timestamp_utc TIMESTAMP WITH TIME ZONE
 ) AS $$
 SELECT 
-    pa.id, 
-    pa.album_name AS item_name, 
-    pa.album_type AS item_type, 
-    pa.parent_album_id as parent_album_id, 
-    pa.parent_album AS parent_album_name,
+    a.id, 
+    a.album_name AS item_name, 
+    a.album_type AS item_type, 
+    a.parent_album_id as parent_album_id, 
+    a.parent_album AS parent_album_name,
     ai.image_type AS feature_item_type, 
-    pa.feature_image_path AS feature_item_path, 
-    iai.image_type AS inner_feature_item_type, 
-    a.feature_image_path AS inner_feature_item_path, 
-    pa.last_updated_utc  
-FROM album AS pa
-LEFT JOIN album_image ai ON pa.feature_image_path = ai.image_path
-LEFT JOIN album a ON pa.feature_image_path = a.album_name
-LEFT JOIN album_image iai ON a.feature_image_path = iai.image_path
-WHERE pa.parent_album_id = p_album_id
+    a.feature_image_path AS feature_item_path, 
+    cai.image_type AS inner_feature_item_type, 
+    ca.feature_image_path AS inner_feature_item_path, 
+    a.last_updated_utc,
+    a.album_timestamp_utc AS item_timestamp_utc  
+FROM album AS a
+LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
+LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image
+LEFT JOIN album_image cai ON ca.feature_image_path = cai.image_path     --get the image record of the child album feature image
+WHERE a.parent_album_id = p_album_id
 
 UNION 
 
@@ -42,7 +44,8 @@ SELECT
     ai.image_path, 
     ai.image_type, 
     ai.image_path, 
-    ai.last_updated_utc
+    ai.last_updated_utc,
+    ai.image_timestamp_utc AS item_timestamp_utc
 FROM album_image ai
   JOIN album AS a ON ai.album_name = a.album_name
 WHERE a.id = p_album_id

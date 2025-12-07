@@ -36,7 +36,7 @@ public class AlbumProcessor: EmptyProcessor
         return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
     }
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _albumLocks = new();
-    // Helper to get per-key semaphore
+    // Helper to get per-key aka per-album semaphore 
     private SemaphoreSlim GetAlbumLock(string albumName)
     {
         return _albumLocks.GetOrAdd(albumName, _ => new SemaphoreSlim(1, 1));
@@ -54,7 +54,7 @@ public class AlbumProcessor: EmptyProcessor
             //Console.WriteLine($"ran image get db: {filePath}");
 
             var semaphore = GetAlbumLock(album.AlbumName);
-            await semaphore.WaitAsync();
+            await semaphore.WaitAsync();  //can't call await in a lock so using semaphore instead
             try
             {
                 album = await albumRepository.EnsureAlbumExistsAsync(filePath);

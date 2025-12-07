@@ -12,5 +12,7 @@ public record AlbumContentHierarchical
     public List<string> NavigationPathSegments { get; set; } = new List<string>();
     public string ImagePath { get; set; } = string.Empty;     
     public DateTimeOffset LastUpdatedUtc { get; set; }    
+    public DateTimeOffset ItemTimestampUtc { get; set; }
+    public List<AlbumContentHierarchical> Content { get; set; } = new List<AlbumContentHierarchical>();
     
 }

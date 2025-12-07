@@ -36,7 +36,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public async Task<Album> EnsureAlbumExistsAsync(string filePath)
     {
         var album = Album.CreateFromFilePath(filePath, RootFolder);
-        var dbalbum = await GetAlbumAsync(filePath);
+        var dbalbum = await GetAlbumByImageAsync(filePath);
         //Console.WriteLine($"ran album get db: {filePath}");
         if (dbalbum == null)
         {            
@@ -50,7 +50,38 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return dbalbum;
     }       
 
-    public async Task<Album?> GetAlbumAsync(string filePath)
+    public async Task<Album?> GetAlbumByNameAsync(string albumName)
+    {
+        Album album = Album.CreateFromAlbumPath(albumName, RootFolder);
+        var sql = "SELECT * FROM album WHERE album_name = @album_name";
+        var albums = await _db.QueryAsync(sql, reader => Album.CreateFromDataReader(reader), album);
+        return albums.FirstOrDefault();                         
+    }
+    public async Task<AlbumContentHierarchical?> GetAlbumHierarchicalByNameAsync(string albumName)
+    {
+        Album album = Album.CreateFromAlbumPath(albumName, RootFolder);
+        var sql = @"SELECT 
+                        a.id, 
+                        a.album_name AS item_name, 
+                        a.album_type AS item_type, 
+                        a.parent_album_id as parent_album_id, 
+                        a.parent_album AS parent_album_name,
+                        ai.image_type AS feature_item_type, 
+                        a.feature_image_path AS feature_item_path, 
+                        cai.image_type AS inner_feature_item_type, 
+                        ca.feature_image_path AS inner_feature_item_path, 
+                        a.last_updated_utc,
+                        a.album_timestamp_utc AS item_timestamp_utc  
+                    FROM album AS a
+                    LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
+                    LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image
+                    LEFT JOIN album_image cai ON ca.feature_image_path = cai.image_path     --get the image record of the child album feature image
+                    WHERE a.album_name = @album_name";
+        var albums = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), album);
+        return albums.FirstOrDefault();                         
+    }
+
+    public async Task<Album?> GetAlbumByImageAsync(string filePath)
     {
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
         var sql = "SELECT * FROM album WHERE album_name = @album_name";
@@ -72,12 +103,13 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     {
         //Console.WriteLine($"TRY save db: {album}");  
         //insert or update existing album record and use the last image as feature image
-        var sql = @"INSERT INTO album (album_name, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id)
-                               VALUES (@album_name, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id)
+        var sql = @"INSERT INTO album (album_name, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id, album_timestamp_utc)
+                               VALUES (@album_name, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id, @album_timestamp_utc)
                     ON CONFLICT (album_name) DO UPDATE
                     SET
                         feature_image_path = EXCLUDED.feature_image_path,
-                        last_updated_utc = EXCLUDED.last_updated_utc                        
+                        last_updated_utc = EXCLUDED.last_updated_utc,
+                        album_timestamp_utc = EXCLUDED.album_timestamp_utc
                     RETURNING id;";        
         album.Id = await _db.ExecuteScalarAsync<long>(sql, album);    
         //Console.WriteLine($"ran album save db: {album.AlbumName}");        
@@ -128,7 +160,8 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
                         image_type as item_type, 
                         image_path as item_path, 
                         album_name, 
-                        last_updated
+                        last_updated_utc,
+                        image_timestamp_utc as item_timestamp_utc
                     FROM album_image 
                     WHERE album_name LIKE @pattern";
         var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters);
@@ -156,7 +189,8 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
                         image_type as item_type, 
                         image_path as item_path, 
                         album_name, 
-                        last_updated
+                        last_updated_utc,
+                        image_timestamp_utc as item_timestamp_utc
                     FROM album_image 
                     WHERE album_name LIKE @pattern";
         var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters);

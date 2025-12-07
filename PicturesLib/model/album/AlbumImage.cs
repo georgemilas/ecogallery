@@ -20,6 +20,7 @@ public record AlbumImage
 
         FileInfo fi = new FileInfo(filePath);    
         DateTimeOffset lastWriteTimeUtc = fi.LastWriteTimeUtc;
+
         var path = filePath.Replace(rootFolder, string.Empty);
         return new AlbumImage
         {
