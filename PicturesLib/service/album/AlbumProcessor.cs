@@ -22,7 +22,7 @@ public class AlbumProcessor: EmptyProcessor
     private AlbumRepository albumRepository;
 
     public override DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
-    protected virtual string thumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
+    protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
 
 
     public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int degreeOfParallelism = -1)

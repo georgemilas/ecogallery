@@ -7,7 +7,7 @@ function debounce(fn, delay) {
     };
 }
 
-function justifyGallery(gallerySelector, targetHeight = 200) {
+function justifyGallery(gallerySelector, targetHeight) {
     const gallery = document.querySelector(gallerySelector);
     const images = [...gallery.querySelectorAll('img')];
     
@@ -31,8 +31,11 @@ function layoutGallery(gallery, images, targetHeight) {
     
     // Actual usable width
     const containerWidth = gallery.clientWidth - paddingLeft - paddingRight;
+    const containerHeight = gallery.clientHeight - (parseFloat(styles.paddingTop) || 0) - (parseFloat(styles.paddingBottom) || 0);
+    const intededHeight = containerHeight / 3 - 20 ;
+
     
-    console.log(`Container width: ${containerWidth}, padding: ${paddingLeft}/${paddingRight}, gap: ${gap}`);
+    console.log(`Container width: ${containerWidth}, padding: l${paddingLeft}:r${paddingRight}, gap: ${gap}, targetHeight: ${targetHeight}, intendedHeight: ${intededHeight}, containerHeight: ${containerHeight}`); 
     
     let row = [];
     let rowWidth = 0;
@@ -46,7 +49,7 @@ function layoutGallery(gallery, images, targetHeight) {
         const potentialRowWidth = rowWidth + imgWidth + gapsWidth;
         
         if (potentialRowWidth > containerWidth && row.length > 0) {
-            justifyRow(row, containerWidth, gap, false);
+            justifyRow(row, containerWidth, gap, false, targetHeight);
             row = [img];
             rowWidth = imgWidth;
         } else {
@@ -55,12 +58,12 @@ function layoutGallery(gallery, images, targetHeight) {
         }
         
         if (index === images.length - 1 && row.length > 0) {
-            justifyRow(row, containerWidth, gap, true);
+            justifyRow(row, containerWidth, gap, true, targetHeight);
         }
     });
 }
 
-function justifyRow(images, containerWidth, gap, isLastRow = false) {
+function justifyRow(images, containerWidth, gap, isLastRow, targetHeight) {
     const ratios = images.map(img => img.naturalWidth / img.naturalHeight);
     const totalGaps = (images.length - 1) * gap;
     const availableWidth = containerWidth - totalGaps;
@@ -69,9 +72,9 @@ function justifyRow(images, containerWidth, gap, isLastRow = false) {
     let adjustedHeight = availableWidth / totalRatio;
     
     // Don't stretch last row too much
-    const isJustified = !(isLastRow && adjustedHeight > 250);
+    const isJustified = !(isLastRow && adjustedHeight > targetHeight);
     if (!isJustified) {
-        adjustedHeight = 200;
+        adjustedHeight = targetHeight;
     }
     
     // Calculate widths
@@ -84,7 +87,7 @@ function justifyRow(images, containerWidth, gap, isLastRow = false) {
     
     images.forEach((img, i) => {
         const isLast = i === images.length - 1;
-        const width = isLast ? flooredWidths[i] + remainder : flooredWidths[i];
+        const width = isLast ? (flooredWidths[i] + remainder -1) : flooredWidths[i];  //-1 to make sure it fits, just in case 
         
         img.style.height = `${Math.floor(adjustedHeight)}px`;
         img.style.width = `${width}px`;
@@ -93,10 +96,13 @@ function justifyRow(images, containerWidth, gap, isLastRow = false) {
 
 // Initialize on load
 window.addEventListener('load', () => {
-    justifyGallery('.gallery', 200);
+    justifyGallery('.gallery', 300);
 });
+window.addEventListener('load', debounce(() => {
+    justifyGallery('.gallery', 300);
+}, 150));
 
 // Debounced resize
 window.addEventListener('resize', debounce(() => {
-    justifyGallery('.gallery', 200);
-}, 350));
+    justifyGallery('.gallery', 300);
+}, 150));

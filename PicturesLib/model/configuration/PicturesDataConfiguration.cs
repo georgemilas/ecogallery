@@ -30,6 +30,26 @@ public class PicturesDataConfiguration
         }
     }
     public DirectoryInfo RootFolder => new DirectoryInfo(Folder);
+
+    public string ThumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
+    public  string ThumbDir(int thumbHeight) {  return Path.Combine(ThumbnailsBase, thumbHeight.ToString());  }
+    public virtual string GetThumbnailPath(string sourceFilePath, int thumbHeight)
+    {
+        if (IsMovieFile(sourceFilePath))
+        {
+            sourceFilePath = Path.ChangeExtension(sourceFilePath, ".jpg");
+        }
+        return sourceFilePath.Replace(RootFolder.FullName, ThumbDir(thumbHeight));
+    }
+
+    public bool IsMovieFile(string sourceFilePath)
+    {
+        var fileExt = Path.GetExtension(sourceFilePath);
+        return MovieExtensions.Any(ext => ext.Equals(fileExt, StringComparison.OrdinalIgnoreCase));
+        //return fileExt.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
+    }
+
+
 }
 
 

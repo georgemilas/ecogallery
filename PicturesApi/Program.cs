@@ -2,6 +2,7 @@ using System.Text.Json;
 using WeatherLib.service;
 using PicturesLib.model.configuration;
 using PicturesLib.repository;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,11 +35,15 @@ builder.Services.AddSingleton(sp =>
     return config;
 });
 
+// Register HttpContextAccessor for accessing request information
+builder.Services.AddHttpContextAccessor();
+
 // Register business logic services
 builder.Services.AddScoped<IWeatherService, WeatherService>();
 builder.Services.AddScoped<IResidioReportService, ResidioReportService>();  
 builder.Services.AddScoped<AlbumRepository>();  
 builder.Services.AddScoped<AlbumImageRepository>();
+builder.Services.AddScoped<PicturesApi.service.AlbumsService>();
 
 // Swagger/OpenAPI https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -52,6 +57,17 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Serve static files from the pictures directory
+var picturesPath = builder.Configuration["PicturesData:Folder"];
+if (!string.IsNullOrEmpty(picturesPath) && Directory.Exists(picturesPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(picturesPath),
+        RequestPath = "/pictures"
+    });
+}
 
 if (app.Environment.IsDevelopment())
 {

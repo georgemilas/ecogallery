@@ -24,22 +24,11 @@ public class ThumbnailProcessor : EmptyProcessor
     /// Process files from the pictures folder (picturesPath) and create thumbnails in picturesPath/_thumbnails/{height} folder
     /// </summary>
     public override DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
-    protected virtual string thumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
-    protected virtual string thumbDir { get { return Path.Combine(thumbnailsBase, _height.ToString()); } }
+    protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
+    protected virtual string thumbDir { get { return _configuration.ThumbDir(_height); } }
     protected virtual string GetThumbnailPath(string sourceFilePath)
     {
-        if (IsMovieFile(sourceFilePath))
-        {
-            sourceFilePath = Path.ChangeExtension(sourceFilePath, ".jpg");
-        }
-        return sourceFilePath.Replace(RootFolder.FullName, thumbDir);
-    }
-
-    private bool IsMovieFile(string sourceFilePath)
-    {
-        var fileExt = Path.GetExtension(sourceFilePath);
-        return _configuration.MovieExtensions.Any(ext => ext.Equals(fileExt, StringComparison.OrdinalIgnoreCase));
-        //return fileExt.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
+        return _configuration.GetThumbnailPath(sourceFilePath, _height);
     }
 
     public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int height = 300, int degreeOfParallelism = -1)
@@ -213,7 +202,7 @@ public class ThumbnailProcessor : EmptyProcessor
             try
             {
                 //Retry open in case the file is still being written   
-                if (IsMovieFile(filePath))
+                if (_configuration.IsMovieFile(filePath))
                 {
                     await BuildVideoThumbnail(height, filePath, thumbPath);
                 }
