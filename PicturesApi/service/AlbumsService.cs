@@ -46,19 +46,19 @@ public class AlbumsService
         {
             throw new Exception($"Album not found: '{albumName}'");
         }    
-        var album = GetServiceAlbum(albumName, libAlbum, 1080);
+        var album = GetServiceAlbum(albumName, libAlbum);
         
         //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");            
         album.Content = new List<AlbumContentHierarchical>();
         foreach (var item in albumContent)
         {
-            var contentAlbum = GetServiceAlbum(albumName, item, 400);
+            var contentAlbum = GetServiceAlbum(albumName, item);
             album.Content.Add(contentAlbum);
         }
         return album;
     }
 
-    private AlbumContentHierarchical GetServiceAlbum(string? albumName, PicturesLib.model.album.AlbumContentHierarchical item, int thumbnailSize)
+    private AlbumContentHierarchical GetServiceAlbum(string? albumName, PicturesLib.model.album.AlbumContentHierarchical item)
     {
         var album = new AlbumContentHierarchical();
         album.Id = item.Id;
@@ -70,22 +70,30 @@ public class AlbumsService
                 ? (item.FeatureItemType != null ? item.FeatureItemPath ?? item.InnerFeatureItemPath ?? defaultFolderImage
                                                 : item.InnerFeatureItemPath ?? defaultFolderImage)
                 : (item.FeatureItemPath ?? string.Empty);
-        Console.WriteLine($"Debug: relative path {path}");
+        //Console.WriteLine($"Debug: relative path {path}");
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
-        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);  //then make it absolute 
-        Console.WriteLine($"Debug: absolute path {path}");
-        var thumbPath = _picturesConfig.GetThumbnailPath(path, thumbnailSize);   //get the thumbnail path from the absolute path
+        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
+        //Console.WriteLine($"Debug: absolute path {path}");
 
-        var baseUrl = GetBaseUrl();
-        thumbPath = thumbPath.Replace(_picturesConfig.RootFolder.FullName, $"{baseUrl}/pictures");  //make it url
-        thumbPath = thumbPath.Replace("\\", "/");        //normalize to forward slashes            
-        album.ImagePath = thumbPath;
-        Console.WriteLine($"Debug: thumbnail path {album.ImagePath}");
-
+        var thumbPath = _picturesConfig.GetThumbnailPath(path, 400);   //get the thumbnail path from the absolute path
+        album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
+        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1080));
+        album.ImageOriginalPath = GetUrl(path);
+        album.IsMovie = _picturesConfig.IsMovieFile(path);
+        //Console.WriteLine($"Debug: thumbnail path {album.ThumbnailPath}");
+        
         album.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()
                                                          : new List<string>();
         album.LastUpdatedUtc = item.LastUpdatedUtc;
         album.ItemTimestampUtc = item.ItemTimestampUtc;
         return album;
+    }
+
+    private string GetUrl(string path)
+    {
+        var baseUrl = GetBaseUrl();
+        path = path.Replace(_picturesConfig.RootFolder.FullName, $"{baseUrl}/pictures");  //make it url
+        path = path.Replace("\\", "/");        //normalize to forward slashes            
+        return path;
     }
 }

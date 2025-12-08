@@ -2,15 +2,18 @@ import React, { useEffect } from 'react';
 import './gallery.css';
 import { justifyGallery, debounce } from './gallery';
 
-export class AlbumHierarchy {
+export class AlbumItemHierarchy {
   id: number = 0;
   name: string = '';
   is_album: boolean = false;
+  is_movie: boolean = false;
   navigation_path_segments: Array<string> = [];
-  image_path: string = '';
+  thumbnail_path: string = '';
+  image_hd_path: string = '';
+  image_original_path: string = '';
   last_updated_utc: Date = new Date();
   item_timestamp_utc: Date = new Date();
-  content: AlbumHierarchy[] = [];
+  content: AlbumItemHierarchy[] = [];
 
   get_name(path: string): string {
     var  name = path.split('\\');
@@ -26,12 +29,13 @@ export class AlbumHierarchy {
 
 }  
 
-interface AlbumHierarchyServiceProps {
-  album: AlbumHierarchy;
+interface AlbumHierarchyProps {
+  album: AlbumItemHierarchy;
   onAlbumClick: (albumName: string) => void;
+  onImageClick: (image: AlbumItemHierarchy) => void;
 }
 
-export function AlbumHierarchyService({ album, onAlbumClick }: AlbumHierarchyServiceProps) {
+export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick }: AlbumHierarchyProps) {
   useEffect(() => {
     // Wait for images to load before calculating layout
     const gallery = document.querySelector('.gallery');
@@ -80,7 +84,7 @@ export function AlbumHierarchyService({ album, onAlbumClick }: AlbumHierarchySer
   return (
     <>
       <div className="gallery-banner">
-        <img src={album.image_path} alt={album.album_name()} />
+        <img src={album.image_hd_path} alt={album.album_name()} />
         
         <div className="gallery-banner-label">
         <nav className="breadcrumbs">
@@ -112,7 +116,7 @@ export function AlbumHierarchyService({ album, onAlbumClick }: AlbumHierarchySer
           .map(r => (
           <li className='albums-item' key={r.id}>
             <a onClick={(e) => {e.preventDefault(); onAlbumClick(r.name);}}>
-              <img src={r.image_path} alt={album.get_name(r.name)} />
+              <img src={r.thumbnail_path} alt={album.get_name(r.name)} />
               <span className="albums-item-label">{album.get_name(r.name)}</span>
             </a>
           </li>
@@ -127,8 +131,8 @@ export function AlbumHierarchyService({ album, onAlbumClick }: AlbumHierarchySer
           .toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime())
           .map(r => (
         <li className="gallery-item" key={r.id}>
-            <a href={r.image_path} target="_blank">
-                <img src={r.image_path} alt={r.name} />
+            <a onClick={(e) => {e.preventDefault(); onImageClick(r);}}>
+                <img src={r.thumbnail_path} alt={r.name} />
                 <span className="gallery-item-label">{r.name}</span>
             </a>
         </li>

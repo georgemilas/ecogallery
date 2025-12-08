@@ -1,0 +1,142 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #111;
+    min-height: 100vh;
+}
+
+.viewer {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.nav {
+    width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.nav:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav svg {
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.nav:hover svg {
+    opacity: 1;
+}
+
+.nav-prev, .nav-next {
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 12px;
+}
+
+button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.toolbar svg {
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    
+}
+
+.toolbar svg:hover {
+    opacity: 1;        
+}
+
+.nav-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spacer-prev {
+    height: 160px; /* roughly matches toolbar height to center the arrow */
+}
+.spacer-next {
+    height: 100px; /* roughly matches toolbar height to center the arrow */
+}
+
+.content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.content img, .content video {
+    max-width: 100%;
+    max-height: 100vh;
+    object-fit: contain;
+}
+
+.slideshow-controls {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 8px 16px;
+    border-radius: 20px;
+    z-index: 1000;
+}
+
+.speed-button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.speed-button svg {
+    width: 20px;
+    height: 20px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.speed-button:hover svg {
+    opacity: 1;
+}
+
+.speed-display {
+    color: white;
+    font-size: 14px;
+    min-width: 40px;
+    text-align: center;
+}

@@ -1,37 +1,14 @@
 'use client';
 
-import { PicturesHierarchyService, PicturesHierarchy } from './components/PictureGallery';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
-  const [pictures, setPictures] = useState<PicturesHierarchy[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    async function fetchPictures() {
-      const base = process.env.NEXT_PUBLIC_WEATHER_API_BASE ?? 'http://localhost:5001';
-      try {
-        const res = await fetch(`${base}/api/v1/albums`);
-        if (!res.ok) {
-          console.error('Failed to fetch root albums', res.status);
-          setPictures([]);
-        } else {
-          const data = await res.json();
-          setPictures(data);
-        }
-      } catch (e) {
-        console.error('Error fetching root albums', e);
-        setPictures([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPictures();
-  }, []);
+    router.replace('/album');
+  }, [router]);
 
-  return (
-    <main>
-      {loading ? <p>Loading...</p> : <PicturesHierarchyService pictures={pictures} />}
-    </main>
-  );
+  return null;
 }

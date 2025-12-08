@@ -33,6 +33,10 @@ public class PicturesDataConfiguration
 
     public string ThumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
     public  string ThumbDir(int thumbHeight) {  return Path.Combine(ThumbnailsBase, thumbHeight.ToString());  }
+
+    /// <summary>
+    /// //get the thumbnail path from the absolute path
+    /// </summary>
     public virtual string GetThumbnailPath(string sourceFilePath, int thumbHeight)
     {
         if (IsMovieFile(sourceFilePath))
