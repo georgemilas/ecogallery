@@ -78,6 +78,7 @@ public class AlbumsService
         var thumbPath = _picturesConfig.GetThumbnailPath(path, 400);   //get the thumbnail path from the absolute path
         album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
         album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1080));
+        album.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));
         album.ImageOriginalPath = GetUrl(path);
         album.IsMovie = _picturesConfig.IsMovieFile(path);
         //Console.WriteLine($"Debug: thumbnail path {album.ThumbnailPath}");
@@ -86,6 +87,7 @@ public class AlbumsService
                                                          : new List<string>();
         album.LastUpdatedUtc = item.LastUpdatedUtc;
         album.ItemTimestampUtc = item.ItemTimestampUtc;
+        album.ImageExif = item.ImageExif;
         return album;
     }
 

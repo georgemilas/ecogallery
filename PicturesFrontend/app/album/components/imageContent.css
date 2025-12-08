@@ -11,8 +11,11 @@ body {
 
 .viewer {
     display: flex;
-    width: 100%;
-    min-height: 100vh;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
 }
 
 .nav {
@@ -91,11 +94,14 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .content img, .content video {
-    max-width: 100%;
-    max-height: 100vh;
+    max-width: 99%;
+    max-height: 99%;
+    width: auto;
+    height: auto;
     object-fit: contain;
 }
 

@@ -1,0 +1,78 @@
+Camera	                Canon EOS R8
+Lens	                Canon RF 24-240mm F4-6.3 IS USM
+Focal Length	        37.0 mm (37.1 mm in 35mm)
+Aperture	            f/8
+Exposure Time	        0.004s (1/250)
+ISO	                    100
+Date Taken	            2025-11-02 14:11:19
+Rating	                2
+Date Modified	        2025-11-14 12:39:27
+Flash	                No Flash
+Metering	            Multi-segment
+Exposure Program	    Aperture-priority AE
+Exposure Bias	        -1/2 EV
+Exposure Mode	        Auto
+White Balance	        Auto
+Color Space	            sRGB
+Scene Capture Type	    Standard
+Circle Of Confusion	    0.030 mm
+Field Of View	        51.8 deg
+Depth Of Field	        18.55 m (2.53 - 21.08 m)
+Hyperfocal Distance	    5.71 m
+Normalized Light Value	14
+Software	            Adobe Photoshop Lightroom Classic 14.5.1 (Windows)
+Serial Number	        182022005137
+Lens Serial Number	    3922000990
+Name	                _MG_4515.jpg
+File Size	            29.82 MB
+Size	                6000 x 4000
+
+
+Camera	                
+Lens	                
+Focal Length	        
+Aperture	            
+Exposure Time	        
+ISO	                    
+Date Taken	            
+Rating	                
+Date Modified	        
+Flash	                
+Metering	            
+Exposure Program	    
+Exposure Bias	        
+Exposure Mode	        
+White Balance	        
+Color Space	            
+Scene Capture Type	    
+Circle Of Confusion	    
+Field Of View	        
+Depth Of Field	        
+Hyperfocal Distance	    
+Normalized Light Value	
+Software	            
+Serial Number	        
+Lens Serial Number	    
+Name	                
+File Size	            
+Size	                
+
+
+
+
+Error handling file event [created (scan): E:\TotulAici\TutuLaptop\pictures\select\_MG_9781.jpg]: 22003: numeric field overflow
+
+DETAIL: A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+Error handling file event [created (scan): E:\TotulAici\TutuLaptop\pictures\select\_MG_9537-Edit.jpg]: 22003: numeric field overflow
+
+DETAIL: A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+ New: 1660/36118 files (4%) - 5.0/s - ETA: 01:54:23 - elapsed: 00:05:30Error handling file event [created (scan): E:\TotulAici\TutuLaptop\pictures\select\_MG_9684.jpg]: 22003: numeric field overflow
+
+DETAIL: A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+ New: 1660/36118 files (4%) - 5.0/s - ETA: 01:54:25 - elapsed: 00:05:30Error handling file event [created (scan): E:\TotulAici\TutuLaptop\pictures\select\_MG_9794.jpg]: 22003: numeric field overflow
+
+DETAIL: A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+ New: 1670/36118 files (4%) - 5.0/s - ETA: 01:53:56 - elapsed: 00:05:31Error handling file event [created (scan): E:\TotulAici\TutuLaptop\pictures\select\_MG_9785-Edit.jpg]: 22003: numeric field overflow
+
+DETAIL: A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+ New: 1680/36118 files (4%) - 5.1/s - ETA: 01:53:22 - elapsed: 00:05:31Error handling file event [created (scan): E:\TotulAici\TutuLaptop\pictures\select\_MG_9797.jpg]: 22003: numeric field overflow

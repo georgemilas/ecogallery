@@ -2,6 +2,42 @@ import React, { useEffect } from 'react';
 import './gallery.css';
 import { justifyGallery, debounce } from './gallery';
 
+export interface ImageExif {
+  id: number;
+  album_image_id: number;
+  camera: string | null;
+  lens: string | null;
+  focal_length: string | null;
+  aperture: string | null;
+  exposure_time: string | null;
+  iso: number | null;
+  date_taken: string | null;
+  rating: number | null;
+  date_modified: string | null;
+  flash: string | null;
+  metering_mode: string | null;
+  exposure_program: string | null;
+  exposure_bias: string | null;
+  exposure_mode: string | null;
+  white_balance: string | null;
+  color_space: string | null;
+  scene_capture_type: string | null;
+  circle_of_confusion: number | null;
+  field_of_view: number | null;
+  depth_of_field: number | null;
+  hyperfocal_distance: number | null;
+  normalized_light_value: number | null;
+  software: string | null;
+  serial_number: string | null;
+  lens_serial_number: string | null;
+  file_name: string;
+  file_path: string;
+  file_size_bytes: number | null;
+  image_width: number | null;
+  image_height: number | null;
+  last_updated_utc: string;
+}
+
 export class AlbumItemHierarchy {
   id: number = 0;
   name: string = '';
@@ -10,10 +46,12 @@ export class AlbumItemHierarchy {
   navigation_path_segments: Array<string> = [];
   thumbnail_path: string = '';
   image_hd_path: string = '';
+  image_uhd_path: string = '';
   image_original_path: string = '';
   last_updated_utc: Date = new Date();
   item_timestamp_utc: Date = new Date();
   content: AlbumItemHierarchy[] = [];
+  image_exif: ImageExif | null = null;
 
   get_name(path: string): string {
     var  name = path.split('\\');

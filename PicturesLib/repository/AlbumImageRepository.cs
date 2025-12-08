@@ -43,10 +43,10 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         image.AlbumId = album?.Id ?? 0;
         var sql = @"INSERT INTO album_image (image_name, image_path, image_type, last_updated_utc, album_name, album_id, image_timestamp_utc) 
                                      VALUES (@image_name, @image_path, @image_type, @last_updated_utc, @album_name, @album_id, @image_timestamp_utc)
-            ON CONFLICT (image_path) DO UPDATE
-                    SET
-                        last_updated_utc = EXCLUDED.last_updated_utc                        
-            RETURNING id";        
+                    ON CONFLICT (image_path) DO UPDATE
+                            SET
+                                last_updated_utc = EXCLUDED.last_updated_utc                        
+                    RETURNING id";        
         image.Id = await _db.ExecuteScalarAsync<long>(sql, image);            
         return image;                        
     }
@@ -58,6 +58,26 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         return await _db.ExecuteAsync(sql, image);               
     }
 
+
+    public async Task<ImageExif> AddNewImageExifAsync(ImageExif exif)
+    {
+        var sql = @"INSERT INTO public.image_exif(album_image_id, camera, lens, focal_length, aperture, exposure_time, iso, date_taken, 
+                                                rating, date_modified, flash, metering_mode, exposure_program, exposure_bias, exposure_mode, 
+                                                white_balance, color_space, scene_capture_type, circle_of_confusion, field_of_view, depth_of_field,
+                                                hyperfocal_distance, normalized_light_value, software, serial_number, lens_serial_number, file_name, 
+                                                file_path, file_size_bytes, image_width, image_height, last_updated_utc)
+	                                VALUES (@album_image_id, @camera, @lens, @focal_length, @aperture, @exposure_time, @iso, @date_taken, 
+                                                @rating, @date_modified, @flash, @metering_mode, @exposure_program, @exposure_bias, @exposure_mode, 
+                                                @white_balance, @color_space, @scene_capture_type, @circle_of_confusion, @field_of_view, @depth_of_field,
+                                                @hyperfocal_distance, @normalized_light_value, @software, @serial_number, @lens_serial_number, @file_name, 
+                                                @file_path, @file_size_bytes, @image_width, @image_height, @last_updated_utc)                                     
+                    ON CONFLICT (album_image_id) DO UPDATE
+                        SET
+                            last_updated_utc = EXCLUDED.last_updated_utc                        
+                    RETURNING id";        
+        exif.Id = await _db.ExecuteScalarAsync<long>(sql, exif);            
+        return exif;                        
+    }
 
 }
 

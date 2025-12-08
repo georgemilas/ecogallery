@@ -71,7 +71,8 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
                         cai.image_type AS inner_feature_item_type, 
                         ca.feature_image_path AS inner_feature_item_path, 
                         a.last_updated_utc,
-                        a.album_timestamp_utc AS item_timestamp_utc  
+                        a.album_timestamp_utc AS item_timestamp_utc,
+                        NULL::json AS image_exif  
                     FROM album AS a
                     LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
                     LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image

@@ -12,10 +12,12 @@ public record AlbumContentHierarchical
     public List<string> NavigationPathSegments { get; set; } = new List<string>();
     public string ThumbnailPath { get; set; } = string.Empty;     
     public string ImageHDPath { get; set; } = string.Empty;     
+    public string ImageUHDPath { get; set; } = string.Empty;     
     public string ImageOriginalPath { get; set; } = string.Empty;     
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset ItemTimestampUtc { get; set; }
     public List<AlbumContentHierarchical> Content { get; set; } = new List<AlbumContentHierarchical>();
     public bool IsMovie { get; set; }
+    public ImageExif? ImageExif { get; set; }
     
 }

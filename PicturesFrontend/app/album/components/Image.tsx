@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlbumItemHierarchy } from './Album';
+import { ExifPanel } from './Exif';
 import './imageContent.css';
 
 interface ImageViewProps {
@@ -17,6 +18,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
   const [isSlideshow, setIsSlideshow] = React.useState(false);
   const [slideshowSpeed, setSlideshowSpeed] = React.useState(3000); // milliseconds
   const slideshowIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [showExif, setShowExif] = React.useState(false);
 
 
   // Sync state with actual fullscreen status on mount
@@ -65,16 +67,23 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
         case 'F':
           toggleFullscreen();
           break;
+        case 'e':
+        case 'E':
+          toggleExif();
+          break;  
         case ' ':
         case 'Enter':
+          e.preventDefault(); // Prevent default for spacebar and enter
           if (image.is_movie && videoRef.current) {
-            e.preventDefault();
             if (videoRef.current.paused) {
               videoRef.current.play();
             } else {
               videoRef.current.pause();
             }
-          }
+          } else {
+            setIsSlideshow(prev => !prev);
+          }             
+          break;
           break;
       }
     };
@@ -114,6 +123,10 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
     setSlideshowSpeed(prev => Math.min(10000, prev + 500)); // Increase interval (slower), maximum 10s
   };
 
+  const toggleExif = () => {
+    setShowExif(prev => !prev);
+  };
+
   return (
    
     <div className="viewer">
@@ -133,6 +146,10 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
           </div>
         )}
 
+        {showExif && image.image_exif && (
+          <ExifPanel exif={image.image_exif} onClose={toggleExif} />
+        )}
+
         <div className="nav nav-prev">
             <div className="toolbar">
                 <button onClick={toggleFullscreen} className="fullscreen-button">
@@ -149,9 +166,11 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
                         )}
                     </svg>
                 </button>
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm0-8c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" fill="black" stroke="white"/>
-                </svg>
+                <button onClick={toggleExif} className="exif-button" title="EXIF Info">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm0-8c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" fill="black" stroke="white"/>
+                    </svg>
+                </button>
             </div>
 
             <div className="nav-btn">
@@ -168,7 +187,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
         <div className="content">
             {image.is_movie 
                 ? (<video ref={videoRef} src={image.image_original_path} controls onContextMenu={(e) => e.preventDefault()} />) 
-                : (<img src={image.image_original_path} alt={image.name} onContextMenu={(e) => e.preventDefault()} />)}
+                : (<img src={image.image_uhd_path} alt={image.name} onContextMenu={(e) => e.preventDefault()} />)}
             
         </div>
 

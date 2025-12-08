@@ -58,3 +58,64 @@ ON public.album_image (image_path);
 CREATE INDEX IF NOT EXISTS ux_album_image_album_name
 ON public.album_image (album_name);
 
+
+------------------------------------------------------------------------------
+----------------- public.image_exif ------------------------------------------  
+------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.image_exif;
+
+CREATE TABLE
+  public.image_exif (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    album_image_id bigint NOT NULL,
+    camera character varying(100) NULL,
+    lens character varying(100) NULL,
+    focal_length character varying(150) NULL,
+    aperture character varying(20) NULL,
+    exposure_time character varying(150) NULL,
+    iso integer NULL,
+    date_taken timestamp with time zone NULL,
+    rating integer NULL,
+    date_modified timestamp with time zone NULL,
+    flash character varying(150) NULL,
+    metering_mode character varying(150) NULL,
+    exposure_program character varying(150) NULL,
+    exposure_bias character varying(20) NULL,
+    exposure_mode character varying(150) NULL,
+    white_balance character varying(150) NULL,
+    color_space character varying(150) NULL,
+    scene_capture_type character varying(150) NULL,
+    circle_of_confusion numeric NULL,
+    field_of_view numeric NULL,
+    depth_of_field numeric NULL,         
+    hyperfocal_distance numeric NULL,    --may be bigger than 9999.99 so we may need (12,2)
+    normalized_light_value numeric NULL, 
+    software character varying(100) NULL,
+    serial_number character varying(100) NULL,
+    lens_serial_number character varying(100) NULL,
+    file_name character varying(255) NOT NULL,
+    file_path character varying(500) NOT NULL,
+    file_size_bytes bigint NULL,
+    image_width integer NULL,
+    image_height integer NULL,
+    last_updated_utc timestamp with time zone NOT NULL      --when the record was last updated
+  );
+
+ALTER TABLE
+  public.image_exif
+ADD
+  CONSTRAINT image_exif_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_image_exif_album_image_id
+ON public.image_exif (album_image_id);
+
+ALTER TABLE
+  public.image_exif
+ADD
+  CONSTRAINT fk_image_exif_album_image
+  FOREIGN KEY (album_image_id)
+  REFERENCES public.album_image (id)
+  ON DELETE CASCADE;
+
+

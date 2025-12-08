@@ -243,11 +243,15 @@ public class ThumbnailProcessor : EmptyProcessor
     private async Task BuildImageThumbnail(int height, string filePath, string thumbPath)
     {
         using var image = await Image.LoadAsync(filePath);
-        image.Mutate(x => x.Resize(new ResizeOptions
+        if (image.Height > height) 
         {
-            Size = new Size(0, height),
-            Mode = ResizeMode.Max
-        }));
+            //resize only if the image is larger than the thumbnail size
+            image.Mutate(x => x.Resize(new ResizeOptions
+            {
+                Size = new Size(0, height),
+                Mode = ResizeMode.Max
+            }));
+        }           
         await image.SaveAsync(thumbPath);        
     }
 

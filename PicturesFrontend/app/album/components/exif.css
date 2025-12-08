@@ -1,0 +1,77 @@
+/* EXIF Panel */
+.exif-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 50px;
+    max-width: 400px;
+    max-height: 60vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    padding: 16px;
+    z-index: 1000;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.exif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.exif-header h3 {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.exif-close {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.exif-close svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.exif-close:hover svg {
+    opacity: 1;
+}
+
+.exif-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.exif-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.exif-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 120px;
+}
+
+.exif-value {
+    color: white;
+    font-size: 13px;
+    text-align: right;
+    flex: 1;
+}

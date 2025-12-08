@@ -21,7 +21,8 @@ public class DatabaseConfiguration
     {
         return $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password};" +
                $"Pooling={Pooling};MinPoolSize={MinPoolSize};MaxPoolSize={MaxPoolSize};" +
-               $"Connection Lifetime={ConnectionLifetime};Command Timeout={CommandTimeout};SSL Mode={SslMode}";
+               $"Connection Lifetime={ConnectionLifetime};Command Timeout={CommandTimeout};SSL Mode={SslMode};" +
+               $"Include Error Detail=true";
     }
 
     /// <summary>

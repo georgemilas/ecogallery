@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.IO;
+using System.Text.Json;
 
 namespace PicturesLib.model.album;
 
@@ -16,9 +17,11 @@ public record AlbumContentHierarchical
     public string? InnerFeatureItemPath { get; set; } = string.Empty;   //not null only if FeatureItemType is null
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset ItemTimestampUtc { get; set; }
+    public ImageExif? ImageExif { get; set; }  
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
     {
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
         return new AlbumContentHierarchical
         {
             Id = reader.GetInt64(reader.GetOrdinal("id")),
@@ -31,7 +34,12 @@ public record AlbumContentHierarchical
             InnerFeatureItemType = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_type")) ? null :  reader.GetString(reader.GetOrdinal("inner_feature_item_type")),
             InnerFeatureItemPath = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_path")) ? null : reader.GetString(reader.GetOrdinal("inner_feature_item_path")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
-            ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc"))
+            ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc")),
+            ImageExif = reader.IsDBNull(reader.GetOrdinal("image_exif")) 
+                                        ? null 
+                                        : JsonSerializer.Deserialize<ImageExif>(reader.GetString(reader.GetOrdinal("image_exif")), options)
+            
+
         };
     }
 

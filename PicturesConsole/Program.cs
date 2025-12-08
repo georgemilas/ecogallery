@@ -38,6 +38,12 @@ var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Env
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail background service and keep the app running
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// thumb   400
+/// HD      1080
+/// UHD     1440
+/// 4K      2160
+/// 5K      2880 
+/// 8K      4320
 var thumbCommand = new Command("thumbnails", "Run the thumbnail building processor as a background service");
 thumbCommand.AddOption(folderOption);
 thumbCommand.AddOption(heightOption);
@@ -135,6 +141,39 @@ albumCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegr
     await host.RunAsync(cts.Token);
 }, folderOption, nonParallelOption, parallelDegreeOption);
 rootCommand.AddCommand(albumCommand);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Command to run the image exif extraction background service and keep the app running
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var imageExifCommand = new Command("exif", "Run the image EXIF extraction processor as a background service");
+imageExifCommand.AddOption(folderOption);
+imageExifCommand.AddOption(nonParallelOption);
+imageExifCommand.AddOption(parallelDegreeOption);
+imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree) =>
+{
+    picturesConfig.Folder = folder;
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
+
+    var host = Host.CreateDefaultBuilder()
+        .ConfigureServices(services =>
+        {
+            if (nonParallel)
+            {
+                services.AddSingleton<IHostedService>(sp => ImageExifProcessor.CreateProcessorNotParallel(picturesConfig));
+            }
+            else
+            {
+                services.AddSingleton<IHostedService>(sp => ImageExifProcessor.CreateProcessor(picturesConfig, parallelDegree));
+            }            
+        })
+        .Build();
+
+    Console.WriteLine($"Starting image EXIF extraction processor on '{picturesConfig.Folder}'. Press Ctrl+C to stop.");
+    await host.RunAsync(cts.Token);
+}, folderOption, nonParallelOption, parallelDegreeOption);
+rootCommand.AddCommand(imageExifCommand);
 
 
 

@@ -18,8 +18,8 @@ public class AlbumProcessor: EmptyProcessor
         imageRepository = new AlbumImageRepository(configuration);
         albumRepository = new AlbumRepository(configuration);
     }
-    private AlbumImageRepository imageRepository; 
-    private AlbumRepository albumRepository;
+    protected AlbumImageRepository imageRepository;
+    protected AlbumRepository albumRepository;
 
     public override DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
     protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
@@ -45,7 +45,7 @@ public class AlbumProcessor: EmptyProcessor
     /// <summary>
     /// create image record and ensure album record exists
     /// </summary>
-    private async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath)
+    protected virtual async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath)
     {
         AlbumImage? albumImage = await imageRepository.GetAlbumImageAsync(filePath);
         if (albumImage == null)
@@ -70,9 +70,9 @@ public class AlbumProcessor: EmptyProcessor
     }
 
     /// <summary>
-    /// delete image record and if album is empty delete album records recursively as well 
+    /// delete image record and if album is empty delete album records recursively as well
     /// </summary>
-    private async Task<int> CleanupImageAndAlbumRecords(string filePath)
+    protected virtual async Task<int> CleanupImageAndAlbumRecords(string filePath)
     {
         int deletedCount = await imageRepository.DeleteAlbumImageAsync(filePath);
         if (deletedCount > 0 && !await albumRepository.AlbumHasContentAsync(filePath))
@@ -208,3 +208,5 @@ public class AlbumProcessor: EmptyProcessor
     }         
     
 }
+
+
