@@ -31,7 +31,11 @@ if (string.IsNullOrWhiteSpace(picturesConfig.Folder))
 
 var rootCommand = new RootCommand("Pictures background services console application");
 var folderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
-var heightOption = new Option<int>(new[] {"--height", "-h"}, () => 290, "Thumbnail height in pixels");
+var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 400, 1080, 1440 }, "Thumbnail heights in pixels (can specify multiple)")
+{
+    AllowMultipleArgumentsPerToken = true
+};
+var heightOption = new Option<int>(new[] {"--height", "-h"}, () => 400, "Thumbnail height in pixels");
 var nonParallelOption = new Option<bool>(new[] {"--nonparallel", "-np"}, "Run thumbnail processing in non-parallel mode");
 var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Environment.ProcessorCount, "Degree of parallelism for thumbnail processing");
 
@@ -46,10 +50,10 @@ var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Env
 /// 8K      4320
 var thumbCommand = new Command("thumbnails", "Run the thumbnail building processor as a background service");
 thumbCommand.AddOption(folderOption);
-thumbCommand.AddOption(heightOption);
+thumbCommand.AddOption(heightsOption);
 thumbCommand.AddOption(nonParallelOption);
 thumbCommand.AddOption(parallelDegreeOption);
-thumbCommand.SetHandler(async (string folder, int height, bool nonParallel, int parallelDegree) =>
+thumbCommand.SetHandler(async (string folder, int[] heights, bool nonParallel, int parallelDegree) =>
 {
     picturesConfig.Folder = folder;
     using var cts = new CancellationTokenSource();
@@ -60,18 +64,20 @@ thumbCommand.SetHandler(async (string folder, int height, bool nonParallel, int 
         {
             if (nonParallel)
             {
-                services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessorNotParallel(picturesConfig, height));
+                if (heights.Length == 1) { services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessorNotParallel(picturesConfig, heights[0])); }  
+                else {services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessorNotParallel(picturesConfig, heights));}
             }
             else
             {
-                services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessor(picturesConfig, height, parallelDegree));
+                if (heights.Length == 1) { services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessor(picturesConfig, heights[0], parallelDegree)); }  
+                else {services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessor(picturesConfig, heights, parallelDegree));}                
             }
         })
         .Build();
 
-    Console.WriteLine($"Starting thumbnail processor on '{picturesConfig.Folder}' with height={height}. Press Ctrl+C to stop.");
+    Console.WriteLine($"Starting thumbnail processor on '{picturesConfig.Folder}' with heights=[{string.Join(", ", heights)}]. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, heightOption, nonParallelOption, parallelDegreeOption);
+}, folderOption, heightsOption, nonParallelOption, parallelDegreeOption);
 rootCommand.AddCommand(thumbCommand);
 
 

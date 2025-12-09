@@ -13,7 +13,7 @@ namespace PicturesLib.service.thumbnail;
 public class ThumbnailCleanup: EmptyProcessor
 {
 
-    public ThumbnailCleanup(PicturesDataConfiguration configuration, int height = 300): base(configuration)
+    public ThumbnailCleanup(PicturesDataConfiguration configuration, int height = 400): base(configuration)
     {
         _height = height;        
     }
@@ -27,12 +27,12 @@ public class ThumbnailCleanup: EmptyProcessor
     protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
     protected virtual string thumbDir { get { return _configuration.ThumbDir(_height); } }    
     
-    public static FilePeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, int height = 300, int degreeOfParallelism = -1)
+    public static FilePeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, int height = 400, int degreeOfParallelism = -1)
     {
         IFileProcessor processor = new ThumbnailCleanup(configuration, height);
         return new FilePeriodicScanService(processor, intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);        
     }
-    public static FilePeriodicScanServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int height = 300)
+    public static FilePeriodicScanServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int height = 400)
     {
         IFileProcessor processor = new ThumbnailCleanup(configuration, height);
         return new FilePeriodicScanServiceNotParallel(processor,intervalMinutes: 2);

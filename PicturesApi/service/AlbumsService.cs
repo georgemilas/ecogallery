@@ -77,7 +77,7 @@ public class AlbumsService
 
         var thumbPath = _picturesConfig.GetThumbnailPath(path, 400);   //get the thumbnail path from the absolute path
         album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
-        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1080));
+        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));    //save space, did not create hd 1080 path
         album.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));
         album.ImageOriginalPath = GetUrl(path);
         album.IsMovie = _picturesConfig.IsMovieFile(path);

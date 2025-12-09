@@ -62,6 +62,45 @@ public class EmptyProcessor: IFileProcessor
         await Task.CompletedTask;
     }       
     
+    protected async Task ExecuteWithRetryAttemptsAsync(string filePath, string callingMethod, Func<Task>callback)
+    {
+        
+        //FileSystemWatcher may have kicked this off before the file is fully written to disk (ex: a large file being copied), so we may get an Exception
+        //therefor we retry with exponential backoff on failure to give time for the file to be fully written to disk and ready
+        //and if we still fail after all attempts is ok because the next iteration of FilePeriodicScanService will try again later
+        const int maxAttempts = 5;
+        int attempt = 0;
+        Exception? lastError = null;
+        while (attempt < maxAttempts)
+        {
+            try
+            {
+                await callback();      
+                return; // Success - exit immediately without Task.Delay
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"{callingMethod} IOException on attempt {attempt + 1} for file {filePath}: {ex.Message}");
+                lastError = ex;                                
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"{callingMethod} UnauthorizedAccessException on attempt {attempt + 1} for file {filePath}: {ex.Message}");
+                lastError = ex;                
+            }
 
+            attempt++;
+            if (attempt < maxAttempts)
+            {
+                await Task.Delay(attempt switch { 1 => 100, 2 => 250, 3 => 500, 4 => 1000, _ => 1500 });
+            }
+        }
+
+        
+        if (lastError != null) 
+        {
+            throw new Exception($"Failed to build thumbnail for file {filePath} after {maxAttempts} attempts.", lastError);    
+        }                        
+    }
     
 }

@@ -13,7 +13,7 @@ namespace PicturesLib.service.thumbnail;
 /// </summary>
 public class ThumbnailProcessor : EmptyProcessor
 {
-    public ThumbnailProcessor(PicturesDataConfiguration configuration, int height = 300): base(configuration)
+    public ThumbnailProcessor(PicturesDataConfiguration configuration, int height = 400): base(configuration)
     {
         _height = height;        
     }
@@ -31,13 +31,15 @@ public class ThumbnailProcessor : EmptyProcessor
         return _configuration.GetThumbnailPath(sourceFilePath, _height);
     }
 
-    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int height = 300, int degreeOfParallelism = -1)
+    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int height = 400, int degreeOfParallelism = -1)
     {
+        Console.WriteLine($"Running ThumbnailProcessor with height={height}");
         IFileProcessor processor = new ThumbnailProcessor(configuration, height);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int height = 300)
+    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int height = 400)
     {
+        Console.WriteLine($"Running ThumbnailProcessor with height={height}");
         IFileProcessor processor = new ThumbnailProcessor(configuration, height);
         return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
     }
@@ -185,59 +187,21 @@ public class ThumbnailProcessor : EmptyProcessor
 
     private async Task BuildThumbnailAsync(int height, string filePath, string thumbPath)
     {
-        var thumbPathFolder = Path.GetDirectoryName(thumbPath);
-        if (!string.IsNullOrEmpty(thumbPathFolder))
-        {
-            Directory.CreateDirectory(thumbPathFolder);
-        }
-
-        //FileSystemWatcher may have kicked this off before the file is fully written to disk (ex: a large file being copied), so we may get an Exception
-        //therefor we retry with exponential backoff on failure to give time for the file to be fully written to disk and ready
-        //and if we still fail the next iteration of FilePeriodicScanService will try again later
-        const int maxAttempts = 5;
-        int attempt = 0;
-        Exception? lastError = null;
-        while (attempt < maxAttempts)
-        {
-            try
+        await ExecuteWithRetryAttemptsAsync(filePath, "BuildThumbnailAsync", async () => {
+            var thumbPathFolder = Path.GetDirectoryName(thumbPath);
+            if (!string.IsNullOrEmpty(thumbPathFolder))
             {
-                //Retry open in case the file is still being written   
-                if (_configuration.IsMovieFile(filePath))
-                {
-                    await BuildVideoThumbnail(height, filePath, thumbPath);
-                }
-                else 
-                {
-                    await BuildImageThumbnail(height, filePath, thumbPath);
-                }      
-                return; // Success - exit immediately without Task.Delay
+                Directory.CreateDirectory(thumbPathFolder);
             }
-            catch (IOException ex)
+            if (_configuration.IsMovieFile(filePath))
             {
-                Console.WriteLine($"BuildThumbnailAsync IOException on attempt {attempt + 1} for file {filePath}: {ex.Message}");
-                lastError = ex;                                
+                await BuildVideoThumbnail(height, filePath, thumbPath);
             }
-            catch (UnauthorizedAccessException ex)
+            else 
             {
-                Console.WriteLine($"BuildThumbnailAsync UnauthorizedAccessException on attempt {attempt + 1} for file {filePath}: {ex.Message}");
-                lastError = ex;                
+                await BuildImageThumbnail(height, filePath, thumbPath);
             }
-
-            attempt++;
-            if (attempt < maxAttempts)
-            {
-                await Task.Delay(attempt switch { 1 => 100, 2 => 250, 3 => 500, 4 => 1000, _ => 1500 });
-            }
-        }
-
-        
-        if (lastError == null) 
-        {
-            return;
-        }
-        var lastErrorLocal = lastError;
-        lastError = null;
-        throw new Exception($"Failed to build thumbnail for file {filePath} after {maxAttempts} attempts.", lastErrorLocal);                
+        });                
     }
 
     private async Task BuildImageThumbnail(int height, string filePath, string thumbPath)
