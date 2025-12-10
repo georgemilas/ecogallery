@@ -59,7 +59,7 @@ SELECT
     row_to_json(exif) AS image_exif
 FROM ra
 JOIN album_image ai ON ai.album_name = ra.album_name
-JOIN image_exif exif ON ai.id = exif.album_image_id
+LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
 
 ORDER BY item_type
 $$ LANGUAGE SQL;

@@ -1,10 +1,47 @@
+/* Gallery banner */  
 
 .gallery-banner {
     height: 350px;
 	width: 95%;
 	margin: 0 auto;	
 	padding: 0 4px;
-	overflow: hidden;	
+	overflow: hidden;
+    position: relative;
+}
+
+.gallery-banner-menu {
+    position: absolute;
+    top: 12px; 
+    left: 12px;
+    right: 12px;
+    z-index: 20;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: #DDDDDD;
+    background-color: rgba(0, 0, 0, 0.4); 
+    padding: 8px 12px;
+    border-radius: 12px;    
+}
+
+.gallery-banner-menu .menu {
+    display: flex;
+    gap: 8px;
+    border-radius: 8px;
+    border: 1px solid #e8f09e; 
+    background-color: rgba(50, 50, 50, 1); 
+    color: white
+}
+.gallery-banner-menu .menu button {
+    color: #e8f09e;
+    padding: 4px 8px;        
+    
+}
+.gallery-banner-menu .menu button:hover {
+    background-color: rgba(200, 200, 200, 0.4); 
+    color: white;
+    
 }
 
 .gallery-banner img {
@@ -16,11 +53,11 @@
 }
 
 .gallery-banner-label {
-    position: relative;
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
     z-index: 20;
-    bottom: 100px;
-    margin-left: 12px;
-	margin-right: 12px;
     text-align: left;
     color: #DDDDDD;
     background-color: rgba(0, 0, 0, 0.4); 
@@ -35,8 +72,14 @@
 .breadcrumbs a { 
     color: #e8f09e;
     text-decoration: none;
+    padding: 4px;
     margin-right: 4px;
 }    
+.breadcrumbs a:hover {
+    color: white;        
+}       
+
+
 
 .gallery-banner-label h1 {
     font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -110,9 +153,9 @@
 }
 .albums-container {
     list-style: none;
-    margin: 0 auto;
+    margin: 10px auto;
     width: 100%;
-    padding: 0 4px;
+    padding: 8px 4px;
     gap: 8px;
     background-color: rgba(50, 50, 50, 0.8);
     display: grid;
@@ -148,3 +191,11 @@
 	font-size: 1rem;
 }
 
+.albums-item-icon {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    opacity: 0.6;    
+}

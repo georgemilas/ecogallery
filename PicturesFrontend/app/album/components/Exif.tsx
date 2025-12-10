@@ -1,17 +1,19 @@
 import React from 'react';
-import { ImageExif } from './Album';
+import { AlbumItemHierarchy, ImageExif } from './Album';
 import './exif.css';
 
 interface ExifPanelProps {
   exif: ImageExif;
+  album: AlbumItemHierarchy;
+  image: AlbumItemHierarchy;
   onClose: () => void;
 }
 
-export function ExifPanel({ exif, onClose }: ExifPanelProps) {
+export function ExifPanel({ exif, album, image, onClose }: ExifPanelProps) {
   return (
     <div className="exif-panel">
       <div className="exif-header">
-        <h3>EXIF Data</h3>
+        <h3>Metadata</h3>
         <button onClick={onClose} className="exif-close" title="Close">
           <svg viewBox="0 0 24 24" fill="none">
             <path d="M6 6L18 18M18 6L6 18" stroke="white" strokeWidth="2" strokeLinecap="round"/>
@@ -19,6 +21,20 @@ export function ExifPanel({ exif, onClose }: ExifPanelProps) {
         </button>
       </div>
       <div className="exif-content">
+        <div className="exif-row">
+          <span className="exif-label">Album:</span>
+          <span className="exif-value">{album.name.replace(/\\/g, '/').slice(1)}</span>
+        </div> 
+        <div className="exif-row">
+          <span className="exif-label">File Name:</span>
+          <span className="exif-value">{image.name.replace(/\\/g, '/').split('/').pop()}</span>
+        </div> 
+        {exif.file_size_bytes && (
+          <div className="exif-row">
+            <span className="exif-label">File Size:</span>
+            <span className="exif-value">{(exif.file_size_bytes / 1024 / 1024).toFixed(2)} MB</span>
+          </div>
+        )}
         {exif.camera && (
           <div className="exif-row">
             <span className="exif-label">Camera:</span>
@@ -77,12 +93,6 @@ export function ExifPanel({ exif, onClose }: ExifPanelProps) {
           <div className="exif-row">
             <span className="exif-label">Dimensions:</span>
             <span className="exif-value">{exif.image_width} × {exif.image_height}</span>
-          </div>
-        )}
-        {exif.file_size_bytes && (
-          <div className="exif-row">
-            <span className="exif-label">File Size:</span>
-            <span className="exif-value">{(exif.file_size_bytes / 1024 / 1024).toFixed(2)} MB</span>
           </div>
         )}
         {exif.software && (

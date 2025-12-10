@@ -6,12 +6,21 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Kestrel to listen on all network interfaces
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(5001); // Listen on all interfaces on port 5001 that is localhost, 127.0.0.1, 10.0.0.240 etc.
+});
+
 // Add CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:3000")
+    {   
+        // policy.WithOrigins("http://localhost:3000", "http://10.0.0.240:3000", 
+        //                     "http://127.0.0.1:3000", "http://gm-pictures.ddns.net:3000",
+        //                     "http://172.29.80.1:3000")
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });

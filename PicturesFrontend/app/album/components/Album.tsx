@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import './gallery.css';
 import { justifyGallery, debounce } from './gallery';
+import { SortPanel } from './Sort';
 
 export interface ImageExif {
   id: number;
@@ -71,9 +72,43 @@ interface AlbumHierarchyProps {
   album: AlbumItemHierarchy;
   onAlbumClick: (albumName: string) => void;
   onImageClick: (image: AlbumItemHierarchy) => void;
+  lastViewedImage?: string | null;
 }
 
-export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick }: AlbumHierarchyProps) {
+export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage }: AlbumHierarchyProps) {
+  const [sortedAlbums, setSortedAlbums] = React.useState<AlbumItemHierarchy[]>([]);
+  const [sortedImages, setSortedImages] = React.useState<AlbumItemHierarchy[]>([]);
+
+  const handleSortedAlbumsChange = useCallback((sorted: AlbumItemHierarchy[]) => {
+    setSortedAlbums(sorted);
+    setTimeout(() => {justifyGallery('.gallery', 300);}, 100);  
+  }, []);
+
+  const handleSortedImagesChange = useCallback((sorted: AlbumItemHierarchy[]) => {
+    setSortedImages(sorted);
+    setTimeout(() => {justifyGallery('.gallery', 300);}, 100);  
+  }, []);
+
+  const getAlbumName = useCallback((item: AlbumItemHierarchy) => {
+    return album.get_name(item.name);
+  }, [album]);
+
+  const albumsToSort = useMemo(() => album.content.filter(a => a.is_album), [album.content]);
+  const imagesToSort = useMemo(() => album.content.filter(a => !a.is_album), [album.content]);
+
+  // Scroll to last viewed image when returning from image view
+  useEffect(() => {
+    if (lastViewedImage) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        const imageElement = document.querySelector(`[data-image-name="${lastViewedImage}"]`);
+        if (imageElement) {
+          imageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  }, [lastViewedImage]);
+
   useEffect(() => {
     // Wait for images to load before calculating layout
     const gallery = document.querySelector('.gallery');
@@ -118,16 +153,28 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick }: A
     };
   }, [album]); // Re-run when album change
 
-  
   return (
     <>
       <div className="gallery-banner">
         <img src={album.image_hd_path} alt={album.album_name()} />
-        
+        <div className="gallery-banner-menu">
+          <nav className="menu">
+            <button onClick={() => onAlbumClick('')} className="back-button" title="Raw Album Data">Raw Album Data</button>
+            <button onClick={() => onAlbumClick('')} className="back-button" title="Virtual Albums">Virtual Albums</button>
+            <button onClick={() => onAlbumClick('')} className="back-button" title="Adhoc Query">Adhoc Query</button>
+          </nav>
+        </div>
         <div className="gallery-banner-label">
+        <SortPanel 
+          albums={albumsToSort} 
+          images={imagesToSort}
+          getAlbumName={getAlbumName} 
+          onSortedAlbumsChange={handleSortedAlbumsChange} 
+          onSortedImagesChange={handleSortedImagesChange}
+        />
         <nav className="breadcrumbs">
           <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginBottom: '4px', marginRight: '4px'}}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '-10px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
               <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
             </svg>
           </a>
@@ -146,16 +193,15 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick }: A
       </div>	
       {album.content.some(a => a.is_album) && (
       <div className='albums'>
-        <h1 className='albums-label'>sub-albums</h1>
         <ul className='albums-container'>
-        {album.content
-          .filter(a => a.is_album)
-          .toSorted((a, b) => new Date(b.last_updated_utc).getTime() - new Date(a.last_updated_utc).getTime())
-          .map(r => (
+        {(sortedAlbums.length > 0 ? sortedAlbums : album.content.filter(a => a.is_album)).map(r => (
           <li className='albums-item' key={r.id}>
             <a onClick={(e) => {e.preventDefault(); onAlbumClick(r.name);}}>
               <img src={r.thumbnail_path} alt={album.get_name(r.name)} />
               <span className="albums-item-label">{album.get_name(r.name)}</span>
+              <svg className="albums-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6C3 4.9 3.9 4 5 4H9L11 6H19C20.1 6 21 6.9 21 8V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V6Z"  fill="black" stroke='white'/>
+              </svg>
             </a>
           </li>
         ))} 
@@ -163,13 +209,11 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick }: A
       </div>
       )}
 
+
       <ul className="gallery">
-        {album.content
-          .filter(a => !a.is_album)
-          .toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime())
-          .map(r => (
-        <li className="gallery-item" key={r.id}>
-            <a onClick={(e) => {e.preventDefault(); onImageClick(r);}}>
+        {(sortedImages.length > 0 ? sortedImages : album.content.filter(a => !a.is_album)).map(r => (
+        <li className="gallery-item" key={r.id} data-image-name={r.name}> 
+            <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); onImageClick(r);}}>
                 <img src={r.thumbnail_path} alt={r.name} />
                 <span className="gallery-item-label">{r.name}</span>
             </a>

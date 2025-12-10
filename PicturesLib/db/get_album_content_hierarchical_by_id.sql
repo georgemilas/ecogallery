@@ -50,7 +50,7 @@ SELECT
     ai.image_timestamp_utc AS item_timestamp_utc,
     row_to_json(exif) AS image_exif
 FROM album_image ai
-JOIN image_exif exif ON ai.id = exif.album_image_id
+LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
 JOIN album AS a ON ai.album_name = a.album_name
 WHERE a.id = p_album_id
 

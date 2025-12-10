@@ -38,7 +38,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         var album = Album.CreateFromFilePath(filePath, RootFolder);
         var dbalbum = await GetAlbumByImageAsync(filePath);
         //Console.WriteLine($"ran album get db: {filePath}");
-        if (dbalbum == null)
+        if (dbalbum == null || dbalbum.FeatureImagePath != album.FeatureImagePath)
         {            
             if (album.HasParentAlbum)
             {
@@ -96,19 +96,23 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
         var sql = "SELECT count(*) FROM album_image WHERE album_name LIKE @pattern";
         var parameters = new { pattern = $"'{album.AlbumName}%'" };
-        var contentCount = await _db.ExecuteScalarAsync<int>(sql, parameters);
+        var contentCount = await _db.ExecuteScalarAsync<long>(sql, parameters);
         return contentCount > 0;                 
     }
 
     public async Task<Album> AddNewAlbumAsync(Album album)
     {
+        var updateFeature = _configuration.IsFeatureFile(album.FeatureImagePath ?? string.Empty)
+            ? "feature_image_path = EXCLUDED.feature_image_path,"
+            : "";
+        //album.FeatureImagePath ??= string.Empty;
         //Console.WriteLine($"TRY save db: {album}");  
         //insert or update existing album record and use the last image as feature image
-        var sql = @"INSERT INTO album (album_name, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id, album_timestamp_utc)
+        var sql = $@"INSERT INTO album (album_name, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id, album_timestamp_utc)
                                VALUES (@album_name, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id, @album_timestamp_utc)
                     ON CONFLICT (album_name) DO UPDATE
                     SET
-                        feature_image_path = EXCLUDED.feature_image_path,
+                        {updateFeature}
                         last_updated_utc = EXCLUDED.last_updated_utc,
                         album_timestamp_utc = EXCLUDED.album_timestamp_utc
                     RETURNING id;";        

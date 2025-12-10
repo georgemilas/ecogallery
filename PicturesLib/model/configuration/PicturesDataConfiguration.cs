@@ -11,7 +11,8 @@ public class PicturesDataConfiguration
     public List<string> RolePrefix { get; set; } = new List<string> { "private_", "public_", "family_", "extfamily_", "friends_", "custid_" };
     public List<string> ValueBasedRoleSuffix { get; set; } = new List<string> { "_custid_{X}", "-custid-{X}", " custid {X}"}; 
     public List<string> ValueBasedRolePrefix { get; set; } = new List<string> { "custid_{X}_", "custid-{X}-", "custid {X} "};
-    public List<string> FeaturePhotoSuffixOrPrefix { get; set; } = new List<string> { "label", "feature" };
+    public List<string> FeaturePhotoSuffix { get; set; } = new List<string> { "_label", "_feature" };
+    public List<string> FeaturePhotoPrefix { get; set; } = new List<string> { "label_", "feature_" };
     public List<string> ImageExtensions { get; set; } = new List<string> { ".jpg", ".jpeg", ".png", ".webp" }; 
     public List<string> MovieExtensions { get; set; } = new List<string> { ".mp4" };
 
@@ -54,6 +55,13 @@ public class PicturesDataConfiguration
     }
 
 
+    public bool IsFeatureFile(string sourceFilePath)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(sourceFilePath);
+        return FeaturePhotoSuffix.Any(suffix => fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ||
+               FeaturePhotoPrefix.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+    }
+
 }
 
 
@@ -67,7 +75,8 @@ public class PicturesDataConfiguration
         "rolePrefix":["private_", "public_", "family_", "extfamily_", "friends_", "custid_"],    
         "valueBasedRolePrefix":["custid_{X}_", "custid-{X}-", "custid {X} "],
         "valueBasedRoleSuffix":["_custid_{X}", "-custid-{X}", " custid {X}"],    
-        "featurePhotoSuffixOrPrefix": ["label", "feature"],
+         "featurePhotoSuffix": ["_label", "_feature"],
+        "featurePhotoPrefix": ["label_", "feature_"],
         "imageExtensions": [ ".jpg", ".jpeg", ".png", ".webp" ],
         "movieExtensions": [ ".mp4" ]
   }

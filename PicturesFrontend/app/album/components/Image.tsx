@@ -95,16 +95,11 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
 
   // Fullscreen toggle
   const toggleFullscreen = () => {
-    console.log('Toggle fullscreen clicked');
     if (!document.fullscreenElement) {
-      console.log('Requesting fullscreen...');
       document.documentElement.requestFullscreen()
-        .then(() => console.log('Fullscreen request succeeded'))
         .catch(err => console.error('Fullscreen request failed:', err));
     } else {
-      console.log('Exiting fullscreen...');
       document.exitFullscreen()
-        .then(() => console.log('Exit fullscreen succeeded'))
         .catch(err => console.error('Exit fullscreen failed:', err));
     }
   };
@@ -147,7 +142,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
         )}
 
         {showExif && image.image_exif && (
-          <ExifPanel exif={image.image_exif} onClose={toggleExif} />
+          <ExifPanel exif={image.image_exif} album={album} image={image} onClose={toggleExif} />
         )}
 
         <div className="nav nav-prev">

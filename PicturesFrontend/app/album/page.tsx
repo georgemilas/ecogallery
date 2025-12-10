@@ -10,6 +10,7 @@ export default function Page() {
   const [album, setAlbum] = useState<AlbumItemHierarchy | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [lastViewedImage, setLastViewedImage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const albumNameParam = searchParams.get('name') || '';
@@ -19,7 +20,7 @@ export default function Page() {
   const selectedImage = album?.content.find(item => item.name === imageNameParam) || null;
 
   const fetchAlbum = async (albumNameParam: string = '') => {
-    const base = process.env.NEXT_PUBLIC_WEATHER_API_BASE ?? 'http://localhost:5001';
+    const base = process.env.NEXT_PUBLIC_PICTURES_API_BASE ?? 'http://localhost:5001';
     setLoading(true);
     try {
       const encodedAlbumName = albumNameParam ? encodeURIComponent(albumNameParam) : '';
@@ -93,6 +94,10 @@ export default function Page() {
   };
 
   const handleCloseImage = () => {
+    // Save the current image name before closing
+    if (imageNameParam) {
+      setLastViewedImage(imageNameParam);
+    }
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.delete('image');
     router.push(`/album?${currentParams.toString()}`);
@@ -123,7 +128,7 @@ export default function Page() {
       ) : album ? (
         <>
           {viewMode === 'gallery' && (
-            <AlbumHierarchyComponent key={albumNameParam} album={album} onAlbumClick={handleAlbumClick} onImageClick={handleImageClick} />
+            <AlbumHierarchyComponent key={albumNameParam} album={album} onAlbumClick={handleAlbumClick} onImageClick={handleImageClick} lastViewedImage={lastViewedImage} />
           )}
           {viewMode === 'image' && selectedImage && (
             <ImageView 

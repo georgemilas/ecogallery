@@ -184,7 +184,7 @@ public class FilePeriodicScanService : BackgroundService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error handling file event [{context}]: {ex.Message}");
+            Console.WriteLine($"Error handling file event [{context}]: {ex}");
             return false;
         }
     }
