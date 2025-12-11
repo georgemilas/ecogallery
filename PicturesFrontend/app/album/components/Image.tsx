@@ -1,30 +1,92 @@
 import React from 'react';
-import { AlbumItemHierarchy } from './Album';
+import { AlbumItemHierarchy, ImageItemContent } from './AlbumHierarchyProps';
 import { ExifPanel } from './Exif';
 import './imageContent.css';
 
 interface ImageViewProps {
-  image: AlbumItemHierarchy;
+  image: ImageItemContent;
   album: AlbumItemHierarchy;
   onClose: () => void;
-  onPrev: (image: AlbumItemHierarchy, album: AlbumItemHierarchy) => void;
-  onNext: (image: AlbumItemHierarchy, album: AlbumItemHierarchy) => void;
+  onPrev: (image: ImageItemContent, album: AlbumItemHierarchy) => void;
+  onNext: (image: ImageItemContent, album: AlbumItemHierarchy) => void;
   isFullscreen: boolean;
   setIsFullscreen: (value: boolean) => void;
 }
 
 export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen, setIsFullscreen }: ImageViewProps) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
+  const imageRef = React.useRef<HTMLImageElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [isSlideshow, setIsSlideshow] = React.useState(false);
   const [slideshowSpeed, setSlideshowSpeed] = React.useState(3000); // milliseconds
   const slideshowIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const [showExif, setShowExif] = React.useState(false);
+  
+  // Zoom state
+  const [zoom, setZoom] = React.useState(1);
+  const [position, setPosition] = React.useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+  const [is1to1, setIs1to1] = React.useState(false);
+  
+  // Touch state (for swipe and pinch)
+  const touchStartX = React.useRef<number>(0);
+  const touchEndX = React.useRef<number>(0);
+  const initialPinchDistance = React.useRef<number>(0);
+  const lastZoom = React.useRef<number>(1);
 
+
+  // Reset zoom when image changes
+  React.useEffect(() => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+    setIs1to1(false);
+  }, [image.name]);
 
   // Sync state with actual fullscreen status on mount
   React.useEffect(() => {    
     setIsFullscreen(!!document.fullscreenElement);
   }, [setIsFullscreen]);
+
+  // Touch/swipe navigation
+  React.useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      touchEndX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = () => {
+      const swipeThreshold = 50; // Minimum distance for a swipe
+      const diff = touchStartX.current - touchEndX.current;
+
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          // Swiped left - go to next
+          onNext(image, album);
+        } else {
+          // Swiped right - go to previous
+          onPrev(image, album);
+        }
+      }
+
+      // Reset values
+      touchStartX.current = 0;
+      touchEndX.current = 0;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [image, album, onPrev, onNext]);
 
 
   // Slideshow effect
@@ -69,6 +131,8 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
           break;
         case 'e':
         case 'E':
+        case 'i':
+        case 'I':
           toggleExif();
           break;  
         case ' ':

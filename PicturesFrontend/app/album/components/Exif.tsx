@@ -1,11 +1,11 @@
 import React from 'react';
-import { AlbumItemHierarchy, ImageExif } from './Album';
+import { ImageItemContent, AlbumItemHierarchy, ImageExif } from './AlbumHierarchyProps';
 import './exif.css';
 
 interface ExifPanelProps {
   exif: ImageExif;
   album: AlbumItemHierarchy;
-  image: AlbumItemHierarchy;
+  image: ImageItemContent;
   onClose: () => void;
 }
 
@@ -87,6 +87,30 @@ export function ExifPanel({ exif, album, image, onClose }: ExifPanelProps) {
           <div className="exif-row">
             <span className="exif-label">White Balance:</span>
             <span className="exif-value">{exif.white_balance}</span>
+          </div>
+        )}
+        {exif.exposure_program && (
+          <div className="exif-row">
+            <span className="exif-label">Exposure Program:</span>
+            <span className="exif-value">{exif.exposure_program}</span>
+          </div>
+        )}
+        {exif.exposure_bias && (
+          <div className="exif-row">
+            <span className="exif-label">Exposure Bias:</span>
+            <span className="exif-value">{exif.exposure_bias}</span>
+          </div>
+        )}
+        {exif.scene_capture_type && (
+          <div className="exif-row">
+            <span className="exif-label">Scene Capture Type:</span>
+            <span className="exif-value">{exif.scene_capture_type}</span>
+          </div>
+        )}
+        {exif.color_space && (
+          <div className="exif-row">
+            <span className="exif-label">Color Space:</span>
+            <span className="exif-value">{exif.color_space}</span>
           </div>
         )}
         {exif.image_width && exif.image_height && (

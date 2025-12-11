@@ -6,7 +6,7 @@ public class PicturesDataConfiguration
     public string Folder { get; set; } = string.Empty;
     public List<string> SkipSuffix { get; set; } = new List<string> { "_skip", "_pss", "_noW" };
     public List<string> SkipPrefix { get; set; } = new List<string> { "skip_", "pss_", "noW_" };
-    public List<string> SkipContains { get; set; } = new List<string> { "DCIM", "EosRP", "_thumbnails" };
+    public List<string> SkipContains { get; set; } = new List<string> { "EosRP", "_thumbnails" };
     public List<string> RoleSuffix { get; set; } = new List<string> { "_private", "_public", "-family", " extfamily", "_friends", "_custid" };
     public List<string> RolePrefix { get; set; } = new List<string> { "private_", "public_", "family_", "extfamily_", "friends_", "custid_" };
     public List<string> ValueBasedRoleSuffix { get; set; } = new List<string> { "_custid_{X}", "-custid-{X}", " custid {X}"}; 

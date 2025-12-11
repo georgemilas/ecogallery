@@ -1,12 +1,13 @@
 'use client';
 import './components/gallery.css';
 
-import { AlbumHierarchyComponent, AlbumItemHierarchy } from './components/Album';
+import { AlbumHierarchyComponent } from './components/Album';
+import { AlbumItemHierarchy, ImageItemContent } from './components/AlbumHierarchyProps';
 import { ImageView } from './components/Image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function Page() {
+function AlbumPage() {
   const [album, setAlbum] = useState<AlbumItemHierarchy | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -15,9 +16,11 @@ export default function Page() {
   const searchParams = useSearchParams();
   const albumNameParam = searchParams.get('name') || '';
   const imageNameParam = searchParams.get('image');
+  const albumSort = searchParams.get('albumSort') || 'timestamp-desc';
+  const imageSort = searchParams.get('imageSort') || 'timestamp-desc';
   
   const viewMode = imageNameParam ? 'image' : 'gallery';
-  const selectedImage = album?.content.find(item => item.name === imageNameParam) || null;
+  const selectedImage = album?.images.find(item => item.name === imageNameParam) || null;
 
   const fetchAlbum = async (albumNameParam: string = '') => {
     const base = process.env.NEXT_PUBLIC_PICTURES_API_BASE ?? 'http://localhost:5001';
@@ -84,10 +87,14 @@ export default function Page() {
   }, []);
 
   const handleAlbumClick = (newAlbumName: string) => {
-    router.push(`/album?name=${encodeURIComponent(newAlbumName)}`);
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.set('name', newAlbumName);
+    currentParams.delete('image'); // Clear image param when navigating to different album
+    // Keep albumSort and imageSort params
+    router.push(`/album?${currentParams.toString()}`);
   };
 
-  const handleImageClick = (image: AlbumItemHierarchy) => {
+  const handleImageClick = (image: ImageItemContent) => {
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.set('image', image.name);
     router.push(`/album?${currentParams.toString()}`);
@@ -103,8 +110,9 @@ export default function Page() {
     router.push(`/album?${currentParams.toString()}`);
   };
 
-  const handlePrevImage = (image: AlbumItemHierarchy, album: AlbumItemHierarchy) => {
-    var content = album.content.filter(a => !a.is_album).toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime());
+  const handlePrevImage = (image: ImageItemContent, album: AlbumItemHierarchy) => {
+    //var content = album.images.toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime());
+    var content = album.images;  //use the order as provided by the sorter in album view 
     var ix = content.findIndex(item => item.name === image.name);
     var prev = ix > 0 ? content[ix - 1] : content[content.length - 1];  //repeat to last if at start
     const currentParams = new URLSearchParams(window.location.search);
@@ -112,8 +120,9 @@ export default function Page() {
     router.push(`/album?${currentParams.toString()}`);
   };
 
-  const handleNextImage = (image: AlbumItemHierarchy, album: AlbumItemHierarchy) => {
-    var content = album.content.filter(a => !a.is_album).toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime());
+  const handleNextImage = (image: ImageItemContent, album: AlbumItemHierarchy) => {
+    //var content = album.images.toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime());
+    var content = album.images;  //use the order as provided by the sorter in album view
     var ix = content.findIndex(item => item.name === image.name);
     var next = ix < content.length - 1 ? content[ix + 1] : content[0];  //repeat to first if at end
     const currentParams = new URLSearchParams(window.location.search);
@@ -128,7 +137,21 @@ export default function Page() {
       ) : album ? (
         <>
           {viewMode === 'gallery' && (
-            <AlbumHierarchyComponent key={albumNameParam} album={album} onAlbumClick={handleAlbumClick} onImageClick={handleImageClick} lastViewedImage={lastViewedImage} />
+            <AlbumHierarchyComponent 
+              key={albumNameParam} 
+              album={album} 
+              onAlbumClick={handleAlbumClick} 
+              onImageClick={handleImageClick} 
+              lastViewedImage={lastViewedImage}
+              albumSort={albumSort}
+              imageSort={imageSort}
+              onSortChange={(albumSort, imageSort) => {
+                const params = new URLSearchParams(window.location.search);
+                params.set('albumSort', albumSort);
+                params.set('imageSort', imageSort);
+                router.push(`/album?${params.toString()}`);
+              }}
+            />
           )}
           {viewMode === 'image' && selectedImage && (
             <ImageView 
@@ -146,5 +169,13 @@ export default function Page() {
         <p>No album found.</p>
       )}
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AlbumPage />
+    </Suspense>
   );
 }

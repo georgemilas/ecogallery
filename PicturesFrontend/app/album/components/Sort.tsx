@@ -1,36 +1,50 @@
 import React from 'react';
 import './sort.css';
-import { AlbumItemHierarchy } from './Album';
+import { ItemContent, AlbumItemContent, ImageItemContent, AlbumItemHierarchy } from './AlbumHierarchyProps';
 
 type SortField = 'name' | 'timestamp';
 type SortOrder = 'asc' | 'desc';
 
 interface SortPanelProps {
-  albums: AlbumItemHierarchy[];
-  images: AlbumItemHierarchy[];
-  getAlbumName: (item: AlbumItemHierarchy) => string;
-  onSortedAlbumsChange: (sorted: AlbumItemHierarchy[]) => void;
-  onSortedImagesChange: (sorted: AlbumItemHierarchy[]) => void;
+  album: AlbumItemHierarchy;
+  onSortedAlbumsChange: () => void;
+  onSortedImagesChange: () => void;
+  initialAlbumSort?: string;
+  initialImageSort?: string;
+  onSortChange?: (albumSort: string, imageSort: string) => void;
 }
 
 export function SortPanel({ 
-  albums,
-  images,
-  getAlbumName,
+  album,
   onSortedAlbumsChange,
-  onSortedImagesChange
+  onSortedImagesChange,
+  initialAlbumSort = 'timestamp-desc',
+  initialImageSort = 'timestamp-desc',
+  onSortChange
 }: SortPanelProps) {
-  const [albumSortField, setAlbumSortField] = React.useState<SortField>('timestamp');
-  const [albumSortOrder, setAlbumSortOrder] = React.useState<SortOrder>('desc');
-  const [imageSortField, setImageSortField] = React.useState<SortField>('timestamp');
-  const [imageSortOrder, setImageSortOrder] = React.useState<SortOrder>('desc');
+  const [albumSortField, setAlbumSortField] = React.useState<SortField>(() => {
+    const [field] = (initialAlbumSort || 'timestamp-desc').split('-') as [SortField, SortOrder];
+    return field;
+  });
+  const [albumSortOrder, setAlbumSortOrder] = React.useState<SortOrder>(() => {
+    const [, order] = (initialAlbumSort || 'timestamp-desc').split('-') as [SortField, SortOrder];
+    return order;
+  });
+  const [imageSortField, setImageSortField] = React.useState<SortField>(() => {
+    const [field] = (initialImageSort || 'timestamp-desc').split('-') as [SortField, SortOrder];
+    return field;
+  });
+  const [imageSortOrder, setImageSortOrder] = React.useState<SortOrder>(() => {
+    const [, order] = (initialImageSort || 'timestamp-desc').split('-') as [SortField, SortOrder];
+    return order;
+  });
 
-  const sortItems = (items: AlbumItemHierarchy[], field: SortField, order: SortOrder, useAlbumName: boolean = false) => {
-    return items.toSorted((a, b) => {
+  const sortItems = (items: ItemContent[], field: SortField, order: SortOrder, useAlbumName: boolean = false) => {
+    items.sort((a, b) => {
       let comparison = 0;
       if (field === 'name') {
-        const nameA = useAlbumName ? getAlbumName(a) : a.name;
-        const nameB = useAlbumName ? getAlbumName(b) : b.name;
+        const nameA = useAlbumName ? album.get_name(a.name) : a.name;
+        const nameB = useAlbumName ? album.get_name(b.name) : b.name;
         comparison = nameA.localeCompare(nameB);
       } else {
         const timeA = useAlbumName ? new Date(a.last_updated_utc).getTime() : new Date(a.item_timestamp_utc).getTime();
@@ -42,27 +56,29 @@ export function SortPanel({
   };
 
   React.useEffect(() => {
-    console.log('Sort: albums changed', albums.length);
-    const sorted = sortItems(albums, albumSortField, albumSortOrder, true);
-    console.log('Sort: sorted albums', sorted.length);
-    onSortedAlbumsChange(sorted);
-  }, [albums, albumSortField, albumSortOrder, getAlbumName, onSortedAlbumsChange]);
+    if (album.albums && album.albums.length > 0) {
+      sortItems(album.albums, albumSortField, albumSortOrder, true);
+      onSortedAlbumsChange();
+    }
+  }, [albumSortField, albumSortOrder, onSortedAlbumsChange]);
 
   React.useEffect(() => {
-    console.log('Sort: images changed', images.length);
-    const sorted = sortItems(images, imageSortField, imageSortOrder, false);
-    console.log('Sort: sorted images', sorted.length);
-    onSortedImagesChange(sorted);
-  }, [images, imageSortField, imageSortOrder, onSortedImagesChange]);
+    if (album.images && album.images.length > 0) {
+      sortItems(album.images, imageSortField, imageSortOrder, false);
+      onSortedImagesChange();
+    }
+  }, [imageSortField, imageSortOrder, onSortedImagesChange]);
 
   const handleAlbumSortChange = (field: SortField, order: SortOrder) => {
     setAlbumSortField(field);
     setAlbumSortOrder(order);
+    onSortChange?.(`${field}-${order}`, `${imageSortField}-${imageSortOrder}`);
   };
 
   const handleImageSortChange = (field: SortField, order: SortOrder) => {
     setImageSortField(field);
     setImageSortOrder(order);
+    onSortChange?.(`${albumSortField}-${albumSortOrder}`, `${field}-${order}`);
   };
 
   return (
@@ -83,8 +99,6 @@ export function SortPanel({
       </div>
       <div className="sort-group">
         <label>Images:</label>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4L4 12H9V20H15V12H20L12 4Z" fill="black" stroke='white'/></svg>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 20L4 12H9V4H15V12H20L12 20Z" fill="black" stroke='white'/></svg>
         <select 
           value={`${imageSortField}-${imageSortOrder}`}
           onChange={(e) => {
@@ -92,9 +106,7 @@ export function SortPanel({
             handleImageSortChange(field, order);
           }}>
 
-          <option value="name-asc">Name <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 4L4 12H9V20H15V12H20L12 4Z" fill="black" stroke='white'/>
-                    </svg></option>
+          <option value="name-asc">Name (A-Z)</option>
           <option value="name-desc">Name (Z-A)</option>
           <option value="timestamp-asc">Date (Oldest)</option>
           <option value="timestamp-desc">Date (Newest)</option>

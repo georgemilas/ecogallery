@@ -44,52 +44,75 @@ public class AlbumsService
         var libAlbum = await _albumRepository.GetAlbumHierarchicalByNameAsync(albumName ?? string.Empty);
         if (libAlbum == null)
         {
-            throw new Exception($"Album not found: '{albumName}'");
+            throw new AlbumNotFoundException(albumName);
         }    
-        var album = GetServiceAlbum(albumName, libAlbum);
+        var album = new AlbumContentHierarchical();
+        SetAlbumItemContent(album, albumName, libAlbum);
         
         //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");            
-        album.Content = new List<AlbumContentHierarchical>();
+        album.Albums = new List<AlbumItemContent>();
+        album.Images = new List<ImageItemContent>();
         foreach (var item in albumContent)
         {
-            var contentAlbum = GetServiceAlbum(albumName, item);
-            album.Content.Add(contentAlbum);
+            if (item.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase))
+            {
+                var contentAlbum = new AlbumItemContent();
+                SetAlbumItemContent(contentAlbum, albumName, item);
+                album.Albums.Add(contentAlbum);
+                continue;
+            }
+            else {
+                var contentImage = GetImageItemContent(albumName, item);
+                album.Images.Add(contentImage);
+                continue;
+            }            
         }
         return album;
     }
 
-    private AlbumContentHierarchical GetServiceAlbum(string? albumName, PicturesLib.model.album.AlbumContentHierarchical item)
+    private void SetAlbumItemContent(AlbumItemContent album, string? albumName, PicturesLib.model.album.AlbumContentHierarchical item)
     {
-        var album = new AlbumContentHierarchical();
         album.Id = item.Id;
         album.Name = item.ItemName;
-        album.IsAlbum = item.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase);
-
+        
         string defaultFolderImage = "\\andr si anth.jpg";
-        string path = album.IsAlbum     //get the relative path first
-                ? (item.FeatureItemType != null ? item.FeatureItemPath ?? item.InnerFeatureItemPath ?? defaultFolderImage
-                                                : item.InnerFeatureItemPath ?? defaultFolderImage)
-                : (item.FeatureItemPath ?? string.Empty);
-        //Console.WriteLine($"Debug: relative path {path}");
+        //get the relative path first
+        string path = item.FeatureItemType != null 
+                                    ? item.FeatureItemPath ?? item.InnerFeatureItemPath ?? defaultFolderImage
+                                    : item.InnerFeatureItemPath ?? defaultFolderImage;
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
-        //Console.WriteLine($"Debug: absolute path {path}");
-
-        var thumbPath = _picturesConfig.GetThumbnailPath(path, 400);   //get the thumbnail path from the absolute path
-        album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
-        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));    //save space, did not create hd 1080 path
-        album.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));
-        album.ImageOriginalPath = GetUrl(path);
-        album.IsMovie = _picturesConfig.IsMovieFile(path);
-        //Console.WriteLine($"Debug: thumbnail path {album.ThumbnailPath}");
         
+        album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
+        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));    //save space, did not create hd 1080 path        
         album.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()
                                                          : new List<string>();
         album.LastUpdatedUtc = item.LastUpdatedUtc;
-        album.ItemTimestampUtc = item.ItemTimestampUtc;
-        album.ImageExif = item.ImageExif;
-        return album;
+        album.ItemTimestampUtc = item.ItemTimestampUtc;                
     }
+
+    private ImageItemContent GetImageItemContent(string? albumName, PicturesLib.model.album.AlbumContentHierarchical item)
+    {
+        var image = new ImageItemContent();
+        image.Id = item.Id;
+        image.Name = item.ItemName;
+        
+        string path = item.FeatureItemPath ?? string.Empty;     //get the relative path first                                
+        path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
+        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
+        image.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
+        image.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));    //save space, did not create hd 1080 path
+        image.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));
+        image.ImageOriginalPath = GetUrl(path);
+        image.IsMovie = _picturesConfig.IsMovieFile(path);
+        image.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()
+                                                         : new List<string>();
+        image.LastUpdatedUtc = item.LastUpdatedUtc;
+        image.ItemTimestampUtc = item.ItemTimestampUtc;
+        image.ImageExif = item.ImageExif;
+        return image;
+    }
+
 
     private string GetUrl(string path)
     {

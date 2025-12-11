@@ -36,15 +36,18 @@ public class ImageExifProcessor: AlbumProcessor
         {
             return Tuple.Create(albumImage, count); //skip exif for movie files
         }
-
-        ImageExif? exif = await ExtractExif(filePath); 
-        if (exif != null)
+        var dbExif = await imageRepository.GetImageExifAsync(albumImage);
+        if (dbExif == null)
         {
-            exif.AlbumImageId = albumImage.Id;
-            exif.FilePath = albumImage.ImagePath;
-            exif.LastUpdatedUtc = DateTimeOffset.UtcNow;
-            await imageRepository.AddNewImageExifAsync(exif);            
-            return Tuple.Create(albumImage, 1);
+            ImageExif? exif = await ExtractExif(filePath); 
+            if (exif != null)
+            {
+                exif.AlbumImageId = albumImage.Id;
+                exif.FilePath = albumImage.ImagePath;
+                exif.LastUpdatedUtc = DateTimeOffset.UtcNow;
+                await imageRepository.AddNewImageExifAsync(exif);            
+                return Tuple.Create(albumImage, 1);
+            }
         }
         return Tuple.Create(albumImage, count);
 

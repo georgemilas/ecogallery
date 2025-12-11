@@ -25,38 +25,74 @@ public class AlbumsController : ControllerBase
     public async Task<ActionResult<AlbumContentHierarchical>> GetRoot()
     {
 
-        var albumContent = await _albumsService.GetAlbumContentHierarchical();
-        return Ok(albumContent);
+        try
+        {
+            var albumContent = await _albumsService.GetAlbumContentHierarchical();
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
     }
 
     // GET: /api/v1/albums/root/hierarchy
     [HttpGet("root/hierarchy")]
     public async Task<ActionResult<AlbumContentHierarchical>> GetRootHierarchy()
     {
-        var albumContent = await _albumsService.GetAlbumContentHierarchical();
-        return Ok(albumContent);
+        try
+        {
+            var albumContent = await _albumsService.GetAlbumContentHierarchical();
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
     }
 
     // GET: /api/v1/albums/{albumName}
     [HttpGet("{albumName}")]
     public async Task<ActionResult<AlbumContentHierarchical>> GetAlbumContentHierarchicalDefault(string albumName)
     {
-        var albumContent = await _albumsService.GetAlbumContentHierarchical(albumName);
-        return Ok(albumContent);
+        try
+        {
+            var albumContent = await _albumsService.GetAlbumContentHierarchical(albumName);
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+
     }
     // GET: /api/v1/albums/{albumName}/hierarchy
     [HttpGet("{albumName}/hierarchy")]
     public async Task<ActionResult<AlbumContentHierarchical>> GetAlbumContentHierarchicalByName(string albumName)
     {
-        var albumContent = await _albumsService.GetAlbumContentHierarchical(albumName);
-        return Ok(albumContent);
+        try
+        {
+            var albumContent = await _albumsService.GetAlbumContentHierarchical(albumName);
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
     }
     // GET: /api/v1/albums/{albumId}/hierarchy
     [HttpGet("{albumId:long}/hierarchy")]
     public async Task<ActionResult<AlbumContentHierarchical>> GetAlbumContentHierarchicalById(long albumId)
     {
-        var albumContent = await _albumsService.GetAlbumContentHierarchical(albumId);
-        return Ok(albumContent);
+        try
+        {
+            var albumContent = await _albumsService.GetAlbumContentHierarchical(albumId);
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
     }
 
 
@@ -64,15 +100,31 @@ public class AlbumsController : ControllerBase
     [HttpGet("{albumName}/flatten")]
     public async Task<ActionResult<List<PicturesLib.model.album.AlbumContentFlatten>>> GetAlbumContentFlattenByName(string albumName)
     {
-        var albumContent = await _albumRepository.GetAlbumContentFlattenByName(albumName);
-        return Ok(albumContent);
+        try
+        {
+            var albumContent = await _albumRepository.GetAlbumContentFlattenByName(albumName);
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+
     }
     // GET: /api/v1/albums/{albumId}/flatten
     [HttpGet("{albumId:long}/flatten")]
     public async Task<ActionResult<List<PicturesLib.model.album.AlbumContentFlatten>>> GetAlbumContentFlattenById(long albumId)
     {
-        var albumContent = await _albumRepository.GetAlbumContentFlattenById(albumId);
-        return Ok(albumContent);
+        try
+        {
+            var albumContent = await _albumRepository.GetAlbumContentFlattenById(albumId);
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+
     }
 
 

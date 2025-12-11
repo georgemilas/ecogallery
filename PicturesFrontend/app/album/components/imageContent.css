@@ -23,12 +23,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     transition: background-color 0.2s;
-}
-
-.nav:hover {
-    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .nav svg {
@@ -38,14 +33,13 @@ body {
     transition: opacity 0.2s;
 }
 
-.nav:hover svg {
-    opacity: 1;
-}
-
 .nav-prev, .nav-next {
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
+}
+svg:hover {
+    opacity: 1;        
 }
 
 .toolbar {
@@ -145,4 +139,14 @@ button {
     font-size: 14px;
     min-width: 40px;
     text-align: center;
+}
+
+.zoom-button.active svg {
+    opacity: 1;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+}
+
+.zoom-button.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
 }

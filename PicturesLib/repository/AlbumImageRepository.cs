@@ -58,6 +58,13 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         return await _db.ExecuteAsync(sql, image);               
     }
 
+    public async Task<ImageExif?> GetImageExifAsync(AlbumImage albumImage)
+    {
+        var sql = "SELECT * FROM image_exif WHERE album_image_id = @album_image_id";
+        var sqlParams = new { album_image_id = albumImage.Id };
+        var imageExifs = await _db.QueryAsync(sql, reader => ImageExif.CreateFromDataReader(reader), sqlParams);
+        return imageExifs.FirstOrDefault();                 
+    }
 
     public async Task<ImageExif> AddNewImageExifAsync(ImageExif exif)
     {

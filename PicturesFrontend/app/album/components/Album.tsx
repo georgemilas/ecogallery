@@ -2,99 +2,26 @@ import React, { useEffect, useCallback, useMemo } from 'react';
 import './gallery.css';
 import { justifyGallery, debounce } from './gallery';
 import { SortPanel } from './Sort';
+import { AlbumHierarchyProps, ItemContent, ImageItemContent } from './AlbumHierarchyProps';
 
-export interface ImageExif {
-  id: number;
-  album_image_id: number;
-  camera: string | null;
-  lens: string | null;
-  focal_length: string | null;
-  aperture: string | null;
-  exposure_time: string | null;
-  iso: number | null;
-  date_taken: string | null;
-  rating: number | null;
-  date_modified: string | null;
-  flash: string | null;
-  metering_mode: string | null;
-  exposure_program: string | null;
-  exposure_bias: string | null;
-  exposure_mode: string | null;
-  white_balance: string | null;
-  color_space: string | null;
-  scene_capture_type: string | null;
-  circle_of_confusion: number | null;
-  field_of_view: number | null;
-  depth_of_field: number | null;
-  hyperfocal_distance: number | null;
-  normalized_light_value: number | null;
-  software: string | null;
-  serial_number: string | null;
-  lens_serial_number: string | null;
-  file_name: string;
-  file_path: string;
-  file_size_bytes: number | null;
-  image_width: number | null;
-  image_height: number | null;
-  last_updated_utc: string;
-}
-
-export class AlbumItemHierarchy {
-  id: number = 0;
-  name: string = '';
-  is_album: boolean = false;
-  is_movie: boolean = false;
-  navigation_path_segments: Array<string> = [];
-  thumbnail_path: string = '';
-  image_hd_path: string = '';
-  image_uhd_path: string = '';
-  image_original_path: string = '';
-  last_updated_utc: Date = new Date();
-  item_timestamp_utc: Date = new Date();
-  content: AlbumItemHierarchy[] = [];
-  image_exif: ImageExif | null = null;
-
-  get_name(path: string): string {
-    var  name = path.split('\\');
-    if (name.length === 0) {
-      name = path.split('/');
-    }
-    return name.pop() || 'Pictures Gallery';
-  }
-
-  album_name(): string {
-    return this.get_name(this.name);
-  }
-
-}  
-
-interface AlbumHierarchyProps {
-  album: AlbumItemHierarchy;
-  onAlbumClick: (albumName: string) => void;
-  onImageClick: (image: AlbumItemHierarchy) => void;
-  lastViewedImage?: string | null;
-}
-
-export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage }: AlbumHierarchyProps) {
-  const [sortedAlbums, setSortedAlbums] = React.useState<AlbumItemHierarchy[]>([]);
-  const [sortedImages, setSortedImages] = React.useState<AlbumItemHierarchy[]>([]);
-
-  const handleSortedAlbumsChange = useCallback((sorted: AlbumItemHierarchy[]) => {
-    setSortedAlbums(sorted);
+export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage, albumSort, imageSort, onSortChange }: AlbumHierarchyProps) {
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  
+  const handleSortedAlbumsChange = useCallback(() => {
+    console.log('AlbumHierarchyComponent: sorted albums changed', album.albums[0]?.name);
+    forceUpdate(); // Force re-render after in-place sort
     setTimeout(() => {justifyGallery('.gallery', 300);}, 100);  
   }, []);
 
-  const handleSortedImagesChange = useCallback((sorted: AlbumItemHierarchy[]) => {
-    setSortedImages(sorted);
+  const handleSortedImagesChange = useCallback(() => {
+    console.log('AlbumHierarchyComponent: sorted images changed', album.images[0]?.name);
+    forceUpdate(); // Force re-render after in-place sort
     setTimeout(() => {justifyGallery('.gallery', 300);}, 100);  
   }, []);
 
-  const getAlbumName = useCallback((item: AlbumItemHierarchy) => {
-    return album.get_name(item.name);
-  }, [album]);
 
-  const albumsToSort = useMemo(() => album.content.filter(a => a.is_album), [album.content]);
-  const imagesToSort = useMemo(() => album.content.filter(a => !a.is_album), [album.content]);
+  // const albumsToSort = useMemo(() => album.albums, [album.albums]);
+  // const imagesToSort = useMemo(() => album.images, [album.images]);
 
   // Scroll to last viewed image when returning from image view
   useEffect(() => {
@@ -166,11 +93,12 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
         </div>
         <div className="gallery-banner-label">
         <SortPanel 
-          albums={albumsToSort} 
-          images={imagesToSort}
-          getAlbumName={getAlbumName} 
+          album={album} 
           onSortedAlbumsChange={handleSortedAlbumsChange} 
           onSortedImagesChange={handleSortedImagesChange}
+          initialAlbumSort={albumSort}
+          initialImageSort={imageSort}
+          onSortChange={onSortChange}
         />
         <nav className="breadcrumbs">
           <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
@@ -191,16 +119,16 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
         <h1>{album.album_name()}</h1>     
         </div>
       </div>	
-      {album.content.some(a => a.is_album) && (
+      {album.albums.length > 0 && (
       <div className='albums'>
         <ul className='albums-container'>
-        {(sortedAlbums.length > 0 ? sortedAlbums : album.content.filter(a => a.is_album)).map(r => (
+        {(album.albums).map(r => (
           <li className='albums-item' key={r.id}>
-            <a onClick={(e) => {e.preventDefault(); onAlbumClick(r.name);}}>
+            <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(r.name);}}>
               <img src={r.thumbnail_path} alt={album.get_name(r.name)} />
               <span className="albums-item-label">{album.get_name(r.name)}</span>
               <svg className="albums-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M3 6C3 4.9 3.9 4 5 4H9L11 6H19C20.1 6 21 6.9 21 8V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V6Z"  fill="black" stroke='white'/>
+                <path d="M3 6C3 4.9 3.9 4 5 4H9L11 6H19C20.1 6 21 6.9 21 8V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V6Z"  fill="black" stroke='white'/>                
               </svg>
             </a>
           </li>
@@ -211,9 +139,9 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
 
 
       <ul className="gallery">
-        {(sortedImages.length > 0 ? sortedImages : album.content.filter(a => !a.is_album)).map(r => (
+        {(album.images).map(r => (
         <li className="gallery-item" key={r.id} data-image-name={r.name}> 
-            <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); onImageClick(r);}}>
+            <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); onImageClick(r as ImageItemContent);}}>
                 <img src={r.thumbnail_path} alt={r.name} />
                 <span className="gallery-item-label">{r.name}</span>
             </a>
