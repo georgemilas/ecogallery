@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlbumItemHierarchy, ImageItemContent } from './AlbumHierarchyProps';
 import { ExifPanel } from './Exif';
+import { useImageZoom } from './useImageZoom';
 import './imageContent.css';
 
 interface ImageViewProps {
@@ -18,16 +19,9 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
   const imageRef = React.useRef<HTMLImageElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [isSlideshow, setIsSlideshow] = React.useState(false);
-  const [slideshowSpeed, setSlideshowSpeed] = React.useState(3000); // milliseconds
+  const [slideshowSpeed, setSlideshowSpeed] = React.useState(3000);
   const slideshowIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const [showExif, setShowExif] = React.useState(false);
-  
-  // Zoom state
-  const [zoom, setZoom] = React.useState(1);
-  const [position, setPosition] = React.useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
-  const [is1to1, setIs1to1] = React.useState(false);
   
   // Touch state (for swipe and pinch)
   const touchStartX = React.useRef<number>(0);
@@ -35,46 +29,65 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
   const initialPinchDistance = React.useRef<number>(0);
   const lastZoom = React.useRef<number>(1);
 
-
-  // Reset zoom when image changes
-  React.useEffect(() => {
-    setZoom(1);
-    setPosition({ x: 0, y: 0 });
-    setIs1to1(false);
-  }, [image.name]);
+  // Use zoom hook for all zoom-related functionality
+  const { state: zoomState, handlers: zoomHandlers, setZoom, setIs1to1 } = useImageZoom(
+    imageRef,
+    containerRef,
+    image.is_movie,
+    image.name
+  );
+  const { zoom, position, isDragging, is1to1 } = zoomState;
 
   // Sync state with actual fullscreen status on mount
   React.useEffect(() => {    
     setIsFullscreen(!!document.fullscreenElement);
   }, [setIsFullscreen]);
 
-  // Touch/swipe navigation
+  // Touch/swipe navigation + pinch zoom
   React.useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
-      touchStartX.current = e.touches[0].clientX;
+      if (e.touches.length === 2 && !image.is_movie) {
+        // Pinch zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
+        lastZoom.current = zoom;
+      } else if (e.touches.length === 1) {
+        touchStartX.current = e.touches[0].clientX;
+      }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      touchEndX.current = e.touches[0].clientX;
+      if (e.touches.length === 2 && !image.is_movie) {
+        // Pinch zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const scale = distance / initialPinchDistance.current;
+        const newZoom = Math.min(Math.max(0.5, lastZoom.current * scale), 10);
+        setZoom(newZoom);
+        setIs1to1(false);
+      } else if (e.touches.length === 1 && zoom <= 1) {
+        touchEndX.current = e.touches[0].clientX;
+      }
     };
 
-    const handleTouchEnd = () => {
-      const swipeThreshold = 50; // Minimum distance for a swipe
-      const diff = touchStartX.current - touchEndX.current;
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0 && zoom <= 1) {
+        const swipeThreshold = 50;
+        const diff = touchStartX.current - touchEndX.current;
 
-      if (Math.abs(diff) > swipeThreshold) {
-        if (diff > 0) {
-          // Swiped left - go to next
-          onNext(image, album);
-        } else {
-          // Swiped right - go to previous
-          onPrev(image, album);
+        if (Math.abs(diff) > swipeThreshold) {
+          if (diff > 0) {
+            onNext(image, album);
+          } else {
+            onPrev(image, album);
+          }
         }
-      }
 
-      // Reset values
-      touchStartX.current = 0;
-      touchEndX.current = 0;
+        touchStartX.current = 0;
+        touchEndX.current = 0;
+      }
     };
 
     window.addEventListener('touchstart', handleTouchStart);
@@ -86,7 +99,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [image, album, onPrev, onNext]);
+  }, [image, album, onPrev, onNext, zoom, setZoom, setIs1to1]);
 
 
   // Slideshow effect
@@ -134,7 +147,21 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
         case 'i':
         case 'I':
           toggleExif();
-          break;  
+          break;
+        case '0':
+          zoomHandlers.reset();
+          break;
+        case '1':
+          zoomHandlers.toggle1to1();
+          break;
+        case '=':
+        case '+':
+          zoomHandlers.zoomIn();
+          break;
+        case '-':
+        case '_':
+          zoomHandlers.zoomOut();
+          break;
         case ' ':
         case 'Enter':
           e.preventDefault(); // Prevent default for spacebar and enter
@@ -154,7 +181,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [image, album, onPrev, onNext, onClose]);
+  }, [image, album, onPrev, onNext, onClose, zoomHandlers]);
 
 
   // Fullscreen toggle
@@ -211,12 +238,12 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
 
         <div className="nav nav-prev">
             <div className="toolbar">
-                <button onClick={toggleFullscreen} className="fullscreen-button">
+                <button onClick={toggleFullscreen} className="fullscreen-button" title="Fullscreen (F)">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d={isFullscreen ? "M5 13H11V19M4 20L11 13M19 11H13V5M20 4L13 11" : "M10 20H4V14M4 20L11 13M14 4H20V10M20 4L13 11"} stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
-                <button onClick={toggleSlideshow} className="slideshow-button">
+                <button onClick={toggleSlideshow} className="slideshow-button"  title="Slideshow (Space/Enter)">
                     <svg viewBox="0 0 24 24" fill="none">
                         {isSlideshow ? (
                             <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" fill="white" stroke="white" stroke-width="2"/>
@@ -225,11 +252,19 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
                         )}
                     </svg>
                 </button>
-                <button onClick={toggleExif} className="exif-button" title="EXIF Info">
+                <button onClick={toggleExif} className="exif-button" title="EXIF Info (E/I)">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm0-8c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" fill="black" stroke="white"/>
                     </svg>
                 </button>
+                {!image.is_movie && (
+                  <button onClick={zoomHandlers.toggle1to1} className={`zoom-button ${is1to1 ? 'active' : ''}`} title="1:1 Zoom (+/-/0/1)">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M2 8C2 4.7 4.7 2 8 2H16C19.3 2 22 4.7 22 8V16C22 19.3 19.3 22 16 22H8C4.7 22 2 19.3 2 16V8Z" stroke="white" strokeWidth="1.5" fill="none"/>
+                      <text x="12" y="15.5" fontSize="9" fill="white" textAnchor="middle" fontWeight="bold">1:1</text>
+                    </svg>
+                  </button>
+                )}
             </div>
 
             <div className="nav-btn">
@@ -243,10 +278,23 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
             <div className="spacer-prev"></div>
         </div>
 
-        <div className="content">
+        <div className="content" ref={containerRef}>
             {image.is_movie 
                 ? (<video ref={videoRef} src={image.image_original_path} controls onContextMenu={(e) => e.preventDefault()} />) 
-                : (<img src={image.image_uhd_path} alt={image.name} onContextMenu={(e) => e.preventDefault()} />)}
+                : (
+                  <img 
+                    ref={imageRef}
+                    src={image.image_original_path} 
+                    alt={image.name} 
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                      transformOrigin: '0 0',
+                      cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                      transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                    }}
+                  />
+                )}
             
         </div>
 
