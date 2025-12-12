@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlbumItemHierarchy, ImageItemContent } from './AlbumHierarchyProps';
 import { ExifPanel } from './Exif';
-import { useImageZoom } from './useImageZoom';
+import { ImageViewZoom } from './ImageViewZoom';
 import './imageContent.css';
 
 interface ImageViewProps {
@@ -30,7 +30,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
   const lastZoom = React.useRef<number>(1);
 
   // Use zoom hook for all zoom-related functionality
-  const { state: zoomState, handlers: zoomHandlers, setZoom, setIs1to1 } = useImageZoom(
+  const { state: zoomState, handlers: zoomHandlers, setZoom, setIs1to1 } = ImageViewZoom(
     imageRef,
     containerRef,
     image.is_movie,
@@ -258,10 +258,24 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
                     </svg>
                 </button>
                 {!image.is_movie && (
-                  <button onClick={zoomHandlers.toggle1to1} className={`zoom-button ${is1to1 ? 'active' : ''}`} title="1:1 Zoom (+/-/0/1)">
+                  <button onClick={zoomHandlers.toggle1to1} className={`zoom-button ${is1to1 ? 'active' : ''}`} title={is1to1 ? "Fit to Screen (0/1)" : "1:1 Zoom (+/-/0/1)"}>
                     <svg viewBox="0 0 24 24" fill="none">
-                      <path d="M2 8C2 4.7 4.7 2 8 2H16C19.3 2 22 4.7 22 8V16C22 19.3 19.3 22 16 22H8C4.7 22 2 19.3 2 16V8Z" stroke="white" strokeWidth="1.5" fill="none"/>
-                      <text x="12" y="15.5" fontSize="9" fill="white" textAnchor="middle" fontWeight="bold">1:1</text>
+                      {is1to1 ? (
+                        // Fit to screen icon - diagonal arrows pointing outward
+                        <>
+                          <path d="M2 8C2 4.7 4.7 2 8 2H16C19.3 2 22 4.7 22 8V16C22 19.3 19.3 22 16 22H8C4.7 22 2 19.3 2 16V8Z" stroke="white" strokeWidth="1.5" fill="none"/>                          
+                          <path d="M10 10L7 7M7 7L10 7M7 7L7 10" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M14 10L17 7M17 7L14 7M17 7L17 10" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M10 14L7 17M7 17L10 17M7 17L7 14" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M14 14L17 17M17 17L14 17M17 17L17 14" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </>
+                      ) : (
+                        // 1:1 zoom icon
+                        <>
+                          <path d="M2 8C2 4.7 4.7 2 8 2H16C19.3 2 22 4.7 22 8V16C22 19.3 19.3 22 16 22H8C4.7 22 2 19.3 2 16V8Z" stroke="white" strokeWidth="1.5" fill="none"/>
+                          <text x="12" y="15.5" fontSize="9" fill="white" textAnchor="middle" fontWeight="bold">1:1</text>
+                        </>
+                      )}
                     </svg>
                   </button>
                 )}
@@ -282,11 +296,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
             {image.is_movie 
                 ? (<video ref={videoRef} src={image.image_original_path} controls onContextMenu={(e) => e.preventDefault()} />) 
                 : (
-                  <img 
-                    ref={imageRef}
-                    src={image.image_original_path} 
-                    alt={image.name} 
-                    onContextMenu={(e) => e.preventDefault()}
+                  <img ref={imageRef} src={image.image_original_path} alt={image.name} onContextMenu={(e) => e.preventDefault()}
                     style={{
                       transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
                       transformOrigin: '0 0',

@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises';
 import React from 'react';
 
 export interface ZoomState {
@@ -14,7 +15,7 @@ export interface ZoomHandlers {
   zoomOut: () => void;
 }
 
-export function useImageZoom(
+export function ImageViewZoom(
   imageRef: React.RefObject<HTMLImageElement>,
   containerRef: React.RefObject<HTMLDivElement>,
   isVideo: boolean,
@@ -58,7 +59,7 @@ export function useImageZoom(
         x: x - (x - position.x) * scale,
         y: y - (y - position.y) * scale,
       });
-      setIs1to1(false);
+      setIs1to1(true);
     };
 
     const container = containerRef.current;
@@ -121,24 +122,24 @@ export function useImageZoom(
       setPosition({ x: 0, y: 0 });
       setIs1to1(false);
     } else {
-      const img = imageRef.current;
-      const container = containerRef.current;
-      if (!img || !container) return;
+        const img = imageRef.current;
+        const container = containerRef.current;
+        if (!img || !container) return;
 
-      const containerRect = container.getBoundingClientRect();
-      const naturalWidth = img.naturalWidth;
-      const naturalHeight = img.naturalHeight;
-      const displayedWidth = img.getBoundingClientRect().width;
-      
-      const actualZoom = naturalWidth / displayedWidth;
-      setZoom(actualZoom);
-      
-      setPosition({
-        x: (containerRect.width - naturalWidth) / 2,
-        y: (containerRect.height - naturalHeight) / 2,
-      });
-      setIs1to1(true);
-    }
+        const containerRect = container.getBoundingClientRect();
+        const naturalWidth = img.naturalWidth;
+        const naturalHeight = img.naturalHeight;
+        const displayedWidth = img.getBoundingClientRect().width;
+        
+        const actualZoom = naturalWidth / displayedWidth;
+        setZoom(actualZoom);
+    
+        setPosition({
+          x: (containerRect.width - naturalWidth) / 2,
+          y: (containerRect.height - naturalHeight) / 2,
+        });
+        setIs1to1(true);        
+      }
   }, [isVideo, is1to1, imageRef, containerRef]);
 
   const reset = React.useCallback(() => {
