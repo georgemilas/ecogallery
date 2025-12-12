@@ -83,34 +83,81 @@ export function SortPanel({
 
   return (
     <div className="sort-panel">
-      <div className="sort-group">
-        <label>Albums:</label>
-        <select 
-          value={`${albumSortField}-${albumSortOrder}`} 
-          onChange={(e) => {
-            const [field, order] = e.target.value.split('-') as [SortField, SortOrder];
-            handleAlbumSortChange(field, order);
-          }}>
-          <option value="name-asc">Name (A-Z)</option>
-          <option value="name-desc">Name (Z-A)</option>
-          <option value="timestamp-asc">Date (Oldest)</option>
-          <option value="timestamp-desc">Date (Newest)</option>
-        </select>
-      </div>
-      <div className="sort-group">
-        <label>Images:</label>
-        <select 
-          value={`${imageSortField}-${imageSortOrder}`}
-          onChange={(e) => {
-            const [field, order] = e.target.value.split('-') as [SortField, SortOrder];
-            handleImageSortChange(field, order);
-          }}>
-
-          <option value="name-asc">Name (A-Z)</option>
-          <option value="name-desc">Name (Z-A)</option>
-          <option value="timestamp-asc">Date (Oldest)</option>
-          <option value="timestamp-desc">Date (Newest)</option>
-        </select>
+      <div className="sort-controls">
+        {/* Album sorting */}
+        <span className="sort-label">Album:</span>
+        <button 
+          className={`sort-btn ${albumSortField === 'name' && albumSortOrder === 'asc' ? 'active' : ''}`}
+          title="Sort albums by name A-Z"
+          onClick={() => handleAlbumSortChange('name', 'asc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <path d="M8 4L8 12M8 4L5 7M8 4L11 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button 
+          className={`sort-btn ${albumSortField === 'name' && albumSortOrder === 'desc' ? 'active' : ''}`}
+          title="Sort albums by name Z-A"
+          onClick={() => handleAlbumSortChange('name', 'desc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <path d="M8 12L8 4M8 12L5 9M8 12L11 9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button 
+          className={`sort-btn ${albumSortField === 'timestamp' && albumSortOrder === 'asc' ? 'active' : ''}`}
+          title="Sort albums by date (oldest first)"
+          onClick={() => handleAlbumSortChange('timestamp', 'asc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <text x="1" y="11" fontSize="10" fill="currentColor" fontWeight="bold">📅</text>
+            <path d="M13 7L13 13M13 7L11 9M13 7L15 9" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button 
+          className={`sort-btn ${albumSortField === 'timestamp' && albumSortOrder === 'desc' ? 'active' : ''}`}
+          title="Sort albums by date (newest first)"
+          onClick={() => handleAlbumSortChange('timestamp', 'desc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <text x="1" y="11" fontSize="10" fill="currentColor" fontWeight="bold">📅</text>
+            <path d="M13 13L13 7M13 13L11 11M13 13L15 11" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>  
+      <div className="sort-controls">  
+        {/* Image sorting */}
+        <span className="sort-label">Images:</span>
+        <button 
+          className={`sort-btn ${imageSortField === 'name' && imageSortOrder === 'asc' ? 'active' : ''}`}
+          title="Sort images by name A-Z"
+          onClick={() => handleImageSortChange('name', 'asc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <path d="M8 4L8 12M8 4L5 7M8 4L11 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button 
+          className={`sort-btn ${imageSortField === 'name' && imageSortOrder === 'desc' ? 'active' : ''}`}
+          title="Sort images by name Z-A"
+          onClick={() => handleImageSortChange('name', 'desc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <path d="M8 12L8 4M8 12L5 9M8 12L11 9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button 
+          className={`sort-btn ${imageSortField === 'timestamp' && imageSortOrder === 'asc' ? 'active' : ''}`}
+          title="Sort images by date (oldest first)"
+          onClick={() => handleImageSortChange('timestamp', 'asc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <text x="1" y="11" fontSize="10" fill="currentColor" fontWeight="bold">📅</text>
+            <path d="M13 7L13 13M13 7L11 9M13 7L15 9" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button 
+          className={`sort-btn ${imageSortField === 'timestamp' && imageSortOrder === 'desc' ? 'active' : ''}`}
+          title="Sort images by date (newest first)"
+          onClick={() => handleImageSortChange('timestamp', 'desc')}>
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <text x="1" y="11" fontSize="10" fill="currentColor" fontWeight="bold">📅</text>
+            <path d="M13 13L13 7M13 13L11 11M13 13L15 11" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
       </div>
     </div>
   );

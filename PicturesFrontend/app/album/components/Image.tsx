@@ -187,6 +187,7 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
   // Fullscreen toggle
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
+      console.log('Requesting fullscreen');
       document.documentElement.requestFullscreen()
         .catch(err => console.error('Fullscreen request failed:', err));
     } else {
