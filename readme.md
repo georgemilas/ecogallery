@@ -61,35 +61,39 @@ Search for quick adhoc albums on the fly
 
 ## How it works
 The solution folder consists of 5 projects :
-1) PictureLib - This is a library containing the main logic for the solution. 
+1) GalleryLib - This is a library containing the main logic for the solution. 
     * model folder: data models 
     * service folder: main business logic
     * database: all database scripts, tables, stored procs, indeces etc.
     * repository: database abstractions 
 
-2) PicturesConsole - This project contains the heart of the syncronization logic
-    Actually it's just a thin layer on top of the library above.
-	```powershell
-	cd gmpictures
-    dotnet run --project PicturesConsole -- exif -f E:\TotulAici\TutuLaptop\pictures
-    dotnet run --project PicturesConsole -- thumbnails -h 400, 1440 -f E:\TotulAici\TutuLaptop\pictures
-    ```
-3) PicturesApi - Api powering the gallery. Expose the data at "/api/v1/pictures" and also to run as a docker container
+2) GalleryService - This project contains the heart of the syncronization logic as a thin layer on top of the library above.
+    * Syncronize pictures folder with the database 
+        ```powershell
+        cd ecogallery
+        dotnet run --project GalleryService -- exif -f E:\TotulAici\TutuLaptop\pictures    
+        ```
+    * Syncronize pictures folder with the thumbnails folder  
+        ```powershell
+        cd ecogallery
+        dotnet run --project GalleryService -- thumbnails -h 400, 1440 -f E:\TotulAici\TutuLaptop\pictures
+        ```
+3) GalleryApi - Api powering the gallery. Expose the data at "/api/v1/pictures" and also to run as a docker container
     ```powershell
-	cd gmpictures
-    dotnet run --project PicturesApi
+	cd ecogallery
+    dotnet run --project GalleryApi
     # Swagger UI: http://localhost:5001/swagger
     # Endpoint:   http://localhost:5001/api/v1/pictures
     ```
-4) PicturesFrontend - The main gallery app (a React/Type Script/NextJS) app
+4) GalleryFrontend - The main gallery app (a React/Type Script/NextJS) app
     ```powershell
-	cd gmpictures\PicturesFrontend
-    npm run dev
+	cd ecogallery
+    npm run dev -prefix GalleryFrontend
     # Endpoint:   http://localhost:3000
     ``` 
-5) PictureLib.Tests - tests to ensure correctness in the business services      
+5) GalleryLib.Tests - tests to ensure correctness in the business services      
     ```powershell
-    cd gmpictures
+    cd ecogallery
 	dotnet test
     ```
 
