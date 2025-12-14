@@ -28,7 +28,7 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
       setTimeout(() => {
         const imageElement = document.querySelector(`[data-image-name="${lastViewedImage}"]`);
         if (imageElement) {
-          imageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          imageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
         }
       }, 100);
     }

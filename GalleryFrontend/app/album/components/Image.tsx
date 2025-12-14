@@ -295,7 +295,9 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
 
         <div className="content" ref={containerRef}>
             {image.is_movie 
-                ? (<video ref={videoRef} src={image.image_original_path} controls onContextMenu={(e) => e.preventDefault()} />) 
+                ? (<video ref={videoRef} src={image.image_original_path}
+                   poster={image.image_uhd_path || image.thumbnail_path}  
+                   controls onContextMenu={(e) => e.preventDefault()} />) 
                 : (
                   <img ref={imageRef} src={image.image_original_path} alt={image.name} onContextMenu={(e) => e.preventDefault()}
                     style={{
