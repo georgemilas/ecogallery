@@ -77,7 +77,7 @@ public class ThumbnailCleanup: EmptyProcessor
         return res;
     }
 
-    public override async Task<int> OnFileCreated(string thumbnailPath)
+    public override async Task<int> OnFileCreated(string thumbnailPath, bool logIfCreated = false)
     {
         //This thumbnail exists and it shouldn't so we are going to delete it 
         if (File.Exists(thumbnailPath))

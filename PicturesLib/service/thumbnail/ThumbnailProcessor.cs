@@ -60,12 +60,16 @@ public class ThumbnailProcessor : EmptyProcessor
                                                         folder.Contains(prefix, StringComparison.OrdinalIgnoreCase)) ||
                 _configuration.SkipContains.Any(skipPart => filePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
     }
-    public override async Task<int> OnFileCreated(string filePath)
+    public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
     {
         string thumbPath = GetThumbnailPath(filePath);
         if (File.Exists(thumbPath)) return 0;
 
         await BuildThumbnailAsync(_height, filePath, thumbPath);
+        if (logIfCreated)
+        {
+            Console.WriteLine($"Created Thumbnail: {thumbPath}");
+        }
         //Console.WriteLine($"Created Thumbnail: {thumbPath}");
         return 1;
     }

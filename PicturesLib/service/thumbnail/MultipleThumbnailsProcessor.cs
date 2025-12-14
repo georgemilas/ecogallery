@@ -59,7 +59,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
                                                         folder.Contains(prefix, StringComparison.OrdinalIgnoreCase)) ||
                 _configuration.SkipContains.Any(skipPart => filePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
     }
-    public override async Task<int> OnFileCreated(string filePath)
+    public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
     {
         bool created = false;
         
@@ -79,7 +79,13 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         }
         else
         {
-            await BuildAllImageThumbnailsAsync(heightsToCreate, filePath, (height) => {});
+            await BuildAllImageThumbnailsAsync(heightsToCreate, filePath, (height) =>
+            {
+                if (logIfCreated)
+                {
+                    Console.WriteLine($"Created Thumbnail for height {height}: {GetThumbnailPath(filePath, height)}");
+                }
+            });
             created = true;
         }
         

@@ -5,7 +5,30 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    background: rgba(0, 0, 0, 1);
     gap: 4px;
+}
+
+.sort-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 1);
+    border-radius: 4px;
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    z-index: 10;
+}
+
+.sort-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
 }
 
 .sort-controls {
@@ -32,17 +55,20 @@
 }
 
 .sort-btn:hover {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(221, 228, 149, 0.5);
     border-color: rgba(232, 240, 158, 0.6);
 }
 
 .sort-btn.active {
-    background: rgba(115, 236, 244, 0.25);
-    border-color: #e8f09e;
+    background: rgba(255, 255, 255, 0.9);
+    border-color: #e8f09e;    
 }
 
 .sort-btn svg {
     color: white;
+}
+.sort-btn.active svg {
+    color: black;
 }
 
 .sort-btn:not(.active) svg {

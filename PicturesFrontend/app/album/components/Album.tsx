@@ -1,8 +1,8 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import './gallery.css';
 import { justifyGallery, debounce } from './gallery';
-import { SortPanel } from './Sort';
-import { AlbumHierarchyProps, ItemContent, ImageItemContent } from './AlbumHierarchyProps';
+import { SortControl } from './Sort';
+import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
 
 export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage, albumSort, imageSort, onSortChange }: AlbumHierarchyProps) {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
@@ -14,14 +14,12 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
   }, []);
 
   const handleSortedImagesChange = useCallback(() => {
-    console.log('AlbumHierarchyComponent: sorted images changed', album.images[0]?.name);
     forceUpdate(); // Force re-render after in-place sort
-    setTimeout(() => {justifyGallery('.gallery', 300);}, 100);  
+    setTimeout(() => {
+      justifyGallery('.gallery', 300);
+    }, 100);  
   }, []);
 
-
-  // const albumsToSort = useMemo(() => album.albums, [album.albums]);
-  // const imagesToSort = useMemo(() => album.images, [album.images]);
 
   // Scroll to last viewed image when returning from image view
   useEffect(() => {
@@ -92,14 +90,6 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
           </nav>
         </div>
         <div className="gallery-banner-label">
-        <SortPanel 
-          album={album} 
-          onSortedAlbumsChange={handleSortedAlbumsChange} 
-          onSortedImagesChange={handleSortedImagesChange}
-          initialAlbumSort={albumSort}
-          initialImageSort={imageSort}
-          onSortChange={onSortChange}
-        />
         <nav className="breadcrumbs">
           <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '-10px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
@@ -121,6 +111,9 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
       </div>	
       {album.albums.length > 0 && (
       <div className='albums'>
+        <SortControl type="albums" album={album} onSortChange={handleSortedAlbumsChange} initialSort={albumSort} 
+          onSortUpdate={(sort) => onSortChange?.(sort, imageSort || 'timestamp-desc')}
+        />
         <ul className='albums-container'>
         {(album.albums).map(r => (
           <li className='albums-item' key={r.id}>
@@ -138,16 +131,31 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
       )}
 
 
-      <ul className="gallery">
+
+      <div className="gallery-container">
+        <SortControl 
+          type="images"
+          album={album} 
+          onSortChange={handleSortedImagesChange}
+          initialSort={imageSort}
+          onSortUpdate={(sort) => onSortChange?.(albumSort || 'timestamp-desc', sort)}
+        />
+        <ul className="gallery">
         {(album.images).map(r => (
         <li className="gallery-item" key={r.id} data-image-name={r.name}> 
             <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); onImageClick(r as ImageItemContent);}}>
                 <img src={r.thumbnail_path} alt={r.name} />
+                {r.is_movie && (
+                  <svg className="gallery-item-video-icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 5v14l11-7L8 5z" fill="currentColor"/>
+                  </svg>
+                )}
                 <span className="gallery-item-label">{r.name}</span>
             </a>
         </li>
         ))}
       </ul>
+      </div>
     </>
   );
 }

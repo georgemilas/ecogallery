@@ -40,7 +40,7 @@ public class FilePeriodicScanServiceNotParallel : FilePeriodicScanService
                 if (stoppingToken.IsCancellationRequested) break;
                 bool created = await InvokeHandlerSafe(async () =>
                 { 
-                    int delta = await _processor.OnFileCreated(file);
+                    int delta = await _processor.OnFileCreated(file, false);
                     actualNew += delta;
                 }, $"created (scan): {file}");
                 if (!created) { lock (_setLock) { currentFiles.Remove(file); } }                

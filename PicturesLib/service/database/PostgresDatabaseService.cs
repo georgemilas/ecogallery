@@ -127,7 +127,7 @@ public class PostgresDatabaseService : IDatabaseService
         {
             var value = prop.GetValue(parameters);
             var paramName = ToSnakeCase(prop.Name);
-            //Console.WriteLine($"Adding parameter: @{paramName} = {value}");
+            //Console.WriteLine($"Adding parameter: @{paramName} = '{value}'");
             command.Parameters.AddWithValue($"@{paramName}", value ?? DBNull.Value);
         }
     }

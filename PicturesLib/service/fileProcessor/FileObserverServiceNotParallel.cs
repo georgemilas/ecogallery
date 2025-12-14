@@ -47,8 +47,7 @@ public class FileObserverServiceNotParallel : FilePeriodicScanServiceNotParallel
     private async void OnWatcherFileCreated(object sender, FileSystemEventArgs e)
     {
         if (!ShouldProcessFile(e.FullPath)) return;
-        Console.WriteLine($"FileSystemWatcher: File created - {e.FullPath}");
-        bool success = await InvokeHandlerSafe(() =>  _processor.OnFileCreated(e.FullPath), $"created: {e.FullPath}");
+        bool success = await InvokeHandlerSafe(() =>  _processor.OnFileCreated(e.FullPath, true), $"created: {e.FullPath}");
         if (success)
         {
             lock (_setLock)

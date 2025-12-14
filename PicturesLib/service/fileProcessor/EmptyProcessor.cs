@@ -28,7 +28,7 @@ public class EmptyProcessor: IFileProcessor
         return false;
     }
 
-    public virtual async Task<int> OnFileCreated(string thumbnailPath)
+    public virtual async Task<int> OnFileCreated(string thumbnailPath, bool logIfCreated = false)
     {
         return 0;       
     }

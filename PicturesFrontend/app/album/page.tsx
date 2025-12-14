@@ -16,8 +16,10 @@ function AlbumPage() {
   const searchParams = useSearchParams();
   const albumNameParam = searchParams.get('name') || '';
   const imageNameParam = searchParams.get('image');
-  const albumSort = searchParams.get('albumSort') || 'timestamp-desc';
-  const imageSort = searchParams.get('imageSort') || 'timestamp-desc';
+  
+  // Local sort state - updated immediately without routing
+  const [currentAlbumSort, setCurrentAlbumSort] = useState(searchParams.get('albumSort') || 'timestamp-desc');
+  const [currentImageSort, setCurrentImageSort] = useState(searchParams.get('imageSort') || 'timestamp-desc');
   
   const viewMode = imageNameParam ? 'image' : 'gallery';
   const selectedImage = album?.images.find(item => item.name === imageNameParam) || null;
@@ -90,13 +92,18 @@ function AlbumPage() {
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.set('name', newAlbumName);
     currentParams.delete('image'); // Clear image param when navigating to different album
-    // Keep albumSort and imageSort params
+    // Persist current sort preferences to URL on navigation
+    currentParams.set('albumSort', currentAlbumSort);
+    currentParams.set('imageSort', currentImageSort);
     router.push(`/album?${currentParams.toString()}`);
   };
 
   const handleImageClick = (image: ImageItemContent) => {
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.set('image', image.name);
+    // Persist current sort preferences to URL on navigation
+    currentParams.set('albumSort', currentAlbumSort);
+    currentParams.set('imageSort', currentImageSort);
     router.push(`/album?${currentParams.toString()}`);
   };
 
@@ -143,13 +150,12 @@ function AlbumPage() {
               onAlbumClick={handleAlbumClick} 
               onImageClick={handleImageClick} 
               lastViewedImage={lastViewedImage}
-              albumSort={albumSort}
-              imageSort={imageSort}
+              albumSort={currentAlbumSort}
+              imageSort={currentImageSort}
               onSortChange={(albumSort, imageSort) => {
-                const params = new URLSearchParams(window.location.search);
-                params.set('albumSort', albumSort);
-                params.set('imageSort', imageSort);
-                router.push(`/album?${params.toString()}`);
+                // Update local state immediately without routing
+                setCurrentAlbumSort(albumSort);
+                setCurrentImageSort(imageSort);
               }}
             />
           )}

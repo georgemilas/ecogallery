@@ -67,7 +67,11 @@ export class AlbumItemHierarchy implements AlbumItemContent {
   albums: AlbumItemContent[] = [];
   images: ImageItemContent[] = [];
 
-
+  /**
+   * Get the name out of a path, ex: \2025\vacation\Florida => Florida
+   * @param path The path from which to extract the name
+   * @returns The name extracted from the path
+   */
   get_name(path: string): string {
     var name = path.split('\\');
     if (name.length === 0) {
@@ -76,11 +80,15 @@ export class AlbumItemHierarchy implements AlbumItemContent {
     return name.pop() || 'Pictures Gallery';
   }
 
+  /**
+   * album.name is the entire path, this returns the name portion, ex: album.name==\2025\vacation\Florida => Florida 
+   * @returns The actual name of the album
+   */
   album_name(): string {
     return this.get_name(this.name);
   }
-
 }
+
 export interface AlbumHierarchyProps {
   album: AlbumItemHierarchy;
   onAlbumClick: (albumName: string) => void;

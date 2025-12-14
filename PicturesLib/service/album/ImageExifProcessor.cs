@@ -29,9 +29,9 @@ public class ImageExifProcessor: AlbumProcessor
     /// <summary>
     /// create image record and ensure album record exists
     /// </summary>
-    protected override async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath)
+    protected override async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath, bool logIfCreated)
     {
-        var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath);
+        var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath, logIfCreated);
         if (_configuration.IsMovieFile(filePath))
         {
             return Tuple.Create(albumImage, count); //skip exif for movie files
@@ -46,7 +46,11 @@ public class ImageExifProcessor: AlbumProcessor
                 exif.FilePath = albumImage.ImagePath;
                 exif.LastUpdatedUtc = DateTimeOffset.UtcNow;
                 await imageRepository.AddNewImageExifAsync(exif);            
-                return Tuple.Create(albumImage, 1);
+                if (logIfCreated)
+                {
+                    Console.WriteLine($"Extracted and stored EXIF data in image_exif table: {filePath}");
+                }
+                return Tuple.Create(albumImage, count + 1);
             }
         }
         return Tuple.Create(albumImage, count);

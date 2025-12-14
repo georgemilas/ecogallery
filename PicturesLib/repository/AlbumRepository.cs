@@ -94,10 +94,12 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     {
         //this checks if there are any images in this album or any sub-albums
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
+        // Escape backslashes for PostgreSQL LIKE pattern
+        var albumEscapedLikePattern = album.AlbumName.Replace(@"\", @"\\") + "%";
         var sql = "SELECT count(*) FROM album_image WHERE album_name LIKE @pattern";
-        var parameters = new { pattern = $"'{album.AlbumName}%'" };
+        var parameters = new { pattern = albumEscapedLikePattern };
         var contentCount = await _db.ExecuteScalarAsync<long>(sql, parameters);
-        return contentCount > 0;                 
+        return contentCount > 0;
     }
 
     public async Task<Album> AddNewAlbumAsync(Album album)
@@ -124,9 +126,14 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public async Task<int> DeleteAlbumAsync(string filePath)
     {
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
+        
         var sql = "DELETE FROM album WHERE album_name = @album_name";
         var rowsAffected = await _db.ExecuteAsync(sql, album);
-
+        
+        if (rowsAffected > 0)
+        {
+            Console.WriteLine($"Deleted album record: {album.AlbumName}");
+        }
         //recursively delete parent album if empty
         if (rowsAffected > 0 && album.HasParentAlbum)
         {
@@ -198,7 +205,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
                         image_timestamp_utc as item_timestamp_utc
                     FROM album_image 
                     WHERE album_name LIKE @pattern";
-        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters);
+        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters2);
         return albumContent;                 
     }  
 

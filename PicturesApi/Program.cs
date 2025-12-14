@@ -1,5 +1,4 @@
 using System.Text.Json;
-using WeatherLib.service;
 using PicturesLib.model.configuration;
 using PicturesLib.repository;
 using Microsoft.Extensions.FileProviders;
@@ -48,8 +47,6 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddHttpContextAccessor();
 
 // Register business logic services
-builder.Services.AddScoped<IWeatherService, WeatherService>();
-builder.Services.AddScoped<IResidioReportService, ResidioReportService>();  
 builder.Services.AddScoped<AlbumRepository>();  
 builder.Services.AddScoped<AlbumImageRepository>();
 builder.Services.AddScoped<PicturesApi.service.AlbumsService>();

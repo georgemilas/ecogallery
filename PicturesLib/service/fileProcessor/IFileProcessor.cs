@@ -5,7 +5,7 @@ public interface IFileProcessor
     DirectoryInfo RootFolder { get; }
     HashSet<string> Extensions { get; }         
     bool ShouldSkipFile(string filePath);
-    Task<int> OnFileCreated(string filePath);
+    Task<int> OnFileCreated(string filePath, bool logIfCreated = false);
     Task OnFileChanged(string filePath);
     Task<int> OnFileDeleted(string filePath);
     Task OnFileRenamed(string oldPath, string newPath, bool newValid);

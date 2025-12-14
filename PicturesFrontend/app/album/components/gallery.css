@@ -87,11 +87,18 @@
 }
 
 
-/* Gallery selectors */  
+/* Gallery selectors */
+
+.gallery-container {
+    position: relative;
+    background-color: rgba(0, 0, 0, 0.8);
+    margin: 12px auto;
+    width: 100%;
+}
 
 .gallery {
     list-style: none;
-    margin: 12px auto;
+    margin: 0;
 	width: 100%;
 	padding: 0 4px;
 	gap: 8px; 
@@ -139,6 +146,7 @@
 	background-color: rgba(50, 50, 50, 0.8);
 	margin: 0 auto;
     width: 100%;
+    position: relative;
 }
 .albums-label {
 	color: #DDDDDD;
@@ -155,7 +163,7 @@
     list-style: none;
     margin: 10px auto;
     width: 100%;
-    padding: 8px 4px;
+    padding: 0 4px;
     gap: 8px;
     background-color: rgba(50, 50, 50, 0.8);
     display: grid;
@@ -198,4 +206,14 @@
     width: 24px;
     height: 24px;
     opacity: 0.6;    
+}
+.gallery-item-video-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    opacity: 0.8;    
+    color: white;
 }

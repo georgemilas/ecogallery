@@ -45,7 +45,7 @@ public class AlbumProcessor: EmptyProcessor
     /// <summary>
     /// create image record and ensure album record exists
     /// </summary>
-    protected virtual async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath)
+    protected virtual async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath, bool logIfCreated )
     {
         AlbumImage? albumImage = await imageRepository.GetAlbumImageAsync(filePath);
         if (albumImage == null)
@@ -64,6 +64,10 @@ public class AlbumProcessor: EmptyProcessor
                 semaphore.Release();
             }
             albumImage = await imageRepository.AddNewImageAsync(filePath, album);
+            if (logIfCreated)
+            {
+                Console.WriteLine($"Created album_image record for changed file: {filePath}");
+            }
             return Tuple.Create(albumImage, 1);
         }
         return Tuple.Create(albumImage, 0);
@@ -75,8 +79,12 @@ public class AlbumProcessor: EmptyProcessor
     protected virtual async Task<int> CleanupImageAndAlbumRecords(string filePath)
     {
         int deletedCount = await imageRepository.DeleteAlbumImageAsync(filePath);
-        if (deletedCount > 0 && !await albumRepository.AlbumHasContentAsync(filePath))
+        if (deletedCount > 0)
         {
+            Console.WriteLine($"Deleted album_image record: {filePath}");
+        }
+        if (deletedCount > 0 && !await albumRepository.AlbumHasContentAsync(filePath))
+        {        
             await albumRepository.DeleteAlbumAsync(filePath);
         }
         return deletedCount;    
@@ -95,15 +103,16 @@ public class AlbumProcessor: EmptyProcessor
     }
 
     
-    public override async Task<int> OnFileCreated(string filePath)
+    public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
     {
-        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath);
+        //don't log creation here during the main PeriodicScanService, only for main FileObserverService methods
+        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath, logIfCreated);
         return count;  //number of records created (0 or 1)
     }
 
     public override async Task OnFileChanged(string filePath)
     {
-        await CreateImageAndAlbumRecords(filePath);   
+        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath, true);           
     }
 
     public override async Task<int> OnFileDeleted(string filePath)
@@ -116,7 +125,7 @@ public class AlbumProcessor: EmptyProcessor
         await CleanupImageAndAlbumRecords(oldPath);
         if (newValid)
         {
-            await CreateImageAndAlbumRecords(newPath);    
+            var (albumImage, count) = await CreateImageAndAlbumRecords(newPath, true);                
         }
     }
 
