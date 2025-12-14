@@ -60,8 +60,8 @@ Search for quick adhoc albums on the fly
 
 
 ## Project structure and some details
-The solution folder consists of several projects :
-1) GalleryLib - This is a library containing the main logic for the solution. 
+The solution folder consists of several projects:
+1) GalleryLib - This is a library containing most of the logic for the solution. 
     * model folder: data models 
     * service folder: main business logic
     * database: all database scripts, tables, stored procs, indeces etc.
@@ -78,7 +78,7 @@ The solution folder consists of several projects :
         cd ecogallery
         dotnet run --project GalleryService -- thumbnails -h 400, 1440 -f E:\TotulAici\TutuLaptop\pictures
         ```
-3) GalleryApi - Api powering the gallery. Expose the data at "/api/v1/pictures" and also to run as a docker container
+3) GalleryApi - Api powering the gallery. Exposes data at "/api/v1/pictures" and also to run as a docker container
     ```powershell
 	cd ecogallery
     dotnet run --project GalleryApi
