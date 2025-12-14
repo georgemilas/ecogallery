@@ -149,9 +149,9 @@ rootCommand.AddCommand(albumCommand);
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Command to run the image exif extraction background service and keep the app running
+// Command to run the album building background service along with image exif extraction functionality 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-var imageExifCommand = new Command("exif", "Run the image EXIF extraction processor as a background service");
+var imageExifCommand = new Command("db", "Run the db sync processor as a background service");
 imageExifCommand.AddOption(folderOption);
 imageExifCommand.AddOption(nonParallelOption);
 imageExifCommand.AddOption(parallelDegreeOption);
@@ -166,16 +166,16 @@ imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallel
         {
             if (nonParallel)
             {
-                services.AddSingleton<IHostedService>(sp => ImageExifProcessor.CreateProcessorNotParallel(picturesConfig));
+                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessorNotParallel(picturesConfig));
             }
             else
             {
-                services.AddSingleton<IHostedService>(sp => ImageExifProcessor.CreateProcessor(picturesConfig, parallelDegree));
+                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessor(picturesConfig, parallelDegree));
             }            
         })
         .Build();
 
-    Console.WriteLine($"Starting image EXIF extraction processor on '{picturesConfig.Folder}'. Press Ctrl+C to stop.");
+    Console.WriteLine($"Starting db sync processor on '{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
 }, folderOption, nonParallelOption, parallelDegreeOption);
 rootCommand.AddCommand(imageExifCommand);

@@ -7,8 +7,13 @@ using SixLabors.ImageSharp;
 
 namespace GalleryLib.service.album;
 
+/// <summary>
+/// Syncronized the pictures folder and add/edit/delete the coresponding database images exif metadata 
+/// in addition to what AlbumProcessor does
+/// </summary>
 public class ImageExifProcessor: AlbumProcessor
 {
+
     public ImageExifProcessor(PicturesDataConfiguration configuration):base(configuration)
     {
         

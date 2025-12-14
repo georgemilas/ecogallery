@@ -8,11 +8,10 @@ using System.Collections.Concurrent;
 namespace GalleryLib.service.album;
 
 /// <summary>
-/// 
+/// Syncronized the pictures folder and add/edit/delete the coresponding database images & albums 
 /// </summary>
 public class AlbumProcessor: EmptyProcessor
 {
-
     public AlbumProcessor(PicturesDataConfiguration configuration):base(configuration)
     {
         imageRepository = new AlbumImageRepository(configuration);

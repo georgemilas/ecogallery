@@ -71,7 +71,7 @@ The solution folder consists of 5 projects :
     * Syncronize pictures folder with the database 
         ```powershell
         cd ecogallery
-        dotnet run --project GalleryService -- exif -f E:\TotulAici\TutuLaptop\pictures    
+        dotnet run --project GalleryService -- db -f E:\TotulAici\TutuLaptop\pictures    
         ```
     * Syncronize pictures folder with the thumbnails folder  
         ```powershell
