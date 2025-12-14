@@ -4,26 +4,26 @@ Gallery app for pictures sitting in a root folder on your hard drive or your loc
     * I have close to 50,000  pictures, almost 2TB worth of data
     * To much to upload and manage externaly 
     * I still want a website to quicly show stuff or just for me to enjoy from wherever
-    * I like privacy. I don't want google/apple/facebook etc. to use my pictures for who knows what (enhace ai, know private data about me, friends, family)
+    * Privacy matters, I don't want google/apple/facebook etc. to use my pictures for who knows what (enhace ai, know private data about me, friends and family)
     * I what the full size pictures for myself when navigating and viewing if necesary  
+* ### What
+    * each folder is an album 
+        * each album contains sub albums and images / movies
+        * slideshow for the album
+        * view image or movie detailed information
+        * zoom, keyboard navigation, sorting etc. 
+        * configure a feature image for the album by naming one of the files with a configurable prefix or suffix like "feature_", or just let the gallery select one
+    * virtual albums, adhoc albums, flatten albums and powerful search
+    * Todo: 
+        * user management and clear separation of public / private catalogs
+        * local AI integration for hardware that supports it mainly to enhance the search and the virtual albums  
 * ### How
     Point the application at the folder containing pictures        
     * creates thumbnails and smaller size images for fast access
     * extracts metadata from images and movies
     * adds data to a local PostgreSQL database powering the gallery
     * keeps data on your hard drive syncronized with the gallery  (for example: move pictures around, add new ones, rename etc.)
-    * simple configurations for files/folders to skip from processing
-* ### What
-    * each folder is an album 
-        * each album contains sub albums and images / movies
-        * configure a feature image for the album by naming one of the files with a configurable prefix or suffix like "feature_", or just let the gallery select one
-        * slideshow for the album
-        * view image metadata
-        * zoom, keyboard navigation, sorting etc. 
-    * virtual albums, adhoc albums, flatten albums and powerful search
-    * Todo: 
-        * user namagement and clear separation of public / private catalogs
-        * local AI integration for hardware that supports it mainly to enhance the search and the virtual albums  
+    * simple configurations for files/folders to skip from processing and additional rules        
 * ### Limitaions
     * Its local so you need to run a server and make it available on the internet 
     * Contact me for help
@@ -59,8 +59,8 @@ Search for quick adhoc albums on the fly
 </table>
 
 
-## How it works
-The solution folder consists of 5 projects :
+## Project structure and some details
+The solution folder consists of several projects :
 1) GalleryLib - This is a library containing the main logic for the solution. 
     * model folder: data models 
     * service folder: main business logic
