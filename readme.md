@@ -37,7 +37,7 @@ Gallery app for pictures sitting in a root folder on your hard drive or your loc
 <td width="auto" height="300px">
 
 ### Main Gallery Page
-<img src="gallery.png" width="100%" alt="main gallery">
+<img src="data/gallery.png" width="100%" alt="main gallery">
 <div>
 Navigate albums, sub albums, virtual albums. <br/>
 Sort images and albums. <br/>
@@ -48,7 +48,7 @@ Search for quick adhoc albums on the fly
 <td width="auto" height="300px">
 
 ### Main Image/Video Viewer
-<img src="gallery-image.png" width="100%" alt="main picture viewer">
+<img src="data/gallery-image.png" width="100%" alt="main picture viewer">
 <div>
     Slideshow (adjust speed and animations), zoom, full screen <br/>  
     View metadata <br />
