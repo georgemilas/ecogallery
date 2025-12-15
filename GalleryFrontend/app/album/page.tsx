@@ -25,11 +25,13 @@ function AlbumPage() {
   const selectedImage = album?.images.find(item => item.name === imageNameParam) || null;
 
   const fetchAlbum = async (albumNameParam: string = '') => {
-    const base = process.env.NEXT_PUBLIC_PICTURES_API_BASE ?? 'http://localhost:5001';
     setLoading(true);
     try {
       const encodedAlbumName = albumNameParam ? encodeURIComponent(albumNameParam) : '';
-      const res = await fetch(`${base}/api/v1/albums/${encodedAlbumName}`);
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001';
+      const url = `${apiBase}/api/v1/albums/${encodedAlbumName}`;
+      console.log('Fetching album:', { raw: albumNameParam, encoded: encodedAlbumName, url });
+      const res = await fetch(url);
       if (!res.ok) {
         console.error('Failed to fetch album', res.status);
         setAlbum(null);
@@ -89,13 +91,13 @@ function AlbumPage() {
   }, []);
 
   const handleAlbumClick = (newAlbumName: string) => {
-    const currentParams = new URLSearchParams(window.location.search);
-    currentParams.set('name', newAlbumName);
-    currentParams.delete('image'); // Clear image param when navigating to different album
-    // Persist current sort preferences to URL on navigation
-    currentParams.set('albumSort', currentAlbumSort);
-    currentParams.set('imageSort', currentImageSort);
-    router.push(`/album?${currentParams.toString()}`);
+    // Build URL with properly encoded params
+    const params = new URLSearchParams({
+      name: newAlbumName,
+      albumSort: currentAlbumSort,
+      imageSort: currentImageSort
+    });
+    router.push(`/album?${params.toString()}`);
   };
 
   const handleImageClick = (image: ImageItemContent) => {

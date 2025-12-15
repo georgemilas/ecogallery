@@ -86,11 +86,24 @@ The solution folder consists of several projects:
     # Endpoint:   http://localhost:5001/api/v1/pictures
     ```
 4) GalleryFrontend - The main gallery app (a React/Type Script/NextJS) app
-    ```powershell
+    * start a dev server for accessing the app locally from your network
+    ```powershell    
 	cd ecogallery
     npm run dev -prefix GalleryFrontend
-    # Endpoint:   http://localhost:3000
+    # Local Endpoint:   http://localhost:3000
+    ```
+
+   * start a production server to access the app from the internet 
+   ```powershell
+    #for the outside world on the internet
+    cd ecogallery\GalleryFronend
+    $env:NEXT_PUBLIC_API_BASE = 'http://localhost:5001'
+    npm run start -- --hostname 0.0.0.0 --port 3000
+    # Internet Endpoint:   http://108.250.182.25
+    # Additional 1: Configure your router/firewall to port forward 80 and 5001 from your public IP to your local server 
+    # Additional 2: Setup a reverse proxy from port 80 to 3001
     ``` 
+
 5) GalleryLib.Tests - tests to ensure correctness in the business services      
     ```powershell
     cd ecogallery
