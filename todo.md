@@ -13,3 +13,8 @@
    * scrolling is instant instead of smooth
 
 
+Set up nginx to:
+    Listen on port 80
+    Reverse proxy /api/* → http://localhost:5001/api/*
+    Reverse proxy /pictures/* → http://localhost:5001/pictures/*
+    Serve everything else → http://localhost:3000/*

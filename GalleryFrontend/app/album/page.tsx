@@ -28,8 +28,8 @@ function AlbumPage() {
     setLoading(true);
     try {
       const encodedAlbumName = albumNameParam ? encodeURIComponent(albumNameParam) : '';
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001';
-      const url = `${apiBase}/api/v1/albums/${encodedAlbumName}`;
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
+      const url = apiBase ? `${apiBase}/api/v1/albums/${encodedAlbumName}` : `/api/v1/albums/${encodedAlbumName}`;
       console.log('Fetching album:', { raw: albumNameParam, encoded: encodedAlbumName, url });
       const res = await fetch(url);
       if (!res.ok) {

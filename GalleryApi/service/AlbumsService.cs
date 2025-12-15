@@ -23,13 +23,21 @@ public class AlbumsService
         var request = _httpContextAccessor.HttpContext?.Request;
         if (request == null) return string.Empty;
         
-        //return $"{request.Scheme}://{request.Host.Value}";
-
-        // Respect forwarded headers when the app is behind a proxy
-        var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? request.Scheme;
-        var host = request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? request.Host.Value;
-
-        return $"{scheme}://{host}".TrimEnd('/');
+        
+        // Respect forwarded headers when the app is behind a proxy        
+        var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault() ;
+        var host = request.Headers["X-Forwarded-Host"].FirstOrDefault();
+        if (scheme != null && host != null)
+        {
+            return $"{scheme}://{host}".TrimEnd('/');
+        }
+        var origin = request.Headers["Origin"].FirstOrDefault();
+        if (origin != null)
+        {
+            return origin.TrimEnd('/');
+        }   
+        return $"{request.Scheme}://{request.Host.Value}";
+        
 
     }
 
