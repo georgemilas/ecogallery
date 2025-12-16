@@ -96,6 +96,8 @@ The solution folder consists of several projects:
    * start a production server to access the app from the internet 
    ```powershell
     cd ecogallery    
+    #Remove-Item -Recurse -Force -Path '.next*' -ErrorAction SilentlyContinue  #delete previous builds, must cd to GelleryFrontend
+    #npm run build -prefix GalleryFrontend   #rebuild if necesary
     npm run start -prefix GalleryFrontend -- --hostname 0.0.0.0 --port 3000
     # Internet Endpoint:   http://your.public.ip
     # Additional 1: Configure your router/firewall to port forward 80 from your public IP to your local server 

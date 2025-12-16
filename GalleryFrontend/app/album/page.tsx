@@ -165,6 +165,7 @@ function AlbumPage() {
             <ImageView 
               image={selectedImage} 
               album={album} 
+              onAlbumClick={handleAlbumClick} 
               onClose={handleCloseImage} 
               onPrev={handlePrevImage} 
               onNext={handleNextImage}

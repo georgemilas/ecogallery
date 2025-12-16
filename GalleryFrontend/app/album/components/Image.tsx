@@ -7,6 +7,7 @@ import './imageContent.css';
 interface ImageViewProps {
   image: ImageItemContent;
   album: AlbumItemHierarchy;
+  onAlbumClick: (albumPath: string) => void;
   onClose: () => void;
   onPrev: (image: ImageItemContent, album: AlbumItemHierarchy) => void;
   onNext: (image: ImageItemContent, album: AlbumItemHierarchy) => void;
@@ -14,7 +15,7 @@ interface ImageViewProps {
   setIsFullscreen: (value: boolean) => void;
 }
 
-export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen, setIsFullscreen }: ImageViewProps) {
+export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, isFullscreen, setIsFullscreen }: ImageViewProps) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const imageRef = React.useRef<HTMLImageElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -293,7 +294,22 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
             <div className="spacer-prev"></div>
         </div>
 
-        <div className="content" ref={containerRef}>
+          <div className="content" ref={containerRef}>
+              <nav className="breadcrumbs">
+              <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '-10px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+                </svg>
+              </a>
+              {album.navigation_path_segments.map((segment, index) => {
+                const pathToSegment = '\\' + album.navigation_path_segments.slice(0, index + 1).join('\\');
+                return (
+                  <span key={index}>
+                    {' > '} <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(pathToSegment);}}>{segment}</a>
+                  </span>
+                );
+              })}
+            </nav>
             {image.is_movie 
                 ? (<video ref={videoRef} src={image.image_original_path}
                    poster={image.image_uhd_path || image.thumbnail_path}  
@@ -308,7 +324,6 @@ export function ImageView({ image, album, onClose, onPrev, onNext, isFullscreen,
                     }}
                   />
                 )}
-            
         </div>
 
         <div className="nav nav-next">

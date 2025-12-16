@@ -1,7 +1,7 @@
 /* Gallery banner */  
 
 .gallery-banner {
-    height: 350px;
+    height: 500px !important; 
 	width: 100%;
 	margin: 0 auto;	
 	padding: 0 4px;

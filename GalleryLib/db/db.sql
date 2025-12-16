@@ -1,6 +1,10 @@
 ---- PostgreSQL database schema for gmpictures --------------------------------
 
 
+-- Enable once per database the pg_trgm extension for trigram indexing and searching
+-- basically enables col ILIKE ANY(ARRAY[...]) to be fast by working against an index on col rather than table scan
+CREATE EXTENSION pg_trgm;
+
 ------------------------------------------------------------------------------
 ----------------- public.album -----------------------------------------------
 ------------------------------------------------------------------------------
@@ -57,6 +61,10 @@ ON public.album_image (image_path);
 
 CREATE INDEX IF NOT EXISTS ux_album_image_album_name
 ON public.album_image (album_name);
+
+-- Create GIN index with trigram ops on image_path for faster ILIKE ANY(ARRAY[...]) searches
+CREATE INDEX IF NOT EXISTS idx_album_image_image_path_trgm 
+ON public.album_image USING GIN (image_path gin_trgm_ops);
 
 
 ------------------------------------------------------------------------------
