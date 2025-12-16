@@ -1,7 +1,6 @@
 using GalleryApi.model;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
-using Microsoft.AspNetCore.Http;
 
 namespace GalleryApi.service;  
 public class AlbumsService
@@ -40,6 +39,41 @@ public class AlbumsService
         
 
     }
+
+
+    public async Task<VirtualAlbumContent> SearchContentByExpression(AlbumSearch albumSearch)
+    {
+        var expr = albumSearch.Expression;        
+        var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(expr);    
+
+        var valbum = new VirtualAlbumContent();
+        valbum.Id = 0;
+        valbum.Name = "Search Result";
+        valbum.Expression = albumSearch.Expression;
+        valbum.Description = content.Any() ? "Search Result" : "No images found";
+        valbum.NavigationPathSegments = new List<string>();
+        valbum.LastUpdatedUtc = DateTimeOffset.UtcNow;
+        valbum.ItemTimestampUtc = DateTimeOffset.UtcNow;
+        var item = content.FirstOrDefault();
+        string path = item?.FeatureItemPath ?? string.Empty;     //get the relative path first                                
+        path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
+        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
+        valbum.ThumbnailPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb)) : string.Empty;
+        valbum.ImageHDPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
+        
+        //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");            
+        valbum.Images = new List<ImageItemContent>();
+        foreach (var image in content)
+        {            
+            var contentImage = GetImageItemContent(null, image);
+            valbum.Images.Add(contentImage);
+            continue;                        
+        }
+        return valbum;
+    }    
+
+
+
 
     public async Task<AlbumContentHierarchical> GetAlbumContentHierarchical(long albumId)
     {
@@ -98,8 +132,8 @@ public class AlbumsService
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
         
-        album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
-        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));    //save space, did not create hd 1080 path        
+        album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
+        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));    
         album.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()
                                                          : new List<string>();
         album.LastUpdatedUtc = item.LastUpdatedUtc;
@@ -115,9 +149,9 @@ public class AlbumsService
         string path = item.FeatureItemPath ?? string.Empty;     //get the relative path first                                
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
-        image.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 400));
-        image.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));    //save space, did not create hd 1080 path
-        image.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, 1440));
+        image.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
+        image.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));    
+        image.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.UHD));
         image.ImageOriginalPath = GetUrl(path);
         image.IsMovie = _picturesConfig.IsMovieFile(path);
         image.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()

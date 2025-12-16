@@ -5,7 +5,7 @@ Gallery app for pictures sitting in a root folder on your hard drive or your loc
     * To much to upload and manage externaly 
     * I still want a website to quicly show stuff or just for me to enjoy from wherever
     * Privacy matters, I don't want google/apple/facebook etc. to use my pictures for who knows what (enhace ai, know private data about me, friends and family)
-    * I what the full size pictures for myself when navigating and viewing if necesary  
+    * I what the full size pictures if necesary when viewing on large or 8K displays 
 * ### What
     * each folder is an album 
         * each album contains sub albums and images / movies

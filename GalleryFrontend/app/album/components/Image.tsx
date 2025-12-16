@@ -163,8 +163,8 @@ export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, 
         case '_':
           zoomHandlers.zoomOut();
           break;
-        case ' ':
-        case 'Enter':
+        case ' ':         //spacebar for slideshow toggle  
+        //case 'Enter':   //some TVs will trigger Enter when clicking the remote OK button, and it should just be cllicked
           e.preventDefault(); // Prevent default for spacebar and enter
           if (image.is_movie && videoRef.current) {
             if (videoRef.current.paused) {
@@ -245,7 +245,7 @@ export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, 
                         <path d={isFullscreen ? "M5 13H11V19M4 20L11 13M19 11H13V5M20 4L13 11" : "M10 20H4V14M4 20L11 13M14 4H20V10M20 4L13 11"} stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
-                <button onClick={toggleSlideshow} className="slideshow-button"  title="Slideshow (Space/Enter)">
+                <button onClick={toggleSlideshow} className="slideshow-button"  title="Slideshow (Spacebar)">
                     <svg viewBox="0 0 24 24" fill="none">
                         {isSlideshow ? (
                             <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" fill="white" stroke="white" stroke-width="2"/>

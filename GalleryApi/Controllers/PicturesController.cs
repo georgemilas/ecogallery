@@ -127,6 +127,22 @@ public class AlbumsController : ControllerBase
 
     }
 
+    // POST: /api/v1/albums/search
+    [HttpPost("search")]
+    public async Task<ActionResult<VirtualAlbumContent>> SearchAlbumData([FromBody] AlbumSearch albumSearch)
+    {
+        try
+        {
+            var albumContent = await _albumsService.SearchContentByExpression(albumSearch);
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+
+    }
+
 
     protected void Dispose(bool disposing)
     {

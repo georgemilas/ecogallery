@@ -65,6 +65,29 @@ public class PicturesDataConfiguration
 }
 
 
+public enum ThumbnailHeights
+{
+    Thumb = 400,
+    /// <summary>
+    /// Small HD resolution should be 720p but to save space we only created UltraHD images at 1440 height
+    /// </summary>
+    SmallHD = 1440,  //720
+    /// <summary>
+    /// HD aka Full HD resolution should be 1080p but to save space we only created UltraHD images at 1440 height
+    /// </summary>
+    HD = 1440,   //1080
+    /// <summary>
+    /// UltraHD (aka 2K) resolution 1440p 
+    /// </summary>
+    UHD = 1440,
+    UHD_2K = 1440,
+    UHD_4K = 2160,
+    UHD_5K = 2880,
+    UHD_6K = 3240,
+    UHD_8K = 4320
+} 
+
+
 /*
     "PicturesData": {
         "Folder": "E:\\TotulAici\\TutuLaptop\\pictures",

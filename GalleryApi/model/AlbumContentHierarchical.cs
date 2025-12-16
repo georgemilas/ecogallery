@@ -4,6 +4,18 @@ using System.IO;
 
 namespace GalleryApi.model;
 
+
+public record AlbumSearch
+{
+    public string Expression { get; set; } = string.Empty;    
+}
+
+public record VirtualAlbumContent: AlbumContentHierarchical
+{
+    public string Expression { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty; 
+}
+
 public record AlbumContentHierarchical: AlbumItemContent
 {
     public List<AlbumItemContent> Albums { get; set; } = new List<AlbumItemContent>(); 
