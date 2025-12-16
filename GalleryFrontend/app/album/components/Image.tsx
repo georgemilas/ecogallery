@@ -315,7 +315,7 @@ export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, 
                    poster={image.image_uhd_path || image.thumbnail_path}  
                    controls onContextMenu={(e) => e.preventDefault()} />) 
                 : (
-                  <img ref={imageRef} src={image.image_original_path} alt={image.name} onContextMenu={(e) => e.preventDefault()}
+                  <img ref={imageRef} src={image.image_uhd_path} alt={image.name} onContextMenu={(e) => e.preventDefault()}
                     style={{
                       transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
                       transformOrigin: '0 0',
