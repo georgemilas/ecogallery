@@ -105,11 +105,8 @@ The solution folder consists of several projects:
     # Additional 2: Setup a reverse proxy from port 80 to 3000 and 5001 (see nginx.config)
     ``` 
 
-5) GalleryLib.Tests - tests to ensure correctness in the business services      
-    ```powershell
-    cd ecogallery
-	dotnet test
-    ```
+5) [ExpParser](https://github.com/georgemilas/ExpParser) - a library powering the search and virtual albums       
+    
 
 ## Additional information
 The solution above is targeting .NET 10 and if you aren't sure you have it or if there are issues building the projects, you can use the following command on a Windows machine in a powershell connsole. Alternatively download and install .NET from [Microsoft official .NET site](https://dotnet.microsoft.com/download/dotnet/10.0) 
