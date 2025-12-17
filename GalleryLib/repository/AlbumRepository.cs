@@ -154,7 +154,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         var te = new SQLTokenEvaluator("image_path", SQLTokenEvaluator.OPERATOR_TYPE.ILIKE_ANY_ARRAY, SQLTokenEvaluator.FIELD_TYPE.STRING);
         var parser = new BooleanLogicExpressionParser(expression, new SQLSemantic(te));
         string where = (string)parser.Evaluate(null);        
-        Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
+        //Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
         var sql = $@"SELECT 
                         ai.id, 
                         ai.image_name AS item_name, 

@@ -24,6 +24,7 @@ public class AlbumsService
         
         
         // Respect forwarded headers when the app is behind a proxy        
+        //Console.WriteLine($"Debug: {request.Headers["X-Forwarded-Proto"]}/{request.Headers["X-Forwarded-Host"]} | {request.Headers["Origin"]} | {request.Scheme}://{request.Host.Value}");
         var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault() ;
         var host = request.Headers["X-Forwarded-Host"].FirstOrDefault();
         if (scheme != null && host != null)
@@ -33,6 +34,7 @@ public class AlbumsService
         var origin = request.Headers["Origin"].FirstOrDefault();
         if (origin != null)
         {
+            origin = origin.Replace(":3000", ":5001");  //adjust for frontend dev server port
             return origin.TrimEnd('/');
         }   
         return $"{request.Scheme}://{request.Host.Value}";
@@ -45,6 +47,7 @@ public class AlbumsService
     {
         var expr = albumSearch.Expression;        
         var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(expr);    
+        //Console.WriteLine($"Debug: Search expression '{expr}' returned {content.Count} items.");
 
         var valbum = new VirtualAlbumContent();
         valbum.Id = 0;

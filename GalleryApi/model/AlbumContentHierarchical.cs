@@ -8,6 +8,8 @@ namespace GalleryApi.model;
 public record AlbumSearch
 {
     public string Expression { get; set; } = string.Empty;    
+    public int Limit { get; set; } = 0;
+    public int Offset { get; set; } = 0;
 }
 
 public record VirtualAlbumContent: AlbumContentHierarchical

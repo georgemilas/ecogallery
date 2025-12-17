@@ -93,6 +93,7 @@ export interface AlbumHierarchyProps {
   album: AlbumItemHierarchy;
   onAlbumClick: (albumName: string) => void;
   onImageClick: (image: ImageItemContent) => void;
+  onSearchSubmit: (expression: string) => void;
   lastViewedImage?: string | null;
   albumSort?: string;
   imageSort?: string;

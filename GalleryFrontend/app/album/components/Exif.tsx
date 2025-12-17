@@ -9,6 +9,11 @@ interface ExifPanelProps {
   onClose: () => void;
 }
 
+function getThumbRelativePath(fullPath: string): string {
+  const thumbPath = fullPath.replace(/\\/g, '/').split('/').slice(0, -1);
+  return thumbPath.splice(thumbPath.indexOf('400')+1).join('/');
+}
+
 export function ExifPanel({ exif, album, image, onClose }: ExifPanelProps) {
   return (
     <div className="exif-panel">
@@ -23,11 +28,15 @@ export function ExifPanel({ exif, album, image, onClose }: ExifPanelProps) {
       <div className="exif-content">
         <div className="exif-row">
           <span className="exif-label">Album:</span>
-          <span className="exif-value">{album.name.replace(/\\/g, '/').slice(1)}</span>
+          <span className="exif-value">{album.name.replace(/\\/g, '/')}</span>
         </div> 
         <div className="exif-row">
           <span className="exif-label">File Name:</span>
           <span className="exif-value">{image.name.replace(/\\/g, '/').split('/').pop()}</span>
+        </div> 
+        <div className="exif-row">
+          <span className="exif-label">Raw path:</span>
+          <span className="exif-value">{getThumbRelativePath(image.thumbnail_path)}</span>
         </div> 
         {exif.file_size_bytes && (
           <div className="exif-row">

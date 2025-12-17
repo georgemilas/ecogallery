@@ -1,7 +1,7 @@
 ## What it is
 Gallery app for pictures sitting in a root folder on your hard drive or your local NAS.
 * ### Why
-    * I have close to 50,000  pictures, almost 2TB worth of data
+    * I have close to 45,000 pictures and videos, almost 400GB (80K/2TB including raw files) worth of data 
     * To much to upload and manage externaly 
     * I still want a website to quicly show stuff or just for me to enjoy from wherever
     * Privacy matters, I don't want google/apple/facebook etc. to use my pictures for who knows what (enhace ai, know private data about me, friends and family)
@@ -27,6 +27,7 @@ Gallery app for pictures sitting in a root folder on your hard drive or your loc
 * ### Limitaions
     * Its local so you need to run a server and make it available on the internet 
     * Contact me for help
+    * No raw files support yet
 
         
 

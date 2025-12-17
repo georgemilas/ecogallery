@@ -4,8 +4,9 @@ import { justifyGallery, debounce } from './gallery';
 import { SortControl } from './Sort';
 import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
 
-export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage, albumSort, imageSort, onSortChange }: AlbumHierarchyProps) {
+export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage, albumSort, imageSort, onSortChange, onSearchSubmit }: AlbumHierarchyProps) {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  const [searchText, setSearchText] = React.useState('');
   
   const handleSortedAlbumsChange = useCallback(() => {
     console.log('AlbumHierarchyComponent: sorted albums changed', album.albums[0]?.name);
@@ -78,15 +79,30 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
     };
   }, [album]); // Re-run when album change
 
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (searchText.trim().length === 0) return;
+    onSearchSubmit(searchText.trim());
+  } 
+
   return (
     <>
       <div className="gallery-banner">
         <img src={album.image_hd_path} alt={album.album_name()} />
         <div className="gallery-banner-menu">
+          <form className="gallery-searchbar" onSubmit={handleSearchSubmit}>
+              <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
+              <button type="submit" className="search-button" title="Search">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="10" cy="10" r="6" stroke="white" strokeWidth="2"/>
+                    <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
+                </svg>
+              </button>
+          </form>
+
           <nav className="menu">
-            <button onClick={() => onAlbumClick('')} className="back-button" title="Raw Album Data">Raw Album Data</button>
-            <button onClick={() => onAlbumClick('')} className="back-button" title="Virtual Albums">Virtual Albums</button>
-            <button onClick={() => onAlbumClick('')} className="back-button" title="Adhoc Query">Adhoc Query</button>
+            <button onClick={() => onAlbumClick('')} className="back-button" title="Raw Albums">Raw Albums</button>
+            <button onClick={() => onAlbumClick('')} className="back-button" title="Virtual Albums">Virtual Albums</button>            
           </nav>
         </div>
         <div className="gallery-banner-label">

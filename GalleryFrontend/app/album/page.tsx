@@ -54,6 +54,40 @@ function AlbumPage() {
     }
   };
 
+  const postSearchAlbum = async (expression: string) => {
+    setLoading(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
+      const url = apiBase ? `${apiBase}/api/v1/albums/search` : `/api/v1/albums/search`;
+      console.log('Searching albums:', { expression, url });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expression })
+      });
+      if (!res.ok) {
+        console.error('Search failed', res.status);
+        setAlbum(null);
+      } else {
+        const data = await res.json();
+        const convertToAlbum = (obj: any): AlbumItemHierarchy => {
+          const album = Object.assign(new AlbumItemHierarchy(), obj);
+          if (album.content) {
+            album.content = album.content.map(convertToAlbum);
+          }
+          return album;
+        };
+        setAlbum(convertToAlbum(data));
+        // Do not change route; show results directly
+      }
+    } catch (e) {
+      console.error('Error searching albums', e);
+      setAlbum(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAlbum(albumNameParam);
   }, [albumNameParam]);
@@ -93,11 +127,19 @@ function AlbumPage() {
   const handleAlbumClick = (newAlbumName: string) => {
     // Build URL with properly encoded params
     const params = new URLSearchParams({
-      name: newAlbumName,
       albumSort: currentAlbumSort,
       imageSort: currentImageSort
     });
-    router.push(`/album?${params.toString()}`);
+    if (newAlbumName) {params.set('name', newAlbumName);}
+    const targetUrl = `/album?${params.toString()}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl === targetUrl) {
+      // If URL is unchanged (e.g., navigating to root when already at root), force a refresh/fetch
+      fetchAlbum(newAlbumName || '');
+      router.refresh();
+    } else {
+      router.push(targetUrl);
+    }
   };
 
   const handleImageClick = (image: ImageItemContent) => {
@@ -159,6 +201,7 @@ function AlbumPage() {
                 setCurrentAlbumSort(albumSort);
                 setCurrentImageSort(imageSort);
               }}
+              onSearchSubmit={(expr) => postSearchAlbum(expr)}
             />
           )}
           {viewMode === 'image' && selectedImage && (

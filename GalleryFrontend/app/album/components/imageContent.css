@@ -37,9 +37,9 @@ body {
  
 
 .nav-prev, .nav-next {
+    display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: space-between;    
 }
 svg:hover {
     opacity: 1;        
@@ -64,10 +64,12 @@ button {
     height: 20px;
     opacity: 0.6;
     cursor: pointer;
-    transition: opacity 0.2s;
-    
+    transition: opacity 0.2s;    
 }
-
+.close-button svg {
+    width: 28px;
+    height: 28px;    
+}
 .toolbar svg:hover {
     opacity: 1;        
 }
@@ -79,11 +81,25 @@ button {
     justify-content: center;
 }
 
+.prev-button, .next-button {
+    display: flex;
+    align-items: center;   
+}
+
+
+.prev-button svg, .next-button svg {
+    width: 30px;
+    height: 30px;
+    opacity: 0.6;
+}
+.prev-button svg:hover, .next-button svg:hover {
+    opacity: 1;
+}
 .spacer-prev {
     height: 160px; /* roughly matches toolbar height to center the arrow */
 }
 .spacer-next {
-    height: 100px; /* roughly matches toolbar height to center the arrow */
+    height: 65px; /* roughly matches toolbar height to center the arrow */
 }
 
 .content {
@@ -165,4 +181,22 @@ button {
 .zoom-button.active {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
+}
+
+.search-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;    
+    margin-right: 12px;
+    margin-left: -12px;
+}
+
+.search-button svg {
+    width: 30px;
+    height: 30px;
+    stroke: white;
 }
