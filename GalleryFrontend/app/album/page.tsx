@@ -11,18 +11,18 @@ function AlbumPage() {
   const [album, setAlbum] = useState<AlbumItemHierarchy | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [lastViewedImage, setLastViewedImage] = useState<string | null>(null);
+  const [lastViewedImage, setLastViewedImage] = useState<number | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const albumNameParam = searchParams.get('name') || '';
-  const imageNameParam = searchParams.get('image');
+  const imageIdParam = searchParams.get('image') ? parseInt(searchParams.get('image') || '', 10) : null;
   
   // Local sort state - updated immediately without routing
   const [currentAlbumSort, setCurrentAlbumSort] = useState(searchParams.get('albumSort') || 'timestamp-desc');
   const [currentImageSort, setCurrentImageSort] = useState(searchParams.get('imageSort') || 'timestamp-desc');
   
-  const viewMode = imageNameParam ? 'image' : 'gallery';
-  const selectedImage = album?.images.find(item => item.name === imageNameParam) || null;
+  const viewMode = imageIdParam ? 'image' : 'gallery';
+  const selectedImage = album?.images.find(item => item.id === imageIdParam) || null;
 
   const fetchAlbum = async (albumNameParam: string = '') => {
     setLoading(true);
@@ -144,7 +144,7 @@ function AlbumPage() {
 
   const handleImageClick = (image: ImageItemContent) => {
     const currentParams = new URLSearchParams(window.location.search);
-    currentParams.set('image', image.name);
+    currentParams.set('image', image.id.toString());
     // Persist current sort preferences to URL on navigation
     currentParams.set('albumSort', currentAlbumSort);
     currentParams.set('imageSort', currentImageSort);
@@ -153,8 +153,8 @@ function AlbumPage() {
 
   const handleCloseImage = () => {
     // Save the current image name before closing
-    if (imageNameParam) {
-      setLastViewedImage(imageNameParam);
+    if (imageIdParam) {
+      setLastViewedImage(imageIdParam);
     }
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.delete('image');
@@ -164,20 +164,20 @@ function AlbumPage() {
   const handlePrevImage = (image: ImageItemContent, album: AlbumItemHierarchy) => {
     //var content = album.images.toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime());
     var content = album.images;  //use the order as provided by the sorter in album view 
-    var ix = content.findIndex(item => item.name === image.name);
+    var ix = content.findIndex(item => item.id === image.id);  //using id to avoid issues with duplicate names
     var prev = ix > 0 ? content[ix - 1] : content[content.length - 1];  //repeat to last if at start
     const currentParams = new URLSearchParams(window.location.search);
-    currentParams.set('image', prev.name);
+    currentParams.set('image', prev.id.toString());
     router.push(`/album?${currentParams.toString()}`);
   };
 
   const handleNextImage = (image: ImageItemContent, album: AlbumItemHierarchy) => {
     //var content = album.images.toSorted((a, b) => new Date(b.item_timestamp_utc).getTime() - new Date(a.item_timestamp_utc).getTime());
     var content = album.images;  //use the order as provided by the sorter in album view
-    var ix = content.findIndex(item => item.name === image.name);
+    var ix = content.findIndex(item => item.id === image.id);  //using id to avoid issues with duplicate names
     var next = ix < content.length - 1 ? content[ix + 1] : content[0];  //repeat to first if at end
     const currentParams = new URLSearchParams(window.location.search);
-    currentParams.set('image', next.name);
+    currentParams.set('image', next.id.toString());
     router.push(`/album?${currentParams.toString()}`);
   };
 

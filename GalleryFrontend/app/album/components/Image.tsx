@@ -35,7 +35,7 @@ export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, 
     imageRef,
     containerRef,
     image.is_movie,
-    image.name
+    image.id
   );
   const { zoom, position, isDragging, is1to1 } = zoomState;
 

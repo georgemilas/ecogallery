@@ -7,33 +7,42 @@ import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
 export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage, albumSort, imageSort, onSortChange, onSearchSubmit }: AlbumHierarchyProps) {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   const [searchText, setSearchText] = React.useState('');
+  const [isLayouting, setIsLayouting] = React.useState(false);
   
+  const scrollToLastViewedImage = (imageId: number) => {
+    const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+    if (imageElement) {
+      console.log('Scrolling to last viewed image:', imageId);
+      imageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
+    }
+  };
   const handleSortedAlbumsChange = useCallback(() => {
     console.log('AlbumHierarchyComponent: sorted albums changed', album.albums[0]?.name);
     forceUpdate(); // Force re-render after in-place sort
-    setTimeout(() => {justifyGallery('.gallery', 300);}, 100);  
-  }, []);
+    setIsLayouting(true);
+    setTimeout(() => {
+      justifyGallery('.gallery', 300, () => {
+        setIsLayouting(false);
+        if (lastViewedImage) {
+          scrollToLastViewedImage(lastViewedImage);
+        }
+      });
+    }, 100);  
+  }, [lastViewedImage]);
 
   const handleSortedImagesChange = useCallback(() => {
     forceUpdate(); // Force re-render after in-place sort
+    setIsLayouting(true);
     setTimeout(() => {
-      justifyGallery('.gallery', 300);
-    }, 100);  
-  }, []);
-
-
-  // Scroll to last viewed image when returning from image view
-  useEffect(() => {
-    if (lastViewedImage) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        const imageElement = document.querySelector(`[data-image-name="${lastViewedImage}"]`);
-        if (imageElement) {
-          imageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
+      justifyGallery('.gallery', 300, () => {
+        setIsLayouting(false);
+        if (lastViewedImage) {
+          scrollToLastViewedImage(lastViewedImage);
         }
-      }, 100);
-    }
+      });
+    }, 100);  
   }, [lastViewedImage]);
+
 
   useEffect(() => {
     // Wait for images to load before calculating layout
@@ -44,10 +53,15 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
     let loadedCount = 0;
     const totalImages = images.length;
 
+    if (totalImages === 0) return;
+
     const onImageLoad = () => {
       loadedCount++;
       if (loadedCount === totalImages) {
-        justifyGallery('.gallery', 300);
+        setIsLayouting(true);
+        justifyGallery('.gallery', 300, () => {
+          setIsLayouting(false);
+        });
       }
     };
 
@@ -63,10 +77,18 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
 
     // Fallback: call after a delay if images don't load
     const fallbackTimer = setTimeout(() => {
-      justifyGallery('.gallery', 300);
-    }, 1000);
+      setIsLayouting(true);
+      justifyGallery('.gallery', 300, () => {
+        setIsLayouting(false);
+      });
+    }, 3000);
 
-    const handleResize = debounce(() => {justifyGallery('.gallery', 300);}, 150);    
+    const handleResize = debounce(() => {
+      setIsLayouting(true);
+      justifyGallery('.gallery', 300, () => {
+        setIsLayouting(false);
+      });
+    }, 150);    
     window.addEventListener('resize', handleResize);    
     
     return () => {
@@ -77,13 +99,25 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
         img.removeEventListener('error', onImageLoad);
       });
     };
-  }, [album]); // Re-run when album change
+  }, [album]); // Remove lastViewedImage from dependencies
 
+
+
+  // Scroll to last viewed image when returning from image view
+  useEffect(() => {
+    if (lastViewedImage && !isLayouting) {
+      scrollToLastViewedImage(lastViewedImage);
+    }
+  }, [lastViewedImage, isLayouting]);
+
+
+  
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (searchText.trim().length === 0) return;
     onSearchSubmit(searchText.trim());
   } 
+
 
   return (
     <>
@@ -156,9 +190,14 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
           initialSort={imageSort}
           onSortUpdate={(sort) => onSortChange?.(albumSort || 'timestamp-desc', sort)}
         />
+        {isLayouting && album.images.length > 100 && (
+          <div className="gallery-loading">
+            <span>Laying out {album.images.length} images...</span>
+          </div>
+        )}
         <ul className="gallery">
         {(album.images).map(r => (
-        <li className="gallery-item" key={r.id} data-image-name={r.name}> 
+        <li className="gallery-item" key={r.id} data-image-id={r.id} data-image-name={r.name}> 
             <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); onImageClick(r as ImageItemContent);}}>
                 <img src={r.thumbnail_path} alt={r.name} />
                 {r.is_movie && (

@@ -10,10 +10,13 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-export function justifyGallery(gallerySelector: string, targetHeight: number): void {
+export function justifyGallery(gallerySelector: string, targetHeight: number, onComplete?: () => void): void {
   const gallery = document.querySelector<HTMLElement>(gallerySelector);
-  if (!gallery) return;
-  
+  if (!gallery) {
+    onComplete?.();
+    return;
+  }
+  console.log('Justifying gallery layout');
   const images = Array.from(gallery.querySelectorAll<HTMLImageElement>('img'));
 
   Promise.all(
@@ -26,6 +29,7 @@ export function justifyGallery(gallerySelector: string, targetHeight: number): v
     })
   ).then(() => {
     layoutGallery(gallery, images, targetHeight);
+    onComplete?.();
   });
 }
 
@@ -40,10 +44,7 @@ function layoutGallery(gallery: HTMLElement, images: HTMLImageElement[], targetH
   const containerWidth = gallery.clientWidth - paddingLeft - paddingRight;
   const containerHeight = gallery.clientHeight - (parseFloat(styles.paddingTop) || 0) - (parseFloat(styles.paddingBottom) || 0);
   
-  console.log(
-    `Container width: ${containerWidth}, padding: l${paddingLeft}:r${paddingRight}, gap: ${gap}, targetHeight: ${targetHeight}, containerHeight: ${containerHeight}`
-  );
-
+  //console.log(`Container width: ${containerWidth}, padding: l${paddingLeft}:r${paddingRight}, gap: ${gap}, targetHeight: ${targetHeight}, containerHeight: ${containerHeight}`);
   let row: HTMLImageElement[] = [];
   let rowWidth = 0;
 

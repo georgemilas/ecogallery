@@ -19,7 +19,7 @@ export function ImageViewZoom(
   imageRef: React.RefObject<HTMLImageElement>,
   containerRef: React.RefObject<HTMLDivElement>,
   isVideo: boolean,
-  imageName: string
+  imageId: number
 ) {
   const [zoom, setZoom] = React.useState(1);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
@@ -32,7 +32,7 @@ export function ImageViewZoom(
     setZoom(1);
     setPosition({ x: 0, y: 0 });
     setIs1to1(false);
-  }, [imageName]);
+  }, [imageId]);
 
   // Mouse wheel zoom
   React.useEffect(() => {
