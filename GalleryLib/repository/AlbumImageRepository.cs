@@ -9,15 +9,16 @@ namespace GalleryLib.repository;
 public class AlbumImageRepository: IDisposable, IAsyncDisposable
 {
 
-    public AlbumImageRepository(PicturesDataConfiguration configuration)
+    public AlbumImageRepository(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
     {
         _configuration = configuration;
-        var dbconfig = DatabaseConfiguration.CreateLocal("gmpictures", "postgres", "Dtututu7&");
-        _db = new PostgresDatabaseService(dbconfig.ToConnectionString());
+        _dbConfig = dbConfig;
+        _db = new PostgresDatabaseService(_dbConfig.ToConnectionString());
     }
 
     private IDatabaseService _db;
     private PicturesDataConfiguration _configuration;
+    private DatabaseConfiguration _dbConfig;
     private string RootFolder => _configuration.RootFolder.FullName;
 
     public void Dispose()
@@ -49,6 +50,15 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
                     RETURNING id";        
         image.Id = await _db.ExecuteScalarAsync<long>(sql, image);            
         return image;                        
+    }
+
+    public async Task<long> UpdateImageHash(AlbumImage image)
+    {
+        var sql = @"UPDATE album_image SET last_updated_utc = @last_updated_utc, image_sha256 = @image_sha256
+                    WHERE id = @id
+                    RETURNING id";
+        var id = await _db.ExecuteScalarAsync<long>(sql, image);            
+        return id;                        
     }
 
     public async Task<int> DeleteAlbumImageAsync(string filePath)

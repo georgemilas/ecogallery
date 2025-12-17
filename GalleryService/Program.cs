@@ -20,9 +20,11 @@ var configuration = new ConfigurationBuilder()
 // Setup Dependency injection to enable future testability  
 var serviceProvider = new ServiceCollection()
     .Configure<PicturesDataConfiguration>(configuration.GetSection(PicturesDataConfiguration.SectionName))
+    .Configure<DatabaseConfiguration>(configuration.GetSection(DatabaseConfiguration.SectionName))
     .BuildServiceProvider();
 
 var picturesConfig = serviceProvider.GetRequiredService<IOptions<PicturesDataConfiguration>>().Value;
+var dbConfig = serviceProvider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
 if (string.IsNullOrWhiteSpace(picturesConfig.Folder))
 {
     throw new InvalidOperationException("PicturesData:Folder is required in appsettings.json");
@@ -133,11 +135,11 @@ albumCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegr
         {
             if (nonParallel)
             {
-                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessorNotParallel(picturesConfig));
+                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessorNotParallel(picturesConfig, dbConfig));
             }
             else
             {
-                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessor(picturesConfig, parallelDegree));
+                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree));
             }            
         })
         .Build();
@@ -166,11 +168,11 @@ imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallel
         {
             if (nonParallel)
             {
-                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessorNotParallel(picturesConfig));
+                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessorNotParallel(picturesConfig, dbConfig));
             }
             else
             {
-                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessor(picturesConfig, parallelDegree));
+                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree));
             }            
         })
         .Build();

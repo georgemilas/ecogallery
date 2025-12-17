@@ -12,15 +12,16 @@ namespace GalleryLib.repository;
 
 public record AlbumRepository: IDisposable, IAsyncDisposable
 {
-    public AlbumRepository(PicturesDataConfiguration configuration)
+    public AlbumRepository(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
     {
         _configuration = configuration;
-        var dbconfig = DatabaseConfiguration.CreateLocal("gmpictures", "postgres", "Dtututu7&");
-        _db = new PostgresDatabaseService(dbconfig.ToConnectionString());
+        _dbConfig = dbConfig;   
+        _db = new PostgresDatabaseService(_dbConfig.ToConnectionString());
     }
 
     private IDatabaseService _db;
     private PicturesDataConfiguration _configuration;
+    private DatabaseConfiguration _dbConfig;    
     private string RootFolder => _configuration.RootFolder.FullName;
 
     public void Dispose()
@@ -148,31 +149,38 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     }
 
 
-    public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalByExpression(string expression)
+    public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalByExpression(string expression, bool groupByPHash = true)
     {
         expression = System.Text.RegularExpressions.Regex.Replace(expression, @"\s+", " "); //normalize spaces
         var te = new SQLTokenEvaluator("image_path", SQLTokenEvaluator.OPERATOR_TYPE.ILIKE_ANY_ARRAY, SQLTokenEvaluator.FIELD_TYPE.STRING);
         var parser = new BooleanLogicExpressionParser(expression, new SQLSemantic(te));
         string where = (string)parser.Evaluate(null);        
-        //Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
-        var sql = $@"SELECT 
-                        ai.id, 
-                        ai.image_name AS item_name, 
-                        ai.image_type AS item_type, 
-                        ai.album_id as parent_album_id, 
-                        ai.album_name AS parent_album_name,
-                        ai.image_type AS feature_item_type, 
-                        ai.image_path AS feature_item_path, 
-                        ai.image_type AS inner_feature_item_type, 
-                        ai.image_path AS inner_feature_item_path, 
-                        ai.last_updated_utc,
-                        ai.image_timestamp_utc AS item_timestamp_utc,
-                        row_to_json(exif) AS image_exif
-                    FROM album_image ai
-                    LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
-                    WHERE {where}";
+        Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
+        
+        // Group by SHA-256 (text) with image_path fallback (stable natural key)
+        var select = groupByPHash ? "SELECT DISTINCT ON (COALESCE(ai.image_sha256, ai.image_path))" : "SELECT";
+        // Ensure ORDER BY starts with the DISTINCT ON expression; add a deterministic tie-breaker
+        var orderby = groupByPHash ? "ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC, ai.id DESC" : "ORDER BY ai.image_timestamp_utc DESC, ai.id DESC";
+                    
+        var sql = $@"{select}
+                    ai.id, 
+                    ai.image_name AS item_name, 
+                    ai.image_type AS item_type, 
+                    ai.album_id as parent_album_id, 
+                    ai.album_name AS parent_album_name,
+                    ai.image_type AS feature_item_type, 
+                    ai.image_path AS feature_item_path, 
+                    ai.image_type AS inner_feature_item_type, 
+                    ai.image_path AS inner_feature_item_path,   
+                    ai.last_updated_utc,
+                    ai.image_timestamp_utc AS item_timestamp_utc,
+                    row_to_json(exif) AS image_exif
+                FROM album_image ai
+                LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
+                WHERE {where}
+                {orderby}";
         var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader));
-        return content;                 
+        return content;                
     } 
 
 

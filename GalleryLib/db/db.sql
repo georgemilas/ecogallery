@@ -46,7 +46,8 @@ CREATE TABLE
     last_updated_utc timestamp with time zone NOT NULL,      --when the record was last updated
     image_timestamp_utc timestamp with time zone NOT NULL,   --when the image file was last modified
     album_name character varying(500) NOT NULL,
-    album_id bigint NOT NULL
+    album_id bigint NOT NULL,
+    image_sha256 character varying(64) NULL                  --SHA-256 hash of the 400px thumbnail for duplicate detection
   );
 
 ALTER TABLE
@@ -65,6 +66,10 @@ ON public.album_image (album_name);
 -- Create GIN index with trigram ops on image_path for faster ILIKE ANY(ARRAY[...]) searches
 CREATE INDEX IF NOT EXISTS idx_album_image_image_path_trgm 
 ON public.album_image USING GIN (image_path gin_trgm_ops);
+
+
+-- Create an index on image_sha256 for grouping/filtering
+CREATE INDEX IF NOT EXISTS idx_album_image_image_sha256 ON public.album_image (image_sha256);
 
 
 ------------------------------------------------------------------------------

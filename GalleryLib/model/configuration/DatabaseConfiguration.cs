@@ -2,6 +2,7 @@ namespace GalleryLib.model.configuration;
 
 public class DatabaseConfiguration
 {
+    public const string SectionName = "Database";
     public string Host { get; set; } = "localhost";
     public int Port { get; set; } = 5432;
     public string Database { get; set; } = string.Empty;

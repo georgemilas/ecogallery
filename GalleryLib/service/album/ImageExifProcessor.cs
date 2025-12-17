@@ -14,33 +14,41 @@ namespace GalleryLib.service.album;
 public class ImageExifProcessor: AlbumProcessor
 {
 
-    public ImageExifProcessor(PicturesDataConfiguration configuration):base(configuration)
+    public ImageExifProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration, dbConfig)
     {
         
     }
 
-    public static new FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int degreeOfParallelism = -1)
+    public static new FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)
     {
-        IFileProcessor processor = new ImageExifProcessor(configuration);
+        IFileProcessor processor = new ImageExifProcessor(configuration, dbConfig);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static new FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration)
+    public static new FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
     {
-        IFileProcessor processor = new ImageExifProcessor(configuration);
+        IFileProcessor processor = new ImageExifProcessor(configuration, dbConfig);
         return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
     }
 
 
     /// <summary>
-    /// create image record and ensure album record exists
+    /// create image record and ensure album record exists, extract EXIF and compute thumbnail perceptual hash
     /// </summary>
     protected override async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath, bool logIfCreated)
     {
-        var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath, logIfCreated);
+        var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath, logIfCreated);                
         if (_configuration.IsMovieFile(filePath))
         {
             return Tuple.Create(albumImage, count); //skip exif for movie files
+        }        
+        
+
+        var dbImage = await imageRepository.GetAlbumImageAsync(filePath);
+        if (String.IsNullOrWhiteSpace(dbImage?.ImageSha256))
+        {
+            await UpdateImageHashAsync(filePath, logIfCreated, dbImage ?? albumImage);
         }
+
         var dbExif = await imageRepository.GetImageExifAsync(albumImage);
         if (dbExif == null)
         {
@@ -60,8 +68,19 @@ public class ImageExifProcessor: AlbumProcessor
         }
         return Tuple.Create(albumImage, count);
 
-        // Note: ON DELETE CASCADE should take care of efix data removal from album_image_exif table
+        // Note: ON DELETE CASCADE should take care of exif data removal from album_image_exif table
         // so no need to override CleanupImageAndAlbumRecords 
+    }
+
+    /// <summary>
+    /// Get path to the 400px thumbnail for an image (adjust path logic based on your setup).
+    /// Assumes thumbnails are in a _thumbnails/400 folder relative to the original image.
+    /// </summary>
+    private string GetThumbnailPath(string imageFilePath, int height)
+    {
+        var dir = Path.GetDirectoryName(imageFilePath)!;
+        var fileName = Path.GetFileName(imageFilePath);
+        return Path.Combine(dir, "_thumbnails", height.ToString(), fileName);
     }
 
     
@@ -83,7 +102,7 @@ public class ImageExifProcessor: AlbumProcessor
                 FileSizeBytes = fileInfo.Length,
                 DateModified = fileInfo.LastWriteTimeUtc
             };
-
+            
             // Get IFD0 directory (main image info)
             var ifd0Directory = directories.OfType<ExifIfd0Directory>().FirstOrDefault();
             if (ifd0Directory != null)

@@ -10,11 +10,11 @@ public class AlbumsService
     private readonly PicturesDataConfiguration _picturesConfig;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AlbumsService(PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
+    public AlbumsService(AlbumRepository albumRepository, PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
     {
+        _albumRepository = albumRepository;
         _picturesConfig = picturesConfig;
         _httpContextAccessor = httpContextAccessor;
-        _albumRepository = new AlbumRepository(_picturesConfig);    
     }
 
     private string GetBaseUrl()
@@ -46,7 +46,7 @@ public class AlbumsService
     public async Task<VirtualAlbumContent> SearchContentByExpression(AlbumSearch albumSearch)
     {
         var expr = albumSearch.Expression;        
-        var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(expr);    
+        var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(expr, groupByPHash: albumSearch.GroupByPHash);    
         //Console.WriteLine($"Debug: Search expression '{expr}' returned {content.Count} items.");
 
         var valbum = new VirtualAlbumContent();

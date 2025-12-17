@@ -12,11 +12,13 @@ namespace GalleryLib.service.album;
 /// </summary>
 public class AlbumProcessor: EmptyProcessor
 {
-    public AlbumProcessor(PicturesDataConfiguration configuration):base(configuration)
+    public AlbumProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration)
     {
-        imageRepository = new AlbumImageRepository(configuration);
-        albumRepository = new AlbumRepository(configuration);
+        _dbConfig = dbConfig;
+        imageRepository = new AlbumImageRepository(configuration, dbConfig);
+        albumRepository = new AlbumRepository(configuration, dbConfig);
     }
+    private readonly DatabaseConfiguration _dbConfig;
     protected AlbumImageRepository imageRepository;
     protected AlbumRepository albumRepository;
 
@@ -24,14 +26,14 @@ public class AlbumProcessor: EmptyProcessor
     protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
 
 
-    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, int degreeOfParallelism = -1)
+    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)
     {
-        IFileProcessor processor = new AlbumProcessor(configuration);
+        IFileProcessor processor = new AlbumProcessor(configuration, dbConfig);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration)
+    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
     {
-        IFileProcessor processor = new AlbumProcessor(configuration);
+        IFileProcessor processor = new AlbumProcessor(configuration, dbConfig);
         return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
     }
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _albumLocks = new();
@@ -62,7 +64,10 @@ public class AlbumProcessor: EmptyProcessor
             {
                 semaphore.Release();
             }
+
             albumImage = await imageRepository.AddNewImageAsync(filePath, album);
+            await UpdateImageHashAsync(filePath, logIfCreated, albumImage);
+
             if (logIfCreated)
             {
                 Console.WriteLine($"Created album_image record for changed file: {filePath}");
@@ -70,6 +75,23 @@ public class AlbumProcessor: EmptyProcessor
             return Tuple.Create(albumImage, 1);
         }
         return Tuple.Create(albumImage, 0);
+    }
+
+    protected async Task UpdateImageHashAsync(string filePath, bool logIfCreated, AlbumImage albumImage)
+    {
+        // Compute perceptual hash from 400px thumbnail if it exists
+        var thumbnailPath = _configuration.GetThumbnailPath(filePath, 400);
+        if (File.Exists(thumbnailPath))
+        {
+            var thumbStream = new FileStream(thumbnailPath, FileMode.Open, FileAccess.Read);
+            albumImage.ImageSha256 = await ImageHash.ComputeSha256Async(thumbStream);
+            var id = await imageRepository.UpdateImageHash(albumImage);
+            if (logIfCreated)
+            {
+                string isOk = id == albumImage.Id ? "successfully" : "unsuccessfully";
+                Console.WriteLine($"Computed and stored {isOk} SHA-256 hash for image thumbnail: {filePath}");
+            }
+        }
     }
 
     /// <summary>
@@ -206,8 +228,8 @@ public class AlbumProcessor: EmptyProcessor
         //only keep repositories open during the scan
         await imageRepository.DisposeAsync(); 
         await albumRepository.DisposeAsync(); 
-        imageRepository = new AlbumImageRepository(_configuration);
-        albumRepository = new AlbumRepository(_configuration);        
+        imageRepository = new AlbumImageRepository(_configuration, _dbConfig);
+        albumRepository = new AlbumRepository(_configuration, _dbConfig);        
     }
     public override async Task OnScanEnd(string skipFilePath)
     {

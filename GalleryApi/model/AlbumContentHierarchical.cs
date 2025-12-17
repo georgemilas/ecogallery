@@ -10,6 +10,7 @@ public record AlbumSearch
     public string Expression { get; set; } = string.Empty;    
     public int Limit { get; set; } = 0;
     public int Offset { get; set; } = 0;
+    public bool GroupByPHash { get; set; } = true;  // If true, group results by image hash to show only one image per duplicate group
 }
 
 public record VirtualAlbumContent: AlbumContentHierarchical
