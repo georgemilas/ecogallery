@@ -202,6 +202,7 @@ function AlbumPage() {
                 setCurrentImageSort(imageSort);
               }}
               onSearchSubmit={(expr) => postSearchAlbum(expr)}
+              clearLastViewedImage={() => setLastViewedImage(null)}
             />
           )}
           {viewMode === 'image' && selectedImage && (

@@ -98,4 +98,5 @@ export interface AlbumHierarchyProps {
   albumSort?: string;
   imageSort?: string;
   onSortChange?: (albumSort: string, imageSort: string) => void;
+  clearLastViewedImage?: () => void;
 }

@@ -4,44 +4,44 @@ import { justifyGallery, debounce } from './gallery';
 import { SortControl } from './Sort';
 import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
 
-export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, lastViewedImage, albumSort, imageSort, onSortChange, onSearchSubmit }: AlbumHierarchyProps) {
+export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   const [searchText, setSearchText] = React.useState('');
   const [isLayouting, setIsLayouting] = React.useState(false);
+  //const isSortingRef = React.useRef(false);
   
   const scrollToLastViewedImage = (imageId: number) => {
     const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
     if (imageElement) {
       console.log('Scrolling to last viewed image:', imageId);
+      console.log('Element position:', imageElement.getBoundingClientRect());
       imageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
+    } else {
+      console.log('Image element not found for id:', imageId);
     }
   };
   const handleSortedAlbumsChange = useCallback(() => {
-    console.log('AlbumHierarchyComponent: sorted albums changed', album.albums[0]?.name);
+    console.log('AlbumHierarchyComponent: sorted albums changed', props.album.albums[0]?.name);
+    props.clearLastViewedImage?.();
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
       justifyGallery('.gallery', 300, () => {
         setIsLayouting(false);
-        if (lastViewedImage) {
-          scrollToLastViewedImage(lastViewedImage);
-        }
       });
     }, 100);  
-  }, [lastViewedImage]);
+  }, [props.clearLastViewedImage]);
 
   const handleSortedImagesChange = useCallback(() => {
+    props.clearLastViewedImage?.();
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
       justifyGallery('.gallery', 300, () => {
         setIsLayouting(false);
-        if (lastViewedImage) {
-          scrollToLastViewedImage(lastViewedImage);
-        }
       });
     }, 100);  
-  }, [lastViewedImage]);
+  }, [props.clearLastViewedImage]);
 
 
   useEffect(() => {
@@ -61,6 +61,9 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
         setIsLayouting(true);
         justifyGallery('.gallery', 300, () => {
           setIsLayouting(false);
+          if (props.lastViewedImage) {
+            scrollToLastViewedImage(props.lastViewedImage);
+          }
         });
       }
     };
@@ -80,6 +83,9 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
       setIsLayouting(true);
       justifyGallery('.gallery', 300, () => {
         setIsLayouting(false);
+        if (props.lastViewedImage) {
+          scrollToLastViewedImage(props.lastViewedImage);
+        }
       });
     }, 3000);
 
@@ -99,54 +105,56 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
         img.removeEventListener('error', onImageLoad);
       });
     };
-  }, [album]); // Remove lastViewedImage from dependencies
+  }, [props.album]); // Remove lastViewedImage from dependencies
 
 
 
-  // Scroll to last viewed image when returning from image view
-  useEffect(() => {
-    if (lastViewedImage && !isLayouting) {
-      scrollToLastViewedImage(lastViewedImage);
-    }
-  }, [lastViewedImage, isLayouting]);
+  // Scroll to last viewed image when returning from image view - removed
+  // Now handled inside justifyGallery callbacks above
 
 
   
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (searchText.trim().length === 0) return;
-    onSearchSubmit(searchText.trim());
+    props.onSearchSubmit(searchText.trim());
   } 
 
 
   return (
     <>
       <div className="gallery-banner">
-        <img src={album.image_hd_path} alt={album.album_name()} />
+        <img src={props.album.image_hd_path} alt={props.album.album_name()} />
         <div className="gallery-banner-menubar">
           <nav className="breadcrumbs">
-            <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
+            <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick('');}}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
               <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
             </svg>
           </a>
-            {album.navigation_path_segments.map((segment, index) => {
-              const pathToSegment = '\\' + album.navigation_path_segments.slice(0, index + 1).join('\\');
+            {props.album.navigation_path_segments.map((segment, index) => {
+              const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
               return (
                 <span key={index}>
-                  {' > '} <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(pathToSegment);}}>{segment}</a>
+                  {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(pathToSegment);}}>{segment}</a>
                 </span>
               );
             })}
           </nav>
           
             <nav className="menu">
-              <button onClick={() => onAlbumClick('')} className="page-button" title="Private Albums">
+              <button onClick={() => props.onAlbumClick('')} className="page-button" title="Private Albums">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
                 </svg>Home
               </button>
-              <button onClick={() => onAlbumClick('')} className="page-button" title="Public Albums">Public Albums</button>            
+              <button onClick={() => props.onAlbumClick('')} className="page-button" title="Public Albums">Public Albums</button>
+              <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+                  <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
+                </svg>
+                Top
+              </button>
             </nav>          
             <form className="searchbar" onSubmit={handleSearchSubmit}>
               <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
@@ -161,20 +169,20 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
         
 
         <div className="gallery-banner-label">
-          <h1>{album.album_name()}</h1>     
+          <h1>{props.album.album_name()}</h1>     
         </div>
       </div>	
-      {album.albums.length > 0 && (
+      {props.album.albums.length > 0 && (
       <div className='albums'>
-        <SortControl type="albums" album={album} onSortChange={handleSortedAlbumsChange} initialSort={albumSort} 
-          onSortUpdate={(sort) => onSortChange?.(sort, imageSort || 'timestamp-desc')}
+        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={props.albumSort} 
+          onSortUpdate={(sort) => props.onSortChange?.(sort, props.imageSort || 'timestamp-desc')}
         />
         <ul className='albums-container'>
-        {(album.albums).map(r => (
+        {(props.album.albums).map(r => (
           <li className='albums-item' key={r.id}>
-            <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(r.name);}}>
-              <img src={r.thumbnail_path} alt={album.get_name(r.name)} />
-              <span className="albums-item-label">{album.get_name(r.name)}</span>
+            <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.name);}}>
+              <img src={r.thumbnail_path} alt={props.album.get_name(r.name)} />
+              <span className="albums-item-label">{props.album.get_name(r.name)}</span>
               <svg className="albums-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M3 6C3 4.9 3.9 4 5 4H9L11 6H19C20.1 6 21 6.9 21 8V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V6Z"  fill="black" stroke='white'/>                
               </svg>
@@ -190,20 +198,20 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
       <div className="gallery-container">
         <SortControl 
           type="images"
-          album={album} 
+          album={props.album} 
           onSortChange={handleSortedImagesChange}
-          initialSort={imageSort}
-          onSortUpdate={(sort) => onSortChange?.(albumSort || 'timestamp-desc', sort)}
+          initialSort={props.imageSort}
+          onSortUpdate={(sort) => props.onSortChange?.(props.albumSort || 'timestamp-desc', sort)}
         />
-        {isLayouting && album.images.length > 100 && (
+        {isLayouting && props.album.images.length > 100 && (
           <div className="gallery-loading">
-            <span>Laying out {album.images.length} images...</span>
+            <span>Laying out {props.album.images.length} images...</span>
           </div>
         )}
         <ul className="gallery">
-        {(album.images).map(r => (
+        {(props.album.images).map(r => (
         <li className="gallery-item" key={r.id} data-image-id={r.id} data-image-name={r.name}> 
-            <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); onImageClick(r as ImageItemContent);}}>
+            <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); props.onImageClick(r as ImageItemContent);}}>
                 <img src={r.thumbnail_path} alt={r.name} />
                 {r.is_movie && (
                   <svg className="gallery-item-video-icon" viewBox="0 0 24 24" fill="none">
