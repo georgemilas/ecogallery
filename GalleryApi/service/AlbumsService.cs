@@ -127,7 +127,7 @@ public class AlbumsService
         album.Id = item.Id;
         album.Name = item.ItemName;
         
-        string defaultFolderImage = "\\andr si anth.jpg";
+        string defaultFolderImage = "";
         //get the relative path first
         string path = item.FeatureItemType != null 
                                     ? item.FeatureItemPath ?? item.InnerFeatureItemPath ?? defaultFolderImage

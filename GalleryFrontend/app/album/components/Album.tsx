@@ -123,8 +123,32 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
     <>
       <div className="gallery-banner">
         <img src={album.image_hd_path} alt={album.album_name()} />
-        <div className="gallery-banner-menu">
-          <form className="gallery-searchbar" onSubmit={handleSearchSubmit}>
+        <div className="gallery-banner-menubar">
+          <nav className="breadcrumbs">
+            <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
+              <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+            </svg>
+          </a>
+            {album.navigation_path_segments.map((segment, index) => {
+              const pathToSegment = '\\' + album.navigation_path_segments.slice(0, index + 1).join('\\');
+              return (
+                <span key={index}>
+                  {' > '} <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(pathToSegment);}}>{segment}</a>
+                </span>
+              );
+            })}
+          </nav>
+          
+            <nav className="menu">
+              <button onClick={() => onAlbumClick('')} className="page-button" title="Private Albums">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+                </svg>Home
+              </button>
+              <button onClick={() => onAlbumClick('')} className="page-button" title="Public Albums">Public Albums</button>            
+            </nav>          
+            <form className="searchbar" onSubmit={handleSearchSubmit}>
               <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
               <button type="submit" className="search-button" title="Search">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -132,31 +156,12 @@ export function AlbumHierarchyComponent({ album, onAlbumClick, onImageClick, las
                     <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
                 </svg>
               </button>
-          </form>
-
-          <nav className="menu">
-            <button onClick={() => onAlbumClick('')} className="back-button" title="Raw Albums">Raw Albums</button>
-            <button onClick={() => onAlbumClick('')} className="back-button" title="Virtual Albums">Virtual Albums</button>            
-          </nav>
-        </div>
-        <div className="gallery-banner-label">
-        <nav className="breadcrumbs">
-          <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '-10px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-              <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-            </svg>
-          </a>
-          {album.navigation_path_segments.map((segment, index) => {
-            const pathToSegment = '\\' + album.navigation_path_segments.slice(0, index + 1).join('\\');
-            return (
-              <span key={index}>
-                {' > '} <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(pathToSegment);}}>{segment}</a>
-              </span>
-            );
-          })}
-        </nav>
+            </form>
+          </div>
         
-        <h1>{album.album_name()}</h1>     
+
+        <div className="gallery-banner-label">
+          <h1>{album.album_name()}</h1>     
         </div>
       </div>	
       {album.albums.length > 0 && (

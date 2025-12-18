@@ -297,7 +297,7 @@ export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, 
           <div className="content" ref={containerRef}>
               <nav className="breadcrumbs">
               <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '-10px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
                 </svg>
               </a>
