@@ -238,7 +238,41 @@ export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, 
           <ExifPanel exif={image.image_exif} album={album} image={image} onClose={toggleExif} />
         )}
 
-        <div className="nav nav-prev">
+        {/* Content - full viewport */}
+        <div className="content" ref={containerRef}>
+              <nav className="breadcrumbs">
+              <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+                </svg>
+              </a>
+              {album.navigation_path_segments.map((segment, index) => {
+                const pathToSegment = '\\' + album.navigation_path_segments.slice(0, index + 1).join('\\');
+                return (
+                  <span key={index}>
+                    {' > '} <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(pathToSegment);}}>{segment}</a>
+                  </span>
+                );
+              })}
+            </nav>
+            {image.is_movie 
+                ? (<video ref={videoRef} src={image.image_original_path}
+                   poster={image.image_uhd_path || image.thumbnail_path}  
+                   controls onContextMenu={(e) => e.preventDefault()} />) 
+                : (
+                  <img ref={imageRef} src={image.image_uhd_path} alt={image.name} onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                      transformOrigin: '0 0',
+                      cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                      transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                    }}
+                  />
+                )}
+        </div>
+
+        {/* Left overlay - toolbar and prev button */}
+        <div className="nav-overlay nav-overlay-left">
             <div className="toolbar">
                 <button onClick={toggleFullscreen} className="fullscreen-button" title="Fullscreen (F)">
                     <svg viewBox="0 0 24 24" fill="none">
@@ -283,65 +317,28 @@ export function ImageView({ image, album, onAlbumClick,onClose, onPrev, onNext, 
                 )}
             </div>
 
-            <div className="nav-btn">
-                <button onClick={() => onPrev(image, album)} className="prev-button">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <polyline points="15,4 7,12 15,20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            </div>
-
-            <div className="spacer-prev"></div>
-        </div>
-
-          <div className="content" ref={containerRef}>
-              <nav className="breadcrumbs">
-              <a href="#"onClick={(e) => {e.preventDefault(); onAlbumClick('');}}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+            <button onClick={() => onPrev(image, album)} className="nav-arrow prev-button">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <polyline points="15,4 7,12 15,20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-              </a>
-              {album.navigation_path_segments.map((segment, index) => {
-                const pathToSegment = '\\' + album.navigation_path_segments.slice(0, index + 1).join('\\');
-                return (
-                  <span key={index}>
-                    {' > '} <a href="#" onClick={(e) => {e.preventDefault(); onAlbumClick(pathToSegment);}}>{segment}</a>
-                  </span>
-                );
-              })}
-            </nav>
-            {image.is_movie 
-                ? (<video ref={videoRef} src={image.image_original_path}
-                   poster={image.image_uhd_path || image.thumbnail_path}  
-                   controls onContextMenu={(e) => e.preventDefault()} />) 
-                : (
-                  <img ref={imageRef} src={image.image_uhd_path} alt={image.name} onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
-                      transformOrigin: '0 0',
-                      cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                      transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-                    }}
-                  />
-                )}
+            </button>
         </div>
 
-        <div className="nav nav-next">
+        {/* Right overlay - close button and next button */}
+        <div className="nav-overlay nav-overlay-right">
             <div className="toolbar">
                 <button onClick={onClose} className="close-button">
                     <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M4,4 L19,20 M19,4 L4,20" stroke="white" fill="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>                
-                </button>
-            </div>
-            <div className="nav-btn">
-                <button onClick={() => onNext(image, album)} className="next-button">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <polyline points="9,4 17,12 9,20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M4,4 L19,20 M19,4 L4,20" stroke="white" fill="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>                
                     </svg>
                 </button>
             </div>
-            <div className="spacer-next"></div>
+            
+            <button onClick={() => onNext(image, album)} className="nav-arrow next-button">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <polyline points="9,4 17,12 9,20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </div>
     </div>
 

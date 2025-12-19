@@ -10,46 +10,86 @@ body {
 }
 
 .viewer {
-    display: flex;
     width: 100vw;
     height: 100vh;
     position: fixed;
     top: 0;
-    position: relative; /* container for centering */
+    left: 0;
 }
 
-.media-box {
-    position: relative; /* anchor overlay to media bounds */
-    display: inline-block;
-}
-
-.media-box .breadcrumbs {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+.content {
+    width: 100%;
+    height: 100%;
     display: flex;
-    color: white;
-    z-index: 1000;
-    background-color: rgba(0,0,0,0.4);
-    padding: 6px 10px;
-    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
 }
- 
 
-.nav-prev, .nav-next {
+/* Navigation overlays */
+.nav-overlay {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    width: 60px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;    
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 100;
+    background-color: rgba(0, 0, 0, 0.3);
 }
-svg:hover {
-    opacity: 1;        
+
+.nav-overlay > * {
+    pointer-events: auto;
+}
+
+.nav-overlay-left {
+    left: 0;
+}
+
+.nav-overlay-right {
+    right: 0;
+}
+
+.nav-overlay .toolbar {
+    position: absolute;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-arrow svg {
+    width: 40px;
+    height: 40px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.nav-arrow:hover svg {
+    opacity: 1;
 }
 
 .toolbar {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding-top: 12px;
+    align-items: center;
 }
 
 button {
@@ -74,35 +114,7 @@ button {
     opacity: 1;        
 }
 
-.nav-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.prev-button, .next-button {
-    display: flex;
-    align-items: center;   
-}
-
-
-.prev-button svg, .next-button svg {
-    width: 30px;
-    height: 30px;
-    opacity: 0.6;
-}
-.prev-button svg:hover, .next-button svg:hover {
-    opacity: 1;
-}
-.spacer-prev {
-    height: 160px; /* roughly matches toolbar height to center the arrow */
-}
-.spacer-next {
-    height: 65px; /* roughly matches toolbar height to center the arrow */
-}
-
-.content {
+.content .breadcrumbs {
     flex: 1;
     display: flex;
     align-items: center;
@@ -114,7 +126,7 @@ button {
 .content .breadcrumbs {
     position: absolute;
     top: 8px;
-    left: 10px;
+    left: 65px;
     display: flex;
     color: white;
     z-index: 1000;
@@ -124,8 +136,8 @@ button {
 }
 
 .content img, .content video {
-    max-width: 99%;
-    max-height: 99%;
+    max-width: 100%;
+    max-height: 100%;
     width: auto;
     height: auto;
     object-fit: contain;

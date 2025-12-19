@@ -8,25 +8,32 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   const [searchText, setSearchText] = React.useState('');
   const [isLayouting, setIsLayouting] = React.useState(false);
-  //const isSortingRef = React.useRef(false);
+  
+  const getResponsiveHeight = () => {
+    const width = window.innerWidth;
+    if (width < 768) return 150; // Mobile
+    if (width < 1024) return 200; // Tablet
+    return 300; // Desktop
+  };
   
   const scrollToLastViewedImage = (imageId: number) => {
     const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
     if (imageElement) {
       console.log('Scrolling to last viewed image:', imageId);
-      console.log('Element position:', imageElement.getBoundingClientRect());
       imageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
-    } else {
+    } 
+    else {
       console.log('Image element not found for id:', imageId);
     }
   };
+
   const handleSortedAlbumsChange = useCallback(() => {
     console.log('AlbumHierarchyComponent: sorted albums changed', props.album.albums[0]?.name);
     props.clearLastViewedImage?.();
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
-      justifyGallery('.gallery', 300, () => {
+      justifyGallery('.gallery', getResponsiveHeight(), () => {
         setIsLayouting(false);
       });
     }, 100);  
@@ -37,7 +44,7 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
-      justifyGallery('.gallery', 300, () => {
+      justifyGallery('.gallery', getResponsiveHeight(), () => {
         setIsLayouting(false);
       });
     }, 100);  
@@ -59,7 +66,7 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
       loadedCount++;
       if (loadedCount === totalImages) {
         setIsLayouting(true);
-        justifyGallery('.gallery', 300, () => {
+        justifyGallery('.gallery', getResponsiveHeight(), () => {
           setIsLayouting(false);
           if (props.lastViewedImage) {
             scrollToLastViewedImage(props.lastViewedImage);
@@ -81,7 +88,7 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
     // Fallback: call after a delay if images don't load
     const fallbackTimer = setTimeout(() => {
       setIsLayouting(true);
-      justifyGallery('.gallery', 300, () => {
+      justifyGallery('.gallery', getResponsiveHeight(), () => {
         setIsLayouting(false);
         if (props.lastViewedImage) {
           scrollToLastViewedImage(props.lastViewedImage);
@@ -91,8 +98,11 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
 
     const handleResize = debounce(() => {
       setIsLayouting(true);
-      justifyGallery('.gallery', 300, () => {
+      justifyGallery('.gallery', getResponsiveHeight(), () => {
         setIsLayouting(false);
+        // if (props.lastViewedImage) {
+        //   scrollToLastViewedImage(props.lastViewedImage);
+        // }
       });
     }, 150);    
     window.addEventListener('resize', handleResize);    
@@ -105,13 +115,7 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
         img.removeEventListener('error', onImageLoad);
       });
     };
-  }, [props.album]); // Remove lastViewedImage from dependencies
-
-
-
-  // Scroll to last viewed image when returning from image view - removed
-  // Now handled inside justifyGallery callbacks above
-
+  }, [props.album]); //, props.lastViewedImage]); 
 
   
   function handleSearchSubmit(e: React.FormEvent) {

@@ -2,7 +2,7 @@
 .exif-panel {
     position: fixed;
     bottom: 20px;
-    left: 50px;
+    left: 65px;
     max-width: 400px;
     max-height: 60vh;
     background-color: rgba(0, 0, 0, 0.6);
