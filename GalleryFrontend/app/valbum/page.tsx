@@ -1,13 +1,13 @@
 'use client';
 
-import { AlbumPage } from './components/AlbumPage';
+import { VirtualAlbumPage } from './components/VirtualAlbumPage';
 import { Suspense } from 'react';
 
 
 export default function Page() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <AlbumPage />
+      <VirtualAlbumPage />
     </Suspense>
   );
 }

@@ -15,12 +15,22 @@ export interface ZoomHandlers {
   zoomOut: () => void;
 }
 
-export function ImageViewZoom(
+export interface ImageZoomResult {
+  state: ZoomState;
+  handlers: ZoomHandlers;
+  setZoom: React.Dispatch<React.SetStateAction<number>>;
+  setIs1to1: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function ImageZoomAndTouchNavigation(
   imageRef: React.RefObject<HTMLImageElement>,
   containerRef: React.RefObject<HTMLDivElement>,
   isVideo: boolean,
-  imageId: number
-) {
+  imageId: number,
+  onPrevImage?: () => void,
+  onNextImage?: () => void
+): ImageZoomResult 
+{
   const [zoom, setZoom] = React.useState(1);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = React.useState(false);
@@ -33,6 +43,69 @@ export function ImageViewZoom(
     setPosition({ x: 0, y: 0 });
     setIs1to1(false);
   }, [imageId]);
+
+  // Touch/swipe navigation + pinch zoom
+  React.useEffect(() => {
+    const touchStartX = { current: 0 };
+    const touchEndX = { current: 0 };
+    const initialPinchDistance = { current: 0 };
+    const lastZoom = { current: 1 };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2 && !isVideo) {
+        // Pinch zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
+        lastZoom.current = zoom;
+      } else if (e.touches.length === 1) {
+        touchStartX.current = e.touches[0].clientX;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && !isVideo) {
+        // Pinch zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const scale = distance / initialPinchDistance.current;
+        const newZoom = Math.min(Math.max(0.5, lastZoom.current * scale), 10);
+        setZoom(newZoom);
+        setIs1to1(false);
+      } else if (e.touches.length === 1 && zoom <= 1) {
+        touchEndX.current = e.touches[0].clientX;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0 && zoom <= 1) {
+        const swipeThreshold = 50;
+        const diff = touchStartX.current - touchEndX.current;
+
+        if (Math.abs(diff) > swipeThreshold) {
+          if (diff > 0) {
+            onNextImage?.();
+          } else {
+            onPrevImage?.();
+          }
+        }
+
+        touchStartX.current = 0;
+        touchEndX.current = 0;
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [zoom, isVideo, onPrevImage, onNextImage]);
 
   // Mouse wheel zoom
   React.useEffect(() => {
@@ -160,19 +233,11 @@ export function ImageViewZoom(
     setIs1to1(false);
   }, [isVideo]);
 
-  const state: ZoomState = {
-    zoom,
-    position,
-    isDragging,
-    is1to1,
-  };
 
-  const handlers: ZoomHandlers = {
-    toggle1to1,
-    reset,
-    zoomIn,
-    zoomOut,
-  };
 
-  return { state, handlers, setZoom, setIs1to1 };
+
+  const state: ZoomState = {zoom, position, isDragging, is1to1};
+  const handlers: ZoomHandlers = {toggle1to1, reset, zoomIn, zoomOut};
+  const result: ImageZoomResult = { state, handlers, setZoom, setIs1to1 };
+  return result;
 }

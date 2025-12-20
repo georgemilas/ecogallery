@@ -1,3 +1,4 @@
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export interface ImageExif {
   id: number;
@@ -97,6 +98,9 @@ export interface AlbumHierarchyProps {
   lastViewedImage?: number | null;
   albumSort?: string;
   imageSort?: string;
+  router: AppRouterInstance;
   onSortChange?: (albumSort: string, imageSort: string) => void;
   clearLastViewedImage?: () => void;
 }
+
+

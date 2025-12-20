@@ -200,55 +200,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return albumContent;                 
     }    
 
-    public async Task<List<AlbumContentFlatten>> GetAlbumContentFlattenByName(string albumName)
-    {
-        // Escape backslashes for PostgreSQL LIKE pattern
-        var albumEscapedLikePattern = albumName.Replace(@"\", @"\\") + "%";
-        var parameters = new { pattern = albumEscapedLikePattern };
-        var sql = @"SELECT 
-                        id,
-                        image_name as item_name, 
-                        image_type as item_type, 
-                        image_path as item_path, 
-                        album_name, 
-                        last_updated_utc,
-                        image_timestamp_utc as item_timestamp_utc
-                    FROM album_image 
-                    WHERE album_name LIKE @pattern";
-        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters);
-        return albumContent;                 
-    }  
-    public async Task<List<AlbumContentFlatten>> GetAlbumContentFlattenById(long albumId)
-    {
-        //first get the album name for the album id
-        var parameters = new { id = albumId };
-        var sql = "SELECT * FROM album WHERE id = @id";
-        var albums = await _db.QueryAsync(sql, reader => Album.CreateFromDataReader(reader), parameters);
-        if (!albums.Any())
-        {
-            return new List<AlbumContentFlatten>();
-        }
-        
-        //now run the query to get the images using album_image.album_name.startsWith(album.AlbumName)
-        var album = albums.First();   
-        // Escape backslashes for PostgreSQL LIKE pattern
-        var albumEscapedLikePattern = album.AlbumName.Replace(@"\", @"\\") + "%";
-        var parameters2 = new { pattern = albumEscapedLikePattern };
-        sql = @"SELECT 
-                        id,
-                        image_name as item_name, 
-                        image_type as item_type, 
-                        image_path as item_path, 
-                        album_name, 
-                        last_updated_utc,
-                        image_timestamp_utc as item_timestamp_utc
-                    FROM album_image 
-                    WHERE album_name LIKE @pattern";
-        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentFlatten.CreateFromDataReader(reader), parameters2);
-        return albumContent;                 
-    }  
-
-
+    
     public async Task<List<AlbumContentHierarchical>> GetRootAlbumContentHierarchical()
     {
         var sql = "SELECT * FROM get_root_album_content_hierarchical()";
@@ -257,6 +209,44 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
             reader => AlbumContentHierarchical.CreateFromDataReader(reader));
         return albumContent;                 
     }
+
+    public async Task<List<VirtualAlbum>> GetRootVirtualAlbumsContent()
+    {
+        var sql = "select * from virtual_album where parent_album = ''";
+        var albumContent = await _db.QueryAsync(sql, reader => VirtualAlbum.CreateFromDataReader(reader));
+        return albumContent;                 
+    }
+    public async Task<VirtualAlbum?> GetVirtualAlbumContentById(long id)
+    {
+        var sql = "select * from virtual_album where id = @id";
+        var parameters = new { id };
+        var albumContent = await _db.QueryAsync(sql, reader => VirtualAlbum.CreateFromDataReader(reader),parameters);
+        return albumContent.FirstOrDefault();                 
+    }
+
+    public async Task<VirtualAlbum> AddNewVirtualAlbumAsync(VirtualAlbum album)
+    {
+        //Console.WriteLine($"TRY save db: {album}");  
+        //insert or update existing virtual album record 
+        var sql = $@"INSERT INTO virtual_album (album_name, album_description, album_expression, album_folder, album_type, persistent_expression, is_public, feature_image_path, last_updated_utc, created_timestamp_utc, parent_album, parent_album_id)
+                               VALUES (@album_name, @album_description, @album_expression, @album_folder, @album_type, @persistent_expression, @is_public, @feature_image_path, @last_updated_utc, @created_timestamp_utc, @parent_album, @parent_album_id)
+                    ON CONFLICT (parent_album, album_name) DO UPDATE
+                    SET
+                        album_description = EXCLUDED.album_description,
+                        album_expression = EXCLUDED.album_expression,
+                        feature_image_path = EXCLUDED.feature_image_path,
+                        last_updated_utc = EXCLUDED.last_updated_utc,
+                        is_public = EXCLUDED.is_public,
+                        persistent_expression = EXCLUDED.persistent_expression,
+                        album_type = EXCLUDED.album_type,
+                        album_folder = EXCLUDED.album_folder                        
+                    RETURNING id;";        
+        album.Id = await _db.ExecuteScalarAsync<long>(sql, album);    
+        //Console.WriteLine($"ran album save db: {album.AlbumName}");        
+        return album; 
+    }
+
+
 
 }
 

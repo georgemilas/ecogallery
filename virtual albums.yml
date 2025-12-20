@@ -1,0 +1,28 @@
+Colors of Barcelona:
+  description: From the trip of 2023 to Barcelona, Montserrat, and Salvador Dali's residence at Portlligat
+  expression:
+    ((barcelona and (8024 8004 981 939 25-2 883 818 787 781 736 709 717 948 958 933 Pano 733 723 674 676 661 656 650 
+                     618 607 534 532 462 442 447 378 377 374 368 348 331 337 309 317 301 293 288 268 253 233 200 193 
+                     142 114 086 7067 7047 7080 127 184 210 319))
+        or (barcelona and phone and (3932 448 flamingo 50745 2321 2336 2412 0329 1648 5429 3520 5453))) and not (_MG_7871 333_04)
+  feature: 2023\Barcelona\feature__MG_7939.jpg
+
+Acasa:
+  description: Acasa in Arad, Sinpaul, Firiteaz si Dudesti - Selectii din 2022 si 2016 
+  expression: ((acasa and arad) or (sinpaul _4532 _4529 luni miercuri)) and not (arad\arad 2009\ strand select castel hunedoara vaca pestera nidi peru lulu _5352 mvi_5673 _5388 _5353 _5334 _5384 _5374 _1476 _5567 _5560 _1487)
+  feature: 2022\Arad\joi sinpaul\feature__MG_5648.jpg
+
+Colors of 2024:
+  description: Featuring Florida, Montreal, Tennessee, South Carolina, Colorado, and the beautiful botanical garden in north Chicago
+  expression: 2024\ and not (andrew dcim eclipse 4th razvan anthony _8940. _8881. _8871. _8870. race _1429 _1575 _1376 _1333 _1195 _112234 _113634 _175050 _3524 _3522)
+  feature: 2024\Colorado\_MG_2981-Pano-Edit.jpg
+
+
+Andrew's Yale Graduation Ceremony:
+  description: A few sweet memories from the graduation weekend
+  expression: 2024\ and andrew and (20240519_155121 9803-Enh _0273 _9993 _9955 _132118 _101331 _101321 _101118 _132447 _171927 _171833 _113536 _155121 _9982 _9951 155037_03 153850 151729 132506 132447 _9948 _9921 122400 9907-enh 9985-enh 9987-enh 9872-enh 9862-enh 9843-enh 9824-enh 9781-enh 9800-enh 9784-enh 9744-enh 9754-enh 9732-enh 141618 _9940 _0344 _0198 _0061 _0040 _105925 _9885 _9886 _9882 _9879) and not (selected\mimi\20240518_141618.jpg)
+  feature: 2024\Andrew selected\_MG_9744-Enhanced-NR-1.jpg
+
+
+
+

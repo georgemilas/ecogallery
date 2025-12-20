@@ -32,6 +32,7 @@ if (string.IsNullOrWhiteSpace(picturesConfig.Folder))
 
 var rootCommand = new RootCommand("Pictures background services console application");
 var folderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
+var yamlFileOption = new Option<string?>(new[] {"--yaml", "-y"}, () => null, "YAML file path");
 var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 400, 1080, 1440 }, "Thumbnail heights in pixels (can specify multiple)")
 {
     AllowMultipleArgumentsPerToken = true
@@ -181,6 +182,42 @@ imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallel
     await host.RunAsync(cts.Token);
 }, folderOption, nonParallelOption, parallelDegreeOption);
 rootCommand.AddCommand(imageExifCommand);
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Command to run load virtual albums from a yaml file  
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var valbumCommand = new Command("valbum", "Load virtual albums from a YAML file");
+valbumCommand.AddOption(folderOption);
+valbumCommand.AddOption(yamlFileOption);
+valbumCommand.SetHandler(async (string folder, string? yamlFilePath) =>
+{
+    if (string.IsNullOrWhiteSpace(yamlFilePath) || !File.Exists(yamlFilePath))
+    {
+        Console.WriteLine("YAML file path is required and must exist.");
+        return;
+    }
+    picturesConfig.Folder = folder;
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
+
+    var host = Host.CreateDefaultBuilder()
+        .ConfigureServices(services =>
+        {
+            services.AddSingleton<IHostedService>(sp => new VirtualAlbumLoaderService(
+                sp.GetRequiredService<IHostApplicationLifetime>(),
+                picturesConfig,
+                dbConfig,
+                new FileInfo(yamlFilePath!)
+            ));                        
+        })
+        .Build();
+
+    Console.WriteLine($"Starting virtual album loader on '{yamlFilePath}'. Press Ctrl+C to stop.");
+    await host.RunAsync(cts.Token);
+}, folderOption, yamlFileOption);
+rootCommand.AddCommand(valbumCommand);
 
 
 

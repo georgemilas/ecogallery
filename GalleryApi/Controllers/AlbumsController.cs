@@ -96,36 +96,6 @@ public class AlbumsController : ControllerBase
     }
 
 
-    // GET: /api/v1/albums/{albumName}/flatten
-    [HttpGet("{albumName}/flatten")]
-    public async Task<ActionResult<List<GalleryLib.model.album.AlbumContentFlatten>>> GetAlbumContentFlattenByName(string albumName)
-    {
-        try
-        {
-            var albumContent = await _albumRepository.GetAlbumContentFlattenByName(albumName);
-            return Ok(albumContent);
-        }
-        catch(AlbumNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-
-    }
-    // GET: /api/v1/albums/{albumId}/flatten
-    [HttpGet("{albumId:long}/flatten")]
-    public async Task<ActionResult<List<GalleryLib.model.album.AlbumContentFlatten>>> GetAlbumContentFlattenById(long albumId)
-    {
-        try
-        {
-            var albumContent = await _albumRepository.GetAlbumContentFlattenById(albumId);
-            return Ok(albumContent);
-        }
-        catch(AlbumNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-
-    }
 
     // POST: /api/v1/albums/search
     [HttpPost("search")]

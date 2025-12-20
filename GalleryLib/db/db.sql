@@ -31,6 +31,37 @@ ADD
 CREATE UNIQUE INDEX IF NOT EXISTS ux_album_album_name
 ON public.album (album_name);
 
+
+------------------------------------------------------------------------------
+----------------- public.virtual_album -----------------------------------------------
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.virtual_album;
+
+CREATE TABLE
+  public.virtual_album (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    album_name character varying(500) NOT NULL,
+    album_description character varying(1500) NULL,
+    album_expression character varying(2500) NULL,
+    album_folder character varying(500) NULL,
+    album_type character varying(20) NOT NULL,               -- one of expression or folder 
+    persistent_expression boolean NOT NULL DEFAULT false,    -- whether the expression is saved across sessions 
+    is_public boolean NOT NULL DEFAULT true,                 -- whether the virtual album is public or private
+    feature_image_path character varying(500) NULL,
+    last_updated_utc timestamp with time zone NULL,          --when the record was last updated
+    created_timestamp_utc timestamp with time zone NOT NULL,   --when the image file that caused the album to be created was last updated
+    parent_album character varying(500) NULL,
+    parent_album_id bigint NULL
+  );    
+
+ALTER TABLE
+  public.virtual_album
+ADD
+  CONSTRAINT virtual_album_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_virtual_album_parent_album_album_name
+ON public.virtual_album (parent_album, album_name);
+
 ------------------------------------------------------------------------------
 ----------------- public.album_image -----------------------------------------  
 ------------------------------------------------------------------------------

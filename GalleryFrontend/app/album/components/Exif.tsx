@@ -14,7 +14,7 @@ function getThumbRelativePath(fullPath: string): string {
   return thumbPath.splice(thumbPath.indexOf('400')+1).join('/');
 }
 
-export function ExifPanel({ exif, album, image, onClose }: ExifPanelProps) {
+export function ExifPanel({ exif, album, image, onClose }: ExifPanelProps): JSX.Element {
   return (
     <div className="exif-panel">
       <div className="exif-header">

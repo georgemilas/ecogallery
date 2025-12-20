@@ -1,17 +1,35 @@
 import React, { useEffect, useCallback } from 'react';
-import './gallery.css';
-import { justifyGallery, debounce } from './gallery';
-import { SortControl } from './Sort';
-import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
+import '../../album/components/gallery.css';
+import { justifyGallery, debounce } from '../../album/components/gallery';
+import { SortControl } from '../../album/components/Sort';
+import { AlbumItemHierarchy, ImageItemContent } from '../../album/components/AlbumHierarchyProps';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
-export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
+
+
+export interface VirtualAlbumHierarchyProps {
+  album: AlbumItemHierarchy;
+  onAlbumClick: (albumId: number | null) => void;
+  onImageClick: (image: ImageItemContent) => void;
+  onSearchSubmit: (expression: string) => void;
+  lastViewedImage?: number | null;
+  albumSort?: string;
+  imageSort?: string;
+  router: AppRouterInstance;
+  onSortChange?: (albumSort: string, imageSort: string) => void;
+  clearLastViewedImage?: () => void;
+}
+
+
+
+
+export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-  const [searchText, setSearchText] = React.useState('');
-  const [isLayouting, setIsLayouting] = React.useState(false);
+    const [isLayouting, setIsLayouting] = React.useState(false);
   
   const getResponsiveHeight = () => {
     const width = window.innerWidth;
-    if (width < 768) return 150; // Mobile
+    if (width < 768) return 150;  // Mobile
     if (width < 1024) return 200; // Tablet
     return 300; // Desktop
   };
@@ -26,18 +44,6 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
       console.log('Image element not found for id:', imageId);
     }
   };
-
-  const handleSortedAlbumsChange = useCallback(() => {
-    console.log('AlbumHierarchyComponent: sorted albums changed', props.album.albums[0]?.name);
-    props.clearLastViewedImage?.();
-    forceUpdate(); // Force re-render after in-place sort
-    setIsLayouting(true);
-    setTimeout(() => {
-      justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);
-      });
-    }, 100);  
-  }, [props.clearLastViewedImage]);
 
   const handleSortedImagesChange = useCallback(() => {
     props.clearLastViewedImage?.();
@@ -56,6 +62,8 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
     const gallery = document.querySelector('.gallery');
     if (!gallery) return;
 
+    //////////////////////////////////////////////////////////////
+    //image load handling
     const images = Array.from(gallery.querySelectorAll('img'));
     let loadedCount = 0;
     const totalImages = images.length;
@@ -94,8 +102,10 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
           scrollToLastViewedImage(props.lastViewedImage);
         }
       });
-    }, 3000);
+    }, 1000);
 
+    //////////////////////////////////////////////////////////////
+    //page  resize (scroll etc.) handling
     const handleResize = debounce(() => {
       setIsLayouting(true);
       justifyGallery('.gallery', getResponsiveHeight(), () => {
@@ -118,59 +128,27 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
   }, [props.album]); //, props.lastViewedImage]); 
 
   
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (searchText.trim().length === 0) return;
-    props.onSearchSubmit(searchText.trim());
-  } 
+  
 
 
   return (
     <>
       <div className="gallery-banner">
         <img src={props.album.image_hd_path} alt={props.album.album_name()} />
-        <div className="gallery-banner-menubar">
-          <nav className="breadcrumbs">
-            <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick('');}}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
-              <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-            </svg>
-          </a>
-            {props.album.navigation_path_segments.map((segment, index) => {
-              const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
-              return (
-                <span key={index}>
-                  {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(pathToSegment);}}>{segment}</a>
-                </span>
-              );
-            })}
-          </nav>
-          
+        <div className="gallery-banner-menubar">                  
             <nav className="menu">
-              <button onClick={() => props.onAlbumClick('')} className="page-button" title="Private Albums">
+              <button onClick={() => props.onAlbumClick(null)} className="page-button" title="Public Albums">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-                </svg>Home
-              </button>
-              <button onClick={() => props.onAlbumClick('')} className="page-button" title="Public Albums">Public Albums</button>
+                </svg>Albums</button>
               <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
                 </svg>
                 Top
               </button>
-            </nav>          
-            <form className="searchbar" onSubmit={handleSearchSubmit}>
-              <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
-              <button type="submit" className="search-button" title="Search">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <circle cx="10" cy="10" r="6" stroke="white" strokeWidth="2"/>
-                    <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
-                </svg>
-              </button>
-            </form>
-          </div>
-        
+            </nav>                      
+          </div>       
 
         <div className="gallery-banner-label">
           <h1>{props.album.album_name()}</h1>     
@@ -178,13 +156,11 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
       </div>	
       {props.album.albums.length > 0 && (
       <div className='albums'>
-        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={props.albumSort} 
-          onSortUpdate={(sort) => props.onSortChange?.(sort, props.imageSort || 'timestamp-desc')}
-        />
+        
         <ul className='albums-container'>
         {(props.album.albums).map(r => (
           <li className='albums-item' key={r.id}>
-            <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.name);}}>
+            <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.id);}}>
               <img src={r.thumbnail_path} alt={props.album.get_name(r.name)} />
               <span className="albums-item-label">{props.album.get_name(r.name)}</span>
               <svg className="albums-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -196,8 +172,6 @@ export function AlbumHierarchyComponent(props: AlbumHierarchyProps) {
         </ul>        
       </div>
       )}
-
-
 
       <div className="gallery-container">
         <SortControl 
