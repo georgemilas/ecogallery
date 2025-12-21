@@ -12,75 +12,79 @@ public class VirtualAlbumsService: ServiceBase
         
     }    
 
-    public async Task<VirtualAlbumContent> GetVirtualAlbumContentById(long albumId)
+    public async Task<VirtualAlbumContent> GetVirtualAlbumContentByIdAsync(long albumId)
     {
-        var valbum = await _albumRepository.GetVirtualAlbumContentById(albumId); 
+        var valbum = await _albumRepository.GetVirtualAlbumByIdAsync(albumId);
         if (valbum == null)
         {
             throw new AlbumNotFoundException($"Virtual album with id {albumId} not found.");
-        }              
+        }
+        VirtualAlbumContent album = await GetFromVirtualAlbum(valbum);
+                
+        return album;
+    }
+
+    public async Task<VirtualAlbumContent> GetRootVirtualAlbumsContentAsync()
+    {
+        var valbum = await _albumRepository.GetRootVirtualAlbumsAsync();        
+        if (valbum == null)
+        {
+            throw new AlbumNotFoundException("No root virtual albums found.");
+        }
+        VirtualAlbumContent album = await GetFromVirtualAlbum(valbum);                
+        return album;
+    }
+
+
+
+    private async Task<VirtualAlbumContent> GetFromVirtualAlbum(GalleryLib.model.album.VirtualAlbum valbum)
+    {
         var album = new VirtualAlbumContent();
         album.Id = valbum.Id;
         album.Name = valbum.AlbumName;
-        album.Description = valbum.AlbumDescription; 
+        album.Description = valbum.AlbumDescription;
         album.Expression = valbum.AlbumExpression;
         album.NavigationPathSegments = new List<string>();
         album.LastUpdatedUtc = valbum.LastUpdatedUtc;
         album.ItemTimestampUtc = valbum.LastUpdatedUtc;
-        string path = valbum.FeatureImagePath ?? "";                                        
+        string path = valbum.FeatureImagePath ?? "";
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute             
         album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
-        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));     
+        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));
         album.Albums = new List<AlbumItemContent>();
         album.Images = new List<ImageItemContent>();
-
-                
-        var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(album.Expression);    
-        foreach (var image in content)
-        {            
+        Console.WriteLine($"Debug: Loading virtual album '{valbum.AlbumName}' with expression '{valbum.AlbumExpression}' and folder '{valbum.AlbumFolder}'");         
+        var content =  !String.IsNullOrWhiteSpace(album.Expression) ?
+                       await _albumRepository.GetAlbumContentHierarchicalByExpression(album.Expression) :
+                       await _albumRepository.GetAlbumContentHierarchicalByName(valbum.AlbumFolder);       
+        Console.WriteLine($"Debug: Virtual album '{valbum.AlbumName}' returned {content.Count} items.");
+        foreach (var image in content.Where(i => !i.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase)))
+        {
             var contentImage = GetImageItemContent(null, image);
-            album.Images.Add(contentImage);
-            continue;                        
-        }        
-        return album;
-    }
+            album.Images.Add(contentImage);                
+        }
 
-    public async Task<VirtualAlbumContent> GetRootVirtualAlbumsContent()
-    {
-        var albumContent = await _albumRepository.GetRootVirtualAlbumsContent();        
-        var album = new VirtualAlbumContent();
-        album.Id = 0;
-        album.Name = "Albums";
-        album.Description = "Albums"; 
-        album.NavigationPathSegments = new List<string>();
-        album.LastUpdatedUtc = DateTimeOffset.UtcNow;
-        album.ItemTimestampUtc = DateTimeOffset.UtcNow;
-        album.Albums = new List<AlbumItemContent>();
-        string path = albumContent[0].FeatureImagePath ?? "";                                        
-        path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
-        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute             
-        album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
-        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));     
-
-        foreach (var valbum in albumContent)
+        var albumContent = await _albumRepository.GetVirtualAlbumContentByIdAsync(valbum.Id);
+        foreach (var calbum in albumContent)
         {   
             var albumItem = new AlbumItemContent();
-            albumItem.Id = valbum.Id;
-            albumItem.Name = valbum.AlbumName;
+            albumItem.Id = calbum.Id;
+            albumItem.Name = calbum.AlbumName;
             albumItem.NavigationPathSegments = new List<string>();
-            albumItem.LastUpdatedUtc = valbum.LastUpdatedUtc;
-            albumItem.ItemTimestampUtc = valbum.LastUpdatedUtc;
-            path = valbum.FeatureImagePath ?? "";                                        
+            albumItem.LastUpdatedUtc = calbum.LastUpdatedUtc;
+            albumItem.ItemTimestampUtc = calbum.LastUpdatedUtc;
+            path = calbum.FeatureImagePath ?? "";                                        
             path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
             path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute             
             albumItem.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
             albumItem.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));                
             album.Albums.Add(albumItem);
         }
-        album.Images = new List<ImageItemContent>();
         return album;
     }
+
+    
 
 
 }

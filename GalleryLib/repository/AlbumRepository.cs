@@ -210,19 +210,34 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return albumContent;                 
     }
 
-    public async Task<List<VirtualAlbum>> GetRootVirtualAlbumsContent()
+    public async Task<VirtualAlbum?> GetRootVirtualAlbumsAsync()
     {
         var sql = "select * from virtual_album where parent_album = ''";
         var albumContent = await _db.QueryAsync(sql, reader => VirtualAlbum.CreateFromDataReader(reader));
-        return albumContent;                 
+        return albumContent.FirstOrDefault();                 
     }
-    public async Task<VirtualAlbum?> GetVirtualAlbumContentById(long id)
+    public async Task<VirtualAlbum?> GetVirtualAlbumByIdAsync(long id)
     {
         var sql = "select * from virtual_album where id = @id";
         var parameters = new { id };
         var albumContent = await _db.QueryAsync(sql, reader => VirtualAlbum.CreateFromDataReader(reader),parameters);
         return albumContent.FirstOrDefault();                 
     }
+    public async Task<List<VirtualAlbum>> GetVirtualAlbumContentByIdAsync(long id)
+    {
+        var sql = "select * from virtual_album where parent_album_id = @parent_album_id";
+        var parameters = new { parent_album_id = id };
+        var albumContent = await _db.QueryAsync(sql, reader => VirtualAlbum.CreateFromDataReader(reader),parameters);
+        return albumContent;                 
+    }
+    public async Task<VirtualAlbum?> GetVirtualAlbumByNameAsync(string name)
+    {
+        var sql = "select * from virtual_album where album_name = @album_name";
+        var parameters = new { album_name = name };
+        var albumContent = await _db.QueryAsync(sql, reader => VirtualAlbum.CreateFromDataReader(reader),parameters);
+        return albumContent.FirstOrDefault();                 
+    }
+
 
     public async Task<VirtualAlbum> AddNewVirtualAlbumAsync(VirtualAlbum album)
     {

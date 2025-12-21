@@ -25,7 +25,7 @@ public class VirtualAlbumsController : ControllerBase
 
         try
         {
-            var albumContent = await _albumsService.GetRootVirtualAlbumsContent();
+            var albumContent = await _albumsService.GetRootVirtualAlbumsContentAsync();
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)
@@ -41,7 +41,7 @@ public class VirtualAlbumsController : ControllerBase
     {
         try
         {
-            var albumContent = await _albumsService.GetVirtualAlbumContentById(albumId);
+            var albumContent = await _albumsService.GetVirtualAlbumContentByIdAsync(albumId);
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)

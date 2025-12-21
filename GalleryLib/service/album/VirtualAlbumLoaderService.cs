@@ -55,6 +55,23 @@ public class VirtualAlbumLoaderService : IHostedService
             {
                 var yalbum = virtualAlbums[name];
                 var album = VirtualAlbum.CreateFromYaml(name, yalbum);
+                if (album.HasParentAlbum)
+                {
+                    var parent = await albumRepository.GetVirtualAlbumByNameAsync(yalbum.Parent);
+                    if (parent == null)
+                    {
+                        parent = new VirtualAlbum()
+                        {
+                            AlbumName = yalbum.Parent,
+                            AlbumDescription = "",
+                            AlbumExpression = "",
+                            IsPublic = true,
+                            LastUpdatedUtc = DateTimeOffset.UtcNow
+                        };
+                        parent = await albumRepository.AddNewVirtualAlbumAsync(parent);
+                    }
+                    album.ParentAlbumId = parent.Id;
+                }
                 await albumRepository.AddNewVirtualAlbumAsync(album);
                 Console.WriteLine($"Loaded virtual album: {album.AlbumName}");
             }

@@ -11,7 +11,7 @@ public record VirtualAlbum
     public string AlbumDescription { get; set; } = string.Empty;
     public string AlbumExpression { get; set; } = string.Empty;
     public string AlbumFolder { get; set; } = string.Empty;
-    public string AlbumType { get; set; } = "folder";
+    public string AlbumType { get; set; } = "expression";    //one of "expression", "folder"
     public bool PersistentExpression { get; set; } = false;
     public bool IsPublic { get; set; } = true;
     public string? FeatureImagePath { get; set; } = null; 
@@ -50,6 +50,7 @@ public record VirtualAlbum
             AlbumType = reader.GetString(reader.GetOrdinal("album_type")),
             PersistentExpression = reader.GetBoolean(reader.GetOrdinal("persistent_expression")),
             IsPublic = reader.GetBoolean(reader.GetOrdinal("is_public")),
+            AlbumFolder = reader.GetString(reader.GetOrdinal("album_folder")),
             FeatureImagePath = reader.GetString(reader.GetOrdinal("feature_image_path")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
             CreatedTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("created_timestamp_utc")),
