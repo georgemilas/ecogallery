@@ -4,6 +4,7 @@ import { justifyGallery, debounce } from '../../album/components/gallery';
 import { SortControl } from '../../album/components/Sort';
 import { AlbumItemHierarchy, ImageItemContent } from '../../album/components/AlbumHierarchyProps';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 
 
@@ -24,6 +25,7 @@ export interface VirtualAlbumHierarchyProps {
 
 
 export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {
+  const { user } = useAuth();
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
     const [isLayouting, setIsLayouting] = React.useState(false);
   
@@ -137,10 +139,19 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
         <img src={props.album.image_hd_path} alt={props.album.album_name()} />
         <div className="gallery-banner-menubar">                  
             <nav className="menu">
-              <button onClick={() => props.onAlbumClick(null)} className="page-button" title="Public Albums">
+              <button onClick={() => props.onAlbumClick(null)} className="page-button" title="Albums">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
                 </svg>Albums</button>
+
+              <button
+                onClick={() => props.router.push(user ? '/album' : '/login')}
+                className="page-button"
+                title={user ? 'Go to private albums' : 'Login to access private albums'}
+              >
+                {user ? 'Private Albums' : 'Login'}
+              </button>
+
               <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>

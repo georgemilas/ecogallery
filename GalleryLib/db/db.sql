@@ -163,3 +163,73 @@ ADD
   ON DELETE CASCADE;
 
 
+------------------------------------------------------------------------------
+----------------- public.user ------------------------------------------------  
+------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.user;
+
+CREATE TABLE
+  public.user (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    username character varying(100) NOT NULL,
+    email character varying(255) NOT NULL,
+    password_hash character varying(255) NOT NULL,
+    full_name character varying(255) NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    is_admin boolean NOT NULL DEFAULT false,
+    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    last_login_utc timestamp with time zone NULL
+  );
+
+ALTER TABLE
+  public.user
+ADD
+  CONSTRAINT user_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_user_username
+ON public.user (username);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_user_email
+ON public.user (email);
+
+
+------------------------------------------------------------------------------
+----------------- public.session ---------------------------------------------  
+------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.session;
+
+CREATE TABLE
+  public.session (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    session_token character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    expires_utc timestamp with time zone NOT NULL,
+    last_activity_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    ip_address character varying(45) NULL,
+    user_agent character varying(500) NULL
+  );
+
+ALTER TABLE
+  public.session
+ADD
+  CONSTRAINT session_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_session_session_token
+ON public.session (session_token);
+
+CREATE INDEX IF NOT EXISTS idx_session_user_id
+ON public.session (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_session_expires_utc
+ON public.session (expires_utc);
+
+ALTER TABLE
+  public.session
+ADD
+  CONSTRAINT fk_session_user
+  FOREIGN KEY (user_id)
+  REFERENCES public.user (id)
+  ON DELETE CASCADE;

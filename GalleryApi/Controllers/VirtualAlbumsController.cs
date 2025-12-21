@@ -11,12 +11,10 @@ namespace GalleryApi.Controllers;
 [Route("api/v1/valbums")]
 public class VirtualAlbumsController : ControllerBase
 {
-    private readonly AlbumRepository _albumRepository;
     private readonly VirtualAlbumsService _albumsService;
 
-    public VirtualAlbumsController(AlbumRepository albumRepository, VirtualAlbumsService albumsService)
+    public VirtualAlbumsController(VirtualAlbumsService albumsService)
     {
-        _albumRepository = albumRepository;
         _albumsService = albumsService;
     }
 
@@ -49,16 +47,6 @@ public class VirtualAlbumsController : ControllerBase
         catch(AlbumNotFoundException ex)
         {
             return NotFound(new { error = ex.Message });
-        }
-    }
-
-
-
-    protected void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _albumRepository?.Dispose();
         }
     }
 }

@@ -5,6 +5,7 @@ import { AlbumItemHierarchy, ImageItemContent } from '../../album/components/Alb
 import { ImageView } from '../../album/components/ImageView';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/app/utils/apiFetch';
 
 export function VirtualAlbumPage(): JSX.Element {
   const [album, setAlbum] = useState<AlbumItemHierarchy | null>(null);
@@ -30,7 +31,7 @@ export function VirtualAlbumPage(): JSX.Element {
       const albumIdPath = albumIdParam !== null ? `/${albumIdParam}` : '';
       const url = apiBase ? `${apiBase}/api/v1/valbums${albumIdPath}` : `/api/v1/valbums${albumIdPath}`;
       console.log('Fetching virtual album:', {albumIdParam, albumIdPath, url });
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) {
         console.error('Failed to fetch virtual album', res.status);
         setAlbum(null);

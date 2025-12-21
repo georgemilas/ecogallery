@@ -1,6 +1,8 @@
 using System.Text.Json;
+using GalleryApi.Middleware;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
+using GalleryLib.Repository.Auth;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,12 +18,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {   
-        // policy.WithOrigins("http://localhost:3000", "http://10.0.0.240:3000", 
-        //                     "http://127.0.0.1:3000", "http://gm-pictures.ddns.net:3000",
-        //                     "http://172.29.80.1:3000")
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:3000", "http://localhost", "http://localhost:5001", 
+                           "http://127.0.0.1:3000", "http://127.0.0.1", "http://127.0.0.1:5001",
+                           "http://192.168.1.66:3000", "http://192.168.1.66", "http://192.168.1.66:5001",
+                           "http://108.250.182.25:3000", "http://108.250.182.25", "http://108.250.182.25:5001")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -57,8 +60,12 @@ builder.Services.AddHttpContextAccessor();
 // Register business logic services
 builder.Services.AddScoped<AlbumRepository>();  
 builder.Services.AddScoped<AlbumImageRepository>();
+builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<GalleryLib.Service.Auth.AuthService>();
 builder.Services.AddScoped<GalleryApi.service.AlbumsService>();
 builder.Services.AddScoped<GalleryApi.service.VirtualAlbumsService>();
+
+
 
 // Swagger/OpenAPI https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -94,6 +101,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+
+// Add authentication middleware in order: app auth first, then user session auth
+app.UseAppAuth();
+app.UseSessionAuth();
 
 if (!app.Environment.IsDevelopment())
 {

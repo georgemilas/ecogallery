@@ -7,8 +7,11 @@ import { AlbumItemHierarchy, ImageItemContent } from './AlbumHierarchyProps';
 import { ImageView } from './ImageView';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/app/utils/apiFetch';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export function AlbumPage(): JSX.Element {
+  const { user, loading: authLoading } = useAuth();
   const [album, setAlbum] = useState<AlbumItemHierarchy | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -32,7 +35,7 @@ export function AlbumPage(): JSX.Element {
       const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
       const url = apiBase ? `${apiBase}/api/v1/albums/${encodedAlbumName}` : `/api/v1/albums/${encodedAlbumName}`;
       console.log('Fetching album:', { raw: albumNameParam, encoded: encodedAlbumName, url });
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) {
         console.error('Failed to fetch album', res.status);
         setAlbum(null);
@@ -61,7 +64,7 @@ export function AlbumPage(): JSX.Element {
       const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
       const url = apiBase ? `${apiBase}/api/v1/albums/search` : `/api/v1/albums/search`;
       console.log('Searching albums:', { expression, url });
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ expression })
@@ -90,8 +93,15 @@ export function AlbumPage(): JSX.Element {
   };
 
   useEffect(() => {
+    // Wait for auth to resolve; if no user, redirect and skip fetch
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
     fetchAlbum(albumNameParam);
-  }, [albumNameParam]);
+  }, [albumNameParam, authLoading, user]);
 
   
   useEffect(() => {

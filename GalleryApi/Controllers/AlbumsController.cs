@@ -11,12 +11,10 @@ namespace GalleryApi.Controllers;
 [Route("api/v1/albums")]
 public class AlbumsController : ControllerBase
 {
-    private readonly AlbumRepository _albumRepository;
     private readonly AlbumsService _albumsService;
 
-    public AlbumsController(AlbumRepository albumRepository, AlbumsService albumsService)
+    public AlbumsController(AlbumsService albumsService)
     {
-        _albumRepository = albumRepository;
         _albumsService = albumsService;
     }
 
@@ -113,12 +111,4 @@ public class AlbumsController : ControllerBase
 
     }
 
-
-    protected void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _albumRepository?.Dispose();
-        }
-    }
 }
