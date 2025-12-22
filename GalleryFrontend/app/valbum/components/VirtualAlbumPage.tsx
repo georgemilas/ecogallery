@@ -163,6 +163,7 @@ export function VirtualAlbumPage(): JSX.Element {
               isFullscreen={isFullscreen}
               setIsFullscreen={setIsFullscreen}
               path='/valbum'
+              useOriginalImage={false}
             />
           )}
         </>

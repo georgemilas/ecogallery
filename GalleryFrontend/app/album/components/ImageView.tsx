@@ -14,6 +14,7 @@ interface ImageViewProps {
   isFullscreen: boolean;  
   setIsFullscreen: (value: boolean) => void;
   path: string;
+  useOriginalImage?: boolean; // If true, use image_original_path; otherwise use image_uhd_path
 }
 
 export function ImageView(props: ImageViewProps): JSX.Element {
@@ -209,7 +210,7 @@ export function ImageView(props: ImageViewProps): JSX.Element {
                    poster={props.image.image_uhd_path || props.image.thumbnail_path}  
                    controls onContextMenu={(e) => e.preventDefault()} />) 
                 : (
-                  <img ref={imageRef} src={props.image.image_uhd_path} alt={props.image.name} onContextMenu={(e) => e.preventDefault()}
+                  <img ref={imageRef} src={props.useOriginalImage ? props.image.image_original_path : props.image.image_uhd_path} alt={props.image.name} onContextMenu={(e) => e.preventDefault()}
                     style={{
                       transform: `translate(${zoom.state.position.x}px, ${zoom.state.position.y}px) scale(${zoom.state.zoom})`,
                       transformOrigin: '0 0',

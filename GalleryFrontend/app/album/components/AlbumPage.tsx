@@ -207,6 +207,7 @@ export function AlbumPage(): JSX.Element {
               isFullscreen={isFullscreen}
               setIsFullscreen={setIsFullscreen}
               path="/album"
+              useOriginalImage={true}
             />
           )}
         </>
