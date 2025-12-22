@@ -23,7 +23,7 @@ public class AlbumsService: ServiceBase
         valbum.Id = 0;
         valbum.Name = "Search Result";
         valbum.Expression = albumSearch.Expression;
-        valbum.Description = content.Any() ? "Search Result" : "No images found";
+        valbum.Description = content.Any() ? $"{content.Count} images" : "No images found";
         valbum.NavigationPathSegments = new List<string>();
         valbum.LastUpdatedUtc = DateTimeOffset.UtcNow;
         valbum.ItemTimestampUtc = DateTimeOffset.UtcNow;
@@ -96,6 +96,7 @@ public class AlbumsService: ServiceBase
     {
         album.Id = item.Id;
         album.Name = item.ItemName;
+        album.Description = item.ItemDescription;
         
         string defaultFolderImage = "";
         //get the relative path first

@@ -7,6 +7,7 @@ public record AlbumImage
 {
     public long Id { get; set; }    
     public string ImageName { get; set; } = string.Empty;
+    public string ImageDescription { get; set; } = string.Empty;
     public string ImagePath { get; set; } = string.Empty;
     public string ImageType { get; set; } = ".jpg";    
     public DateTimeOffset LastUpdatedUtc { get; set; }     //record last update time UTC
@@ -27,6 +28,7 @@ public record AlbumImage
         {
             ImageName = Path.GetFileName(path),
             ImagePath = path,
+            ImageDescription = path,
             ImageType  = Path.GetExtension(path),   //includes the dot, e.g. ".jpg"             
             LastUpdatedUtc = DateTimeOffset.UtcNow,
             AlbumName = Path.GetDirectoryName(path) ?? string.Empty,   //includes the entire folder path  ex: 2025/vacation/Florida
@@ -40,6 +42,7 @@ public record AlbumImage
         {
             Id = reader.GetInt64(reader.GetOrdinal("id")),
             ImageName = reader.GetString(reader.GetOrdinal("image_name")),
+            ImageDescription =  reader.IsDBNull(reader.GetOrdinal("image_description")) ? string.Empty :  reader.GetString(reader.GetOrdinal("image_description")),
             ImagePath = reader.GetString(reader.GetOrdinal("image_path")),
             ImageType = reader.GetString(reader.GetOrdinal("image_type")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),

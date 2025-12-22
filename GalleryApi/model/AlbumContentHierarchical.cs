@@ -15,8 +15,7 @@ public record AlbumSearch
 
 public record VirtualAlbumContent: AlbumContentHierarchical
 {
-    public string Expression { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty; 
+    public string Expression { get; set; } = string.Empty;    
 }
 
 public record AlbumContentHierarchical: AlbumItemContent
@@ -43,6 +42,7 @@ public record ItemContent
 {
     public long Id { get; set; }   //Int64
     public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty; 
     public List<string> NavigationPathSegments { get; set; } = new List<string>();
     public string ThumbnailPath { get; set; } = string.Empty;         
     public DateTimeOffset LastUpdatedUtc { get; set; }    

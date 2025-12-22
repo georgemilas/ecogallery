@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION get_album_content_hierarchical_by_id(p_album_id BIGIN
 RETURNS TABLE (
     id BIGINT,
     item_name VARCHAR,
+    item_description VARCHAR,
     item_type VARCHAR,
     parent_album_id BIGINT,
     parent_album_name VARCHAR,
@@ -17,7 +18,8 @@ RETURNS TABLE (
 ) AS $$
 SELECT 
     a.id, 
-    a.album_name AS item_name, 
+    a.album_name AS item_name,
+    a.album_description AS item_description, 
     a.album_type AS item_type, 
     a.parent_album_id as parent_album_id, 
     a.parent_album AS parent_album_name,
@@ -39,6 +41,7 @@ UNION ALL
 SELECT 
     ai.id, 
     ai.image_name AS item_name, 
+    ai.image_description AS item_description,
     ai.image_type AS item_type, 
     ai.album_id as parent_album_id, 
     ai.album_name AS parent_album_name,

@@ -1,11 +1,11 @@
-homepage: 
-  description: welcome to my gallery
+Pictures Gallery: 
+  description: Welcome to my gallery
   folder: \public
   feature: \public\IMG_8337.jpg
 
 Colors of Barcelona:
-  parent: homepage
-  description: From the trip of 2023 to Barcelona, Montserrat, and Salvador Dali's residence at Portlligat
+  parent: Pictures Gallery
+  description: From the 2023 trip to Barcelona, Montserrat, and Salvador Dali's residence at Portlligat 
   expression:
     ((barcelona and (8024 8004 981 939 25-2 883 818 787 781 736 709 717 948 958 933 Pano 733 723 674 676 661 656 650 
                      618 607 534 532 462 442 447 378 377 374 368 348 331 337 309 317 301 293 288 268 253 233 200 193 
@@ -14,24 +14,45 @@ Colors of Barcelona:
   feature: \2023\Barcelona\feature__MG_7939.jpg
 
 Acasa:
-  parent: homepage
+  parent: Pictures Gallery
   description: Acasa in Arad, Sinpaul, Firiteaz si Dudesti - Selectii din 2022 si 2016 
   expression: ((acasa and arad) or (sinpaul _4532 _4529 luni miercuri)) and not (arad\arad 2009\ strand select castel hunedoara vaca pestera nidi peru lulu _5352 mvi_5673 _5388 _5353 _5334 _5384 _5374 _1476 _5567 _5560 _1487)
   feature: \2022\Arad\joi sinpaul\feature__MG_5648.jpg
 
-Colors of 2024:
-  parent: homepage
-  description: Featuring Florida, Montreal, Tennessee, South Carolina, Colorado, and the beautiful botanical garden in north Chicago
+2024:
+  parent: Pictures Gallery
+  description: From 2024 trips to Florida, Montreal, Tennessee, South Carolina, Colorado, and the beautiful botanical garden in north Chicago
   expression: 2024\ and not (andrew dcim eclipse 4th razvan anthony _8940. _8881. _8871. _8870. race _1429 _1575 _1376 _1333 _1195 _112234 _113634 _175050 _3524 _3522)
   feature: \2024\Colorado\_MG_2981-Pano-Edit.jpg
 
 
-Andrew's Yale Graduation Ceremony:
-  parent: homepage
-  description: A few sweet memories from the graduation weekend
+Andrew's Graduation:
+  parent: Pictures Gallery
+  description: A few sweet memories from 2024 Yale graduation weekend
   expression: 2024\ and andrew and (20240519_155121 9803-Enh _0273 _9993 _9955 _132118 _101331 _101321 _101118 _132447 _171927 _171833 _113536 _155121 _9982 _9951 155037_03 153850 151729 132506 132447 _9948 _9921 122400 9907-enh 9985-enh 9987-enh 9872-enh 9862-enh 9843-enh 9824-enh 9781-enh 9800-enh 9784-enh 9744-enh 9754-enh 9732-enh 141618 _9940 _0344 _0198 _0061 _0040 _105925 _9885 _9886 _9882 _9879) and not (selected\mimi\20240518_141618.jpg)
   feature: \2024\Andrew selected\_MG_9744-Enhanced-NR-1.jpg
 
+2021: 
+  parent: Pictures Gallery
+  description: Selections from 2021 trips to South Carolina's Hilton head Island and walks around Schaumburg neighborhoods
+  folder: \2021\best
+  feature: \2021\best\IMG_1683.jpg
+
+2022: 
+  parent: Pictures Gallery
+  description: Selections from 2022 trips to Romania, Anthony at Northwestern, wippets racing and walks around Chicago neighborhoods
+  expression: 
+    \2022 and (select _6826 _6441-Edit _6762-Edit _6833 _6560 _6653 _6636 _6659 _5529 _6634 _6622 _6299 _6501 _6367 _172001_2 _6220 172240 _6126 trophy _6033 _6045 _154511
+                      _6027 _5914 _5887 _5875 _5817 _5815 _5757 _5727 _5740 _5722 _5718
+                      _4104 day\_MG_4297 _4301 _4157 _4075-2 _4059 _4029 _3936 _3894 _3880 _221919)
+    and not (_5689 _5687 _5685 _5676 _5672 _5637 _5450 _5353)
+  feature: \2022\Arad\select\_MG_5459.jpg
+
+Bahamas:
+  parent: Pictures Gallery
+  description: Selections from trip to Bahamas
+  expression: bahamas and best and not (orig _7231_1)
+  feature: \2008\bahamas\simbata\best\IMG_7017.jpg
 
 
 

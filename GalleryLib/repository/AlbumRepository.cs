@@ -66,6 +66,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         var sql = @"SELECT 
                         a.id, 
                         a.album_name AS item_name, 
+                        a.album_description AS item_description,
                         a.album_type AS item_type, 
                         a.parent_album_id as parent_album_id, 
                         a.parent_album AS parent_album_name,
@@ -113,11 +114,12 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         //album.FeatureImagePath ??= string.Empty;
         //Console.WriteLine($"TRY save db: {album}");  
         //insert or update existing album record and use the last image as feature image
-        var sql = $@"INSERT INTO album (album_name, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id, album_timestamp_utc)
-                               VALUES (@album_name, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id, @album_timestamp_utc)
+        var sql = $@"INSERT INTO album (album_name, album_description, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id, album_timestamp_utc)
+                               VALUES (@album_name, @album_description, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id, @album_timestamp_utc)
                     ON CONFLICT (album_name) DO UPDATE
                     SET
                         {updateFeature}
+                        album_description = EXCLUDED.album_description,
                         last_updated_utc = EXCLUDED.last_updated_utc,
                         album_timestamp_utc = EXCLUDED.album_timestamp_utc
                     RETURNING id;";        
@@ -165,6 +167,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         var sql = $@"{select}
                     ai.id, 
                     ai.image_name AS item_name, 
+                    ai.image_description AS item_description,
                     ai.image_type AS item_type, 
                     ai.album_id as parent_album_id, 
                     ai.album_name AS parent_album_name,

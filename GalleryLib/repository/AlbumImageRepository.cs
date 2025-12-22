@@ -42,11 +42,12 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
     {
         AlbumImage image = AlbumImage.CreateFromFilePath(filePath, RootFolder);
         image.AlbumId = album?.Id ?? 0;
-        var sql = @"INSERT INTO album_image (image_name, image_path, image_type, last_updated_utc, album_name, album_id, image_timestamp_utc) 
-                                     VALUES (@image_name, @image_path, @image_type, @last_updated_utc, @album_name, @album_id, @image_timestamp_utc)
+        var sql = @"INSERT INTO album_image (image_name, image_description, image_path, image_type, last_updated_utc, album_name, album_id, image_timestamp_utc) 
+                                     VALUES (@image_name, @image_description, @image_path, @image_type, @last_updated_utc, @album_name, @album_id, @image_timestamp_utc)
                     ON CONFLICT (image_path) DO UPDATE
                             SET
-                                last_updated_utc = EXCLUDED.last_updated_utc                        
+                                last_updated_utc = EXCLUDED.last_updated_utc,
+                                image_description = EXCLUDED.image_description                        
                     RETURNING id";        
         image.Id = await _db.ExecuteScalarAsync<long>(sql, image);            
         return image;                        

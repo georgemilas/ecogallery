@@ -23,6 +23,7 @@ public class ServiceBase
         var image = new ImageItemContent();
         image.Id = item.Id;
         image.Name = item.ItemName;
+        image.Description = item.ItemDescription;
         
         string path = item.FeatureItemPath ?? string.Empty;     //get the relative path first                                
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative

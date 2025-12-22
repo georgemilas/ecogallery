@@ -179,6 +179,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
 
         <div className="gallery-banner-label">
           <h1>{props.album.album_name()}</h1>     
+          {props.album.description && <h3>{props.album.description}</h3>}
         </div>
       </div>	
       {props.album.albums.length > 0 && (
@@ -227,7 +228,8 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
                     <path d="M8 5v14l11-7L8 5z" fill="currentColor"/>
                   </svg>
                 )}
-                <span className="gallery-item-label">{r.name}</span>
+                <span className="gallery-item-label">{r.name}</span>                
+                {r.description && <span className="gallery-item-label">{r.description}</span>}
             </a>
         </li>
         ))}

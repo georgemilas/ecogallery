@@ -47,6 +47,17 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
     }
   };
 
+  const handleSortedAlbumsChange = useCallback(() => {
+    console.log('VirtualAlbumHierarchyView: sorted albums changed', props.album.albums[0]?.name);
+    forceUpdate(); // Force re-render after in-place sort
+    setIsLayouting(true);
+    setTimeout(() => {
+      justifyGallery('.gallery', getResponsiveHeight(), () => {
+        setIsLayouting(false);
+      });
+    }, 100);  
+  }, []);
+
   const handleSortedImagesChange = useCallback(() => {
     props.clearLastViewedImage?.();
     forceUpdate(); // Force re-render after in-place sort
@@ -162,12 +173,15 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
           </div>       
 
         <div className="gallery-banner-label">
-          <h1>{props.album.album_name()}</h1>     
+          <h1>{props.album.album_name()}</h1>
+          {props.album.description && <h3>{props.album.description}</h3>}      
         </div>
       </div>	
       {props.album.albums.length > 0 && (
       <div className='albums'>
-        
+        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={props.albumSort} 
+                  onSortUpdate={(sort) => props.onSortChange?.(sort, props.imageSort || 'timestamp-desc')}
+                />
         <ul className='albums-container'>
         {(props.album.albums).map(r => (
           <li className='albums-item' key={r.id}>
@@ -208,6 +222,7 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
                   </svg>
                 )}
                 <span className="gallery-item-label">{r.name}</span>
+                {r.description && <span className="gallery-item-label">{r.description}</span>}
             </a>
         </li>
         ))}

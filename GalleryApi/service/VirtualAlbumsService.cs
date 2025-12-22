@@ -71,6 +71,7 @@ public class VirtualAlbumsService: ServiceBase
             var albumItem = new AlbumItemContent();
             albumItem.Id = calbum.Id;
             albumItem.Name = calbum.AlbumName;
+            albumItem.Description = calbum.AlbumDescription;
             albumItem.NavigationPathSegments = new List<string>();
             albumItem.LastUpdatedUtc = calbum.LastUpdatedUtc;
             albumItem.ItemTimestampUtc = calbum.LastUpdatedUtc;

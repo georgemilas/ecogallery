@@ -39,6 +39,7 @@ export interface ImageExif {
 export interface ItemContent {
   id: number;
   name: string;
+  description?: string;
   navigation_path_segments: Array<string>;
   thumbnail_path: string;
   last_updated_utc: Date;
@@ -60,6 +61,7 @@ export interface AlbumItemContent extends ItemContent {
 export class AlbumItemHierarchy implements AlbumItemContent {
   id: number = 0;
   name: string = '';
+  description?: string;   // optional in AlbumItemContent interface therefor we must add it here
   navigation_path_segments: Array<string> = [];
   thumbnail_path: string = '';
   image_hd_path: string = '';

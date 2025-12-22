@@ -8,6 +8,7 @@ public record AlbumContentHierarchical
 {
     public long Id { get; set; }   //Int64
     public string ItemName { get; set; } = string.Empty;
+    public string ItemDescription { get; set; } = string.Empty;
     public string ItemType { get; set; } = string.Empty;   //could be media (aka image or movie) or folder
     public long ParentAlbumId { get; set; }   //Int64
     public string ParentAlbumName { get; set; } = string.Empty;
@@ -26,6 +27,7 @@ public record AlbumContentHierarchical
         {
             Id = reader.GetInt64(reader.GetOrdinal("id")),
             ItemName = reader.GetString(reader.GetOrdinal("item_name")),
+            ItemDescription = reader.IsDBNull(reader.GetOrdinal("item_description")) ? string.Empty :  reader.GetString(reader.GetOrdinal("item_description")),
             ItemType = reader.GetString(reader.GetOrdinal("item_type")),
             ParentAlbumId = reader.GetInt64(reader.GetOrdinal("parent_album_id")),
             ParentAlbumName = reader.GetString(reader.GetOrdinal("parent_album_name")),

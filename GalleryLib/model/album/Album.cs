@@ -8,6 +8,7 @@ public record Album
     public long Id { get; set; }   //Int64
     public string AlbumName { get; set; } = string.Empty;
     public string AlbumType { get; set; } = "folder";
+    public string AlbumDescription { get; set; } = string.Empty;
     public string? FeatureImagePath { get; set; } = null; 
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset AlbumTimestampUtc { get; set; }
@@ -26,6 +27,7 @@ public record Album
         {
             AlbumName = relativePath,   //includes the entire relative folder path  ex: 2025/vacation/Florida
             AlbumType  = "folder",   
+            AlbumDescription = relativePath,
             LastUpdatedUtc = DateTimeOffset.UtcNow,
             AlbumTimestampUtc = lastUpdatedUtc,
             ParentAlbum = Path.GetDirectoryName(relativePath) ?? string.Empty
@@ -44,7 +46,8 @@ public record Album
         return new Album
         {
             AlbumName = albumName,   //includes the entire relative folder path  ex: 2025/vacation/Florida
-            AlbumType  = "folder",   
+            AlbumType  = "folder",
+            AlbumDescription = albumName,   
             FeatureImagePath = relativePath,
             LastUpdatedUtc = DateTimeOffset.UtcNow,
             AlbumTimestampUtc = lastUpdatedUtc,
@@ -59,6 +62,7 @@ public record Album
             Id = reader.GetInt64(reader.GetOrdinal("id")),
             AlbumName = reader.GetString(reader.GetOrdinal("album_name")),
             AlbumType = reader.GetString(reader.GetOrdinal("album_type")),
+            AlbumDescription =  reader.IsDBNull(reader.GetOrdinal("album_description")) ? string.Empty :  reader.GetString(reader.GetOrdinal("album_description")),
             FeatureImagePath = reader.GetString(reader.GetOrdinal("feature_image_path")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
             AlbumTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("album_timestamp_utc")),
