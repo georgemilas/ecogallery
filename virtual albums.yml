@@ -19,11 +19,35 @@ Acasa:
   expression: ((acasa and arad) or (sinpaul _4532 _4529 luni miercuri)) and not (arad\arad 2009\ strand select castel hunedoara vaca pestera nidi peru lulu _5352 mvi_5673 _5388 _5353 _5334 _5384 _5374 _1476 _5567 _5560 _1487)
   feature: \2022\Arad\joi sinpaul\feature__MG_5648.jpg
 
+
+2025:
+  parent: Pictures Gallery
+  description: From trips to Maine and Victoria Island and just walking around Chicago neighborhoods 
+  expression: 2025 and ((main and (4144 4224 4201 4168 4160  4153 4083 4064 4033 3938 4008 3954 3965 3959 3892 3940 3918 3915 3908 3903 3878)) 
+     or (_4567 4534 4524  4530 4518 4522 4515 4526) 
+     or (victoria and (4484 4509 4500 4464 4471 4440  4428 4407 4417 4377 4356 4365 4345 4343 4330 4284 4272 4277 4268 4265 4492))) 
+  feature: \2025\Maine\feature__MG_3938.jpg
+
 2024:
   parent: Pictures Gallery
   description: From 2024 trips to Florida, Montreal, Tennessee, South Carolina, Colorado, and the beautiful botanical garden in north Chicago
-  expression: 2024\ and not (andrew dcim eclipse 4th razvan anthony _8940. _8881. _8871. _8870. race _1429 _1575 _1376 _1333 _1195 _112234 _113634 _175050 _3524 _3522)
+  expression: 2024\ and not (andrew dcim eclipse 4th razvan anthony _8940. _8881. _8871. _8870. race _1429 _1575 _1376 _1333 _1195 _112234 _113634 _175050 _3524 _3522 
+   mimi\bird mimi\20240502_070002.mp4 mimi\20240501_181732.mp4 _2713 _2569)
   feature: \2024\Colorado\_MG_2981-Pano-Edit.jpg
+
+Colorado:
+  parent: 2024
+  description: Selections from 2024 trip to Colorado 
+  expression: 2024\ and colorado and not (andrew dcim eclipse 4th razvan anthony _8940. _8881. _8871. _8870. race _1429 _1575 _1376 _1333 _1195 _112234
+   _113634 _175050 _3524 _3522 mimi\bird mimi\20240502_070002.mp4 mimi\20240501_181732.mp4 _2713 _2569)
+  feature: \2024\Colorado\_MG_2981-Pano-Edit.jpg
+
+South Carolina & Florida:
+  parent: 2024
+  description: Selections from 2024 trip to Florida, South Carolina and Tennessee 
+  expression: 2024\ and (florida carolina) and not (andrew dcim eclipse 4th razvan anthony _8940. _8881. _8871. _8870. race _1429 _1575 _1376 _1333 _1195 _112234
+   _113634 _175050 _3524 _3522 mimi\bird mimi\20240502_070002.mp4 mimi\20240501_181732.mp4 _2713 _2569)
+  feature: \2024\South Carolina & Tennessee\_MG_2056.jpg
 
 
 Andrew's Graduation:
@@ -33,7 +57,7 @@ Andrew's Graduation:
     2024\ and andrew and (20240519_155121 9803-Enh _0273 _9993 _9955 _132118 _101331 _101321 _101118 _132447 _171927 _171833 _113536 _155121 _9982 _9951
     155037_03 153850 151729 132506 132447 _9948 _9921 122400 9907-enh 9985-enh 9987-enh 9872-enh 9862-enh 9843-enh 9824-enh 9781-enh 9800-enh 9784-enh 9744-enh
     9754-enh 9732-enh 141618 _9940 _0344 _0198 _0061 _0040 _105925 _9885 _9886 _9882 _9879  _165615 _095452) 
-    and not (selected\mimi\20240518_141618.jpg)
+    and not (selected\mimi\20240518_141618.jpg mimi\20240520_095452.mp4 mimi\20240518_165615.mp4)
   feature: \2024\Andrew selected\_MG_9744-Enhanced-NR-1.jpg
 
 2021: 
@@ -52,11 +76,22 @@ Andrew's Graduation:
     and not (_5689 _5687 _5685 _5676 _5672 _5637 _5450 _5353)
   feature: \2022\Arad\select\_MG_5459.jpg
 
+2019:
+  parent: Pictures Gallery
+  description: Selections from trips to Yellowstone, San Francisco, Lake Tahoe, Death Valley and Sequoia National Park
+  expression: 2019 and (best 0073.mp4 0940.mp4) and not (0840 0827 0812 0797 0371 0374 0375 0458 0460 0677 0642 0573 0565 0524 0216 0411 0395 0272 0379 0412 0381 1147)
+  feature: \2019\excursie\best\IMG_0299.jpg
+
 Bahamas:
   parent: Pictures Gallery
   description: Selections from trip to Bahamas
   expression: bahamas and best and not (orig _7231_1 _6882)
   feature: \2008\bahamas\simbata\best\IMG_7017.jpg
 
+Puerto Vallarta:
+  parent: Pictures Gallery
+  description: Selections from trip to Puerto Vallarta, Mexico
+  expression: puerto and (best 3369 3674 3624 3719) and not (3884_2)
+  feature: \2008\puerto vallarta\best\IMG_3384 mexic.JPG 
 
 
