@@ -2,7 +2,7 @@ using System.Data.Common;
 
 namespace GalleryLib.model.album;
 
-public class ImageExif
+public class ImageMetadata   //EXIF, IPTC etc. 
 {
     public long Id { get; set; }
     public long AlbumImageId { get; set; }
@@ -40,9 +40,9 @@ public class ImageExif
 
 
 
-    public static ImageExif CreateFromDataReader(DbDataReader reader)
+    public static ImageMetadata CreateFromDataReader(DbDataReader reader)
     {
-        return new ImageExif
+        return new ImageMetadata
         {
             Id = reader.GetInt64(reader.GetOrdinal("id")),
             AlbumImageId = reader.GetInt64(reader.GetOrdinal("album_image_id")),

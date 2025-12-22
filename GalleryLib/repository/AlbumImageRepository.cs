@@ -69,15 +69,38 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         return await _db.ExecuteAsync(sql, image);               
     }
 
-    public async Task<ImageExif?> GetImageExifAsync(AlbumImage albumImage)
+    public async Task<ImageMetadata?> GetImageExifAsync(AlbumImage albumImage)
     {
         var sql = "SELECT * FROM image_exif WHERE album_image_id = @album_image_id";
         var sqlParams = new { album_image_id = albumImage.Id };
-        var imageExifs = await _db.QueryAsync(sql, reader => ImageExif.CreateFromDataReader(reader), sqlParams);
+        var imageExifs = await _db.QueryAsync(sql, reader => ImageMetadata.CreateFromDataReader(reader), sqlParams);
         return imageExifs.FirstOrDefault();                 
     }
 
-    public async Task<ImageExif> AddNewImageExifAsync(ImageExif exif)
+    public async Task<VideoMetadata?> GetVideoMetadataAsync(AlbumImage albumImage)
+    {
+        var sql = "SELECT * FROM video_metadata WHERE album_image_id = @album_image_id";
+        var sqlParams = new { album_image_id = albumImage.Id };
+        var videoMetadata = await _db.QueryAsync(sql, reader => VideoMetadata.CreateFromDataReader(reader), sqlParams);
+        return videoMetadata.FirstOrDefault();                 
+    }
+
+    public async Task<VideoMetadata> AddNewVideoMetadataAsync(VideoMetadata videoMetadata)
+    {
+        var sql = @"INSERT INTO public.video_metadata(album_image_id, file_name, file_path, file_size_bytes, date_taken, date_modified, duration, 
+                                                    video_width, video_height, video_codec, audio_codec, pixel_format, frame_rate, video_bit_rate, 
+                                                    audio_sample_rate, audio_channels, audio_bit_rate, format_name, software, camera, last_updated_utc)
+                                    VALUES (@album_image_id, @file_name, @file_path, @file_size_bytes, @date_taken, @date_modified, @duration, 
+                                                    @video_width, @video_height, @video_codec, @audio_codec, @pixel_format, @frame_rate, @video_bit_rate, 
+                                                    @audio_sample_rate, @audio_channels, @audio_bit_rate, @format_name, @software, @camera, @last_updated_utc)                                     
+                    ON CONFLICT (album_image_id) DO UPDATE
+                        SET
+                            last_updated_utc = EXCLUDED.last_updated_utc                        
+                    RETURNING id";        
+        videoMetadata.Id = await _db.ExecuteScalarAsync<long>(sql, videoMetadata);            
+        return videoMetadata;                        
+    }
+    public async Task<ImageMetadata> AddNewImageExifAsync(ImageMetadata exif)
     {
         var sql = @"INSERT INTO public.image_exif(album_image_id, camera, lens, focal_length, aperture, exposure_time, iso, date_taken, 
                                                 rating, date_modified, flash, metering_mode, exposure_program, exposure_bias, exposure_mode, 

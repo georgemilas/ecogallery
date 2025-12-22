@@ -10,7 +10,7 @@ namespace GalleryLib.service.album;
 /// <summary>
 /// Syncronized the pictures folder and add/edit/delete the coresponding database information 
 /// </summary>
-public class DbSyncProcessor:  ImageExifProcessor
+public class DbSyncProcessor:  ImageMetadataProcessor
 {
     public DbSyncProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration, dbConfig)
     {

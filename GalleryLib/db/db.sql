@@ -166,6 +166,55 @@ ADD
 
 
 ------------------------------------------------------------------------------
+----------------- public.video_metadata --------------------------------------  
+------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.video_metadata;
+
+CREATE TABLE
+  public.video_metadata (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    album_image_id bigint NOT NULL,
+    file_name character varying(255) NOT NULL,
+    file_path character varying(500) NOT NULL,
+    file_size_bytes bigint NULL,
+    date_taken timestamp with time zone NULL,
+    date_modified timestamp with time zone NULL,
+    duration interval NULL,                      -- Video duration as PostgreSQL interval
+    video_width integer NULL,
+    video_height integer NULL,
+    video_codec character varying(100) NULL,
+    audio_codec character varying(100) NULL,
+    pixel_format character varying(100) NULL,
+    frame_rate numeric NULL,               -- e.g., 29.970, 59.940
+    video_bit_rate bigint NULL,
+    audio_sample_rate integer NULL,              -- e.g., 44100, 48000
+    audio_channels integer NULL,                 -- e.g., 2 for stereo
+    audio_bit_rate bigint NULL,
+    format_name character varying(150) NULL,     -- e.g., "mov,mp4,m4a,3gp,3g2,mj2"
+    software character varying(255) NULL,        -- Format long name or encoder
+    camera character varying(150) NULL,          -- Camera make and model
+    last_updated_utc timestamp with time zone NOT NULL  -- when the record was last updated
+  );
+
+ALTER TABLE
+  public.video_metadata
+ADD
+  CONSTRAINT video_metadata_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_video_metadata_album_image_id
+ON public.video_metadata (album_image_id);
+
+ALTER TABLE
+  public.video_metadata
+ADD
+  CONSTRAINT fk_video_metadata_album_image
+  FOREIGN KEY (album_image_id)
+  REFERENCES public.album_image (id)
+  ON DELETE CASCADE;
+
+
+------------------------------------------------------------------------------
 ----------------- public.user ------------------------------------------------  
 ------------------------------------------------------------------------------
 

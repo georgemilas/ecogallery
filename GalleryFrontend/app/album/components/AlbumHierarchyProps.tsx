@@ -36,6 +36,31 @@ export interface ImageExif {
   last_updated_utc: string;
 }
 
+export interface VideoMetadata {
+  id: number;
+  album_image_id: number;
+  file_name: string;
+  file_path: string;
+  file_size_bytes: number | null;
+  date_taken: string | null;
+  date_modified: string | null;
+  duration: string | null;              // ISO 8601 duration string (e.g., "PT1M20S" for 1:20)
+  video_width: number | null;
+  video_height: number | null;
+  video_codec: string | null;
+  audio_codec: string | null;
+  pixel_format: string | null;
+  frame_rate: number | null;
+  video_bit_rate: number | null;
+  audio_sample_rate: number | null;
+  audio_channels: number | null;
+  audio_bit_rate: number | null;
+  format_name: string | null;
+  software: string | null;
+  camera: string | null;
+  last_updated_utc: string;
+}
+
 export interface ItemContent {
   id: number;
   name: string;
@@ -52,6 +77,7 @@ export interface ImageItemContent extends ItemContent {
   image_uhd_path: string;
   image_original_path: string;
   image_exif: ImageExif | null;
+  video_metadata: VideoMetadata | null;
 }
 
 export interface AlbumItemContent extends ItemContent {

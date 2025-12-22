@@ -18,7 +18,8 @@ public record AlbumContentHierarchical
     public string? InnerFeatureItemPath { get; set; } = string.Empty;   //not null only if FeatureItemType is null
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset ItemTimestampUtc { get; set; }
-    public ImageExif? ImageExif { get; set; }  
+    public ImageMetadata? ImageExif { get; set; }  
+    public VideoMetadata? VideoMetadata { get; set; }
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
     {
@@ -39,7 +40,10 @@ public record AlbumContentHierarchical
             ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc")),
             ImageExif = reader.IsDBNull(reader.GetOrdinal("image_exif")) 
                                         ? null 
-                                        : JsonSerializer.Deserialize<ImageExif>(reader.GetString(reader.GetOrdinal("image_exif")), options)
+                                        : JsonSerializer.Deserialize<ImageMetadata>(reader.GetString(reader.GetOrdinal("image_exif")), options),
+            VideoMetadata = reader.IsDBNull(reader.GetOrdinal("video_metadata")) 
+                                        ? null 
+                                        : JsonSerializer.Deserialize<VideoMetadata>(reader.GetString(reader.GetOrdinal("video_metadata")), options)
             
 
         };

@@ -38,6 +38,7 @@ public class ServiceBase
         image.LastUpdatedUtc = item.LastUpdatedUtc;
         image.ItemTimestampUtc = item.ItemTimestampUtc;
         image.ImageExif = item.ImageExif;
+        image.VideoMetadata = item.VideoMetadata;
         return image;
     }
 

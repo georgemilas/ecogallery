@@ -45,9 +45,6 @@ public class AlbumsService: ServiceBase
         return valbum;
     }    
 
-
-
-
     public async Task<AlbumContentHierarchical> GetAlbumContentHierarchical(long albumId)
     {
         var albumContent = await _albumRepository.GetAlbumContentHierarchicalById(albumId);        

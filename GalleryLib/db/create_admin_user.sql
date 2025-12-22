@@ -13,14 +13,5 @@ VALUES (
 )
 ON CONFLICT (username) DO NOTHING;
 
--- Note: The password_hash above is just a placeholder.
--- You need to generate the actual hash by running this C# code:
--- using System.Security.Cryptography;
--- using System.Text;
--- var password = "admin123";
--- var bytes = Encoding.UTF8.GetBytes(password);
--- var hash = SHA256.Create().ComputeHash(bytes);
--- var passwordHash = Convert.ToBase64String(hash);
--- Console.WriteLine(passwordHash);
-
--- Or use the register endpoint to create users properly
+-- Note: The password_hash above is just a temporary initialization helper.
+-- Use the reset password endpoint to create new passwords properly

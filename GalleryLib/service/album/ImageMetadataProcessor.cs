@@ -4,6 +4,7 @@ using GalleryLib.model.album;
 using GalleryLib.model.configuration;
 using GalleryLib.service.fileProcessor;
 using SixLabors.ImageSharp;
+using FFMpegCore;
 
 namespace GalleryLib.service.album;
 
@@ -11,22 +12,22 @@ namespace GalleryLib.service.album;
 /// Syncronized the pictures folder and add/edit/delete the coresponding database images exif metadata 
 /// in addition to what AlbumProcessor does
 /// </summary>
-public class ImageExifProcessor: AlbumProcessor
+public class ImageMetadataProcessor: AlbumProcessor
 {
 
-    public ImageExifProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration, dbConfig)
+    public ImageMetadataProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration, dbConfig)
     {
         
     }
 
     public static new FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)
     {
-        IFileProcessor processor = new ImageExifProcessor(configuration, dbConfig);
+        IFileProcessor processor = new ImageMetadataProcessor(configuration, dbConfig);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
     public static new FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
     {
-        IFileProcessor processor = new ImageExifProcessor(configuration, dbConfig);
+        IFileProcessor processor = new ImageMetadataProcessor(configuration, dbConfig);
         return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
     }
 
@@ -39,7 +40,22 @@ public class ImageExifProcessor: AlbumProcessor
         var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath, logIfCreated);                
         if (_configuration.IsMovieFile(filePath))
         {
-            return Tuple.Create(albumImage, count); //skip exif for movie files
+            var dbVideoMetadata = await imageRepository.GetVideoMetadataAsync(albumImage);
+            if (dbVideoMetadata == null)
+            {
+                VideoMetadata videoMetadata = await ExtractVideoMetadata(filePath);
+                videoMetadata.AlbumImageId = albumImage.Id;
+                videoMetadata.FilePath = albumImage.ImagePath;
+                videoMetadata.LastUpdatedUtc = DateTimeOffset.UtcNow;
+                await imageRepository.AddNewVideoMetadataAsync(videoMetadata);
+                if (logIfCreated)
+                {
+                    Console.WriteLine($"Extracted and stored video metadata in video_metadata table: {filePath}");
+                }
+                return Tuple.Create(albumImage, count + 1);
+            }
+            return Tuple.Create(albumImage, count); 
+            //TODO: movie hash?
         }        
         
 
@@ -52,7 +68,7 @@ public class ImageExifProcessor: AlbumProcessor
         var dbExif = await imageRepository.GetImageExifAsync(albumImage);
         if (dbExif == null)
         {
-            ImageExif? exif = await ExtractExif(filePath); 
+            ImageMetadata? exif = await ExtractImageMetadata(filePath); 
             if (exif != null)
             {
                 exif.AlbumImageId = albumImage.Id;
@@ -72,19 +88,105 @@ public class ImageExifProcessor: AlbumProcessor
         // so no need to override CleanupImageAndAlbumRecords 
     }
 
-    /// <summary>
-    /// Get path to the 400px thumbnail for an image (adjust path logic based on your setup).
-    /// Assumes thumbnails are in a _thumbnails/400 folder relative to the original image.
-    /// </summary>
-    private string GetThumbnailPath(string imageFilePath, int height)
+    
+    public async Task<VideoMetadata> ExtractVideoMetadata(string filePath)
     {
-        var dir = Path.GetDirectoryName(imageFilePath)!;
-        var fileName = Path.GetFileName(imageFilePath);
-        return Path.Combine(dir, "_thumbnails", height.ToString(), fileName);
+        var fileInfo = new FileInfo(filePath);
+        var videoMetadata = new VideoMetadata
+        {
+            FileName = fileInfo.Name,
+            FilePath = filePath,
+            FileSizeBytes = fileInfo.Length,
+            DateModified = fileInfo.LastWriteTimeUtc
+        };
+
+        try
+        {
+            // Get comprehensive video information
+            var mediaInfo = await FFProbe.AnalyseAsync(filePath);
+
+            // Duration
+            videoMetadata.Duration = mediaInfo.Duration;
+
+            // Video stream info (dimensions, codec)
+            var videoStream = mediaInfo.VideoStreams.FirstOrDefault();
+            if (videoStream != null)
+            {
+                videoMetadata.VideoWidth = videoStream.Width;
+                videoMetadata.VideoHeight = videoStream.Height;
+                videoMetadata.PixelFormat = videoStream.PixelFormat;
+                videoMetadata.VideoCodec = videoStream.CodecName;
+                videoMetadata.FrameRate = (decimal?)videoStream.FrameRate;
+                videoMetadata.VideoBitRate = videoStream.BitRate;
+            }
+
+            // Audio stream info (codec)
+            var audioStream = mediaInfo.AudioStreams.FirstOrDefault();
+            if (audioStream != null)
+            {
+                videoMetadata.AudioCodec = audioStream.CodecName;
+                videoMetadata.AudioSampleRate = audioStream.SampleRateHz;
+                videoMetadata.AudioChannels = audioStream.Channels;
+                videoMetadata.AudioBitRate = audioStream.BitRate;
+            }
+
+            // Metadata tags (creation_time, date taken, camera info, etc.)
+            if (mediaInfo.Format.Tags != null)
+            {
+                // Creation time from metadata
+                if (mediaInfo.Format.Tags.TryGetValue("creation_time", out string? creationTime))
+                {
+                    if (DateTime.TryParse(creationTime, out var createdDate))
+                    {
+                        videoMetadata.DateTaken = DateTime.SpecifyKind(createdDate, DateTimeKind.Utc);
+                    }
+                }
+
+                // Camera information (make and model)
+                string? make = null;
+                string? model = null;
+                
+                // Try standard tags
+                mediaInfo.Format.Tags.TryGetValue("make", out make);
+                mediaInfo.Format.Tags.TryGetValue("model", out model);
+                
+                // Try Apple QuickTime tags
+                if (string.IsNullOrEmpty(make))
+                    mediaInfo.Format.Tags.TryGetValue("com.apple.quicktime.make", out make);
+                if (string.IsNullOrEmpty(model))
+                    mediaInfo.Format.Tags.TryGetValue("com.apple.quicktime.model", out model);
+                
+                // Build camera string
+                if (!string.IsNullOrEmpty(make) && !string.IsNullOrEmpty(model))
+                    videoMetadata.Camera = $"{make} {model}";
+                else if (!string.IsNullOrEmpty(model))
+                    videoMetadata.Camera = model;
+                else if (!string.IsNullOrEmpty(make))
+                    videoMetadata.Camera = make;
+                
+                // Fallback to encoder tag if no camera info found
+                if (string.IsNullOrEmpty(videoMetadata.Camera) &&
+                    mediaInfo.Format.Tags.TryGetValue("encoder", out string? encoder))
+                {
+                    videoMetadata.Camera = encoder;
+                }
+            }
+
+            // Format/container info
+            videoMetadata.FormatName = mediaInfo.Format.FormatName;
+            videoMetadata.Software = mediaInfo.Format.FormatLongName;
+
+            return videoMetadata;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error extracting video metadata from {filePath}: {ex.Message}");
+            return videoMetadata;
+        }
     }
 
-    
-    public async Task<ImageExif?> ExtractExif(string filePath)
+
+    public async Task<ImageMetadata?> ExtractImageMetadata(string filePath)
     {
         if (!File.Exists(filePath))
         {
@@ -96,7 +198,7 @@ public class ImageExifProcessor: AlbumProcessor
             var fileInfo = new FileInfo(filePath);
             var directories = ImageMetadataReader.ReadMetadata(filePath);
             
-            var exif = new ImageExif
+            var exif = new ImageMetadata
             {
                 FileName = fileInfo.Name,
                 FileSizeBytes = fileInfo.Length,

@@ -177,8 +177,14 @@ export function ImageView(props: ImageViewProps): JSX.Element {
           </div>
         )}
 
-        {showExif && props.image.image_exif && (
-          <ExifPanel exif={props.image.image_exif} album={props.album} image={props.image} onClose={toggleExif} />
+        {showExif && (props.image.image_exif || props.image.video_metadata) && (
+          <ExifPanel 
+            exif={props.image.image_exif} 
+            videoMetadata={props.image.video_metadata}
+            album={props.album} 
+            image={props.image} 
+            onClose={toggleExif} 
+          />
         )}
 
         {/* Content - full viewport */}

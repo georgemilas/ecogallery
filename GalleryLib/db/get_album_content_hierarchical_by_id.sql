@@ -14,7 +14,8 @@ RETURNS TABLE (
     inner_feature_item_path VARCHAR,
     last_updated_utc TIMESTAMP WITH TIME ZONE,
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
-    image_exif JSON
+    image_exif JSON,
+    video_metadata JSON
 ) AS $$
 SELECT 
     a.id, 
@@ -29,7 +30,8 @@ SELECT
     ca.feature_image_path AS inner_feature_item_path, 
     a.last_updated_utc,
     a.album_timestamp_utc AS item_timestamp_utc, 
-    NULL::json AS image_exif
+    NULL::json AS image_exif,
+    NULL::json AS video_metadata
 FROM album AS a
 LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
 LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image
@@ -51,9 +53,11 @@ SELECT
     ai.image_path AS inner_feature_item_path, 
     ai.last_updated_utc,
     ai.image_timestamp_utc AS item_timestamp_utc,
-    row_to_json(exif) AS image_exif
+    row_to_json(exif) AS image_exif,
+    row_to_json(vm) AS video_metadata
 FROM album_image ai
 LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
+LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
 JOIN album AS a ON ai.album_name = a.album_name
 WHERE a.id = p_album_id
 

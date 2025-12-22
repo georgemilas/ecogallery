@@ -5,6 +5,7 @@
    * theme for an album (background, border, roundings)
    * sorting is now global, make it by album    
    * going back to album on large albums (wait for gallery to render before setting to last image - show loading?)
+   * movie hash ?
       
 
 ### Changes
