@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setLoading(false);
 
-        if (pathname !== '/login' && pathname !== '/valbum' && !pathname.startsWith('/valbum?')) {
+        if (pathname !== '/login' && pathname !== '/valbum' && !pathname.startsWith('/valbum?') && pathname !== '/') {
           router.push('/login');
         }
         return;
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
 
       // Redirect to login if not authenticated and not already on login or public pages
-      if (!isValid && pathname !== '/login' && pathname !== '/valbum' && !pathname.startsWith('/valbum?')) {
+      if (!isValid && pathname !== '/login' && pathname !== '/valbum' && !pathname.startsWith('/valbum?') && pathname !== '/') {
         router.push('/login');
       }
     };
