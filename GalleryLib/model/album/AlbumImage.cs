@@ -28,7 +28,7 @@ public record AlbumImage
         {
             ImageName = Path.GetFileName(path),
             ImagePath = path,
-            ImageDescription = path,
+            //ImageDescription = path,
             ImageType  = Path.GetExtension(path),   //includes the dot, e.g. ".jpg"             
             LastUpdatedUtc = DateTimeOffset.UtcNow,
             AlbumName = Path.GetDirectoryName(path) ?? string.Empty,   //includes the entire folder path  ex: 2025/vacation/Florida

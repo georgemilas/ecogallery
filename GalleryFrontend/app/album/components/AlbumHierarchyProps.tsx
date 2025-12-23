@@ -135,6 +135,7 @@ export interface AlbumHierarchyProps {
   onAlbumClick: (albumName: string) => void;
   onImageClick: (image: ImageItemContent) => void;
   onSearchSubmit: (expression: string) => void;
+  onGetApiUrl: (apiUrl: string) => void;
   lastViewedImage?: number | null;
   settings: AlbumSettings;
   router: AppRouterInstance;

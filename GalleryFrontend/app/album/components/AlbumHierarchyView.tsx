@@ -208,7 +208,9 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
                   <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
                 </svg>Home
               </button>
-              <button onClick={() => props.router.push('/valbum')} className="page-button" title="Public Albums">Public Albums</button>
+              <button onClick={() => props.router.push('/valbum')} className="page-button" title="Public Albums">Public</button>
+              <button onClick={() => props.onGetApiUrl('random')} className="page-button" title="Random Images">Random</button>
+              <button onClick={() => props.onGetApiUrl('recent')} className="page-button" title="Recent Images">Recent</button>
               <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
@@ -274,7 +276,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
                     <path d="M8 5v14l11-7L8 5z" fill="currentColor"/>
                   </svg>
                 )}
-                <span className="gallery-item-label">{r.name}</span>                
+                <span className="gallery-item-label">{props.album.get_name(r.name)}</span>                
                 {r.description && <span className="gallery-item-label">{r.description}</span>}
             </a>
         </li>

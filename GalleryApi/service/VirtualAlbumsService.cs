@@ -1,4 +1,5 @@
 using GalleryApi.model;
+using GalleryLib.model.album;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
 
@@ -34,6 +35,77 @@ public class VirtualAlbumsService: ServiceBase
         VirtualAlbumContent album = await GetFromVirtualAlbum(valbum);                
         return album;
     }
+
+
+     public async Task<VirtualAlbumContent> GetRandomImages()
+    {
+        var album = await PickImagesFromAll((all) =>
+        {
+            var random = new Random();
+            var nRandom = all.OrderBy(x => random.Next()).Take(100).ToList();
+            return nRandom;
+        });
+        album.Name = "Random Images";
+        album.Description = album.Images.Any() ? $"{album.Images.Count} random images" : "No images found";
+        return album;
+    }
+
+    public async Task<VirtualAlbumContent> GetRecentImages()
+    {
+        var album = await PickImagesFromAll((all) =>
+        {
+            var nRecent = all.OrderByDescending(x => x.ItemTimestampUtc).Take(100).ToList();
+            return nRecent;
+        });
+        album.Name = "Recent Images";
+        album.Description = album.Images.Any() ? $"{album.Images.Count} recent images" : "No images found";
+        return album;
+    }
+
+    private async Task<VirtualAlbumContent> PickImagesFromAll(Func<List<GalleryLib.model.album.AlbumContentHierarchical>, List<GalleryLib.model.album.AlbumContentHierarchical>> filter)
+    {
+        var albums = await _albumRepository.GetAllVirtualAlbumsAsync();
+        var all = new List<GalleryLib.model.album.AlbumContentHierarchical>();
+        foreach (var album in albums)
+        {
+            var content = !String.IsNullOrWhiteSpace(album.AlbumExpression) ?
+                       await _albumRepository.GetAlbumContentHierarchicalByExpression(album.AlbumExpression) :
+                       await _albumRepository.GetAlbumContentHierarchicalByName(album.AlbumFolder);
+            all.AddRange(content);
+        }
+        var filteredContent = filter(all);
+        
+        var valbum = new VirtualAlbumContent();
+        valbum.Expression = "";
+        valbum.NavigationPathSegments = new List<string>();
+        valbum.LastUpdatedUtc = DateTimeOffset.UtcNow;
+        valbum.ItemTimestampUtc = DateTimeOffset.UtcNow;
+        var item = filteredContent.FirstOrDefault();
+        string path = item?.FeatureItemPath ?? string.Empty;     //get the relative path first                                
+        path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
+        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
+        valbum.ThumbnailPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb)) : string.Empty;
+        valbum.ImageHDPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
+
+        var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, AuthenticatedUser?.Id ?? 1, true);    //get admin settings if no user
+        valbum.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
+        {
+            AlbumId = valbum.Id,
+            IsVirtual = true,
+            UserId = AuthenticatedUser?.Id ?? 1
+        };
+
+        valbum.Albums = new List<AlbumItemContent>();
+        valbum.Images = new List<ImageItemContent>();
+        foreach (var image in filteredContent.Where(i => !i.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase)))
+        {
+            var contentImage = GetImageItemContent(null, image);
+            valbum.Images.Add(contentImage);
+        }
+        return valbum;
+    }
+
+
 
 
 

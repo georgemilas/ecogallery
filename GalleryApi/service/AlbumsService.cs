@@ -12,18 +12,44 @@ public class AlbumsService: ServiceBase
     
     }
 
+    public async Task<VirtualAlbumContent> GetRandomImages()
+    {
+        var content = await _albumRepository.GetRandomImages();
+        
+        var valbum = GetVirtualContent(content);
+        valbum.Name = "Random Images";
+        valbum.Expression = "";
+        valbum.Description = content.Any() ? $"{content.Count} random images" : "No images found";
+        return valbum;
+    }
+
+    public async Task<VirtualAlbumContent> GetRecentImages()
+    {
+        var content = await _albumRepository.GetRecentImages();
+        
+        var valbum = GetVirtualContent(content);
+        valbum.Name = "Recent Images";
+        valbum.Expression = "";
+        valbum.Description = content.Any() ? $"{content.Count} recent images" : "No images found";
+        return valbum;
+    }
     
     public async Task<VirtualAlbumContent> SearchContentByExpression(AlbumSearch albumSearch)
     {
-        var expr = albumSearch.Expression;        
-        var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(expr, groupByPHash: albumSearch.GroupByPHash);    
-        //Console.WriteLine($"Debug: Search expression '{expr}' returned {content.Count} items.");
-
-        var valbum = new VirtualAlbumContent();
-        valbum.Id = 0;
+        var expr = albumSearch.Expression;
+        var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(expr, groupByPHash: albumSearch.GroupByPHash);
+        
+        var valbum = GetVirtualContent(content);
         valbum.Name = "Search Result";
         valbum.Expression = albumSearch.Expression;
-        valbum.Description = content.Any() ? $"{content.Count} images" : "No images found";
+        valbum.Description = content.Any() ? $"{content.Count} images matching '{albumSearch.Expression}'" : "No images found";
+        return valbum;
+    }
+
+    private VirtualAlbumContent GetVirtualContent(List<GalleryLib.model.album.AlbumContentHierarchical> content)
+    {
+        var valbum = new VirtualAlbumContent();
+        valbum.Id = 0;
         valbum.NavigationPathSegments = new List<string>();
         valbum.LastUpdatedUtc = DateTimeOffset.UtcNow;
         valbum.ItemTimestampUtc = DateTimeOffset.UtcNow;
@@ -33,17 +59,17 @@ public class AlbumsService: ServiceBase
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
         valbum.ThumbnailPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb)) : string.Empty;
         valbum.ImageHDPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
-        
+
         //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");            
         valbum.Images = new List<ImageItemContent>();
         foreach (var image in content)
-        {            
+        {
             var contentImage = GetImageItemContent(null, image);
             valbum.Images.Add(contentImage);
-            continue;                        
+            continue;
         }
         return valbum;
-    }    
+    }
 
     public async Task<AlbumContentHierarchical> GetAlbumContentHierarchicalById(long albumId)
     {

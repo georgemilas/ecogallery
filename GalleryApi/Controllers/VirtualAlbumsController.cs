@@ -18,7 +18,7 @@ public class VirtualAlbumsController : ControllerBase
         _albumsService = albumsService;
     }
 
-    // GET: /api/v1/albums
+    // GET: /api/v1/valbums
     [HttpGet]
     public async Task<ActionResult<VirtualAlbumContent>> GetRoot()
     {
@@ -49,6 +49,40 @@ public class VirtualAlbumsController : ControllerBase
             return NotFound(new { error = ex.Message });
         }
     }
+
+    // GET: /api/v1/valbums/random
+    [HttpGet("random")]
+    public async Task<ActionResult<VirtualAlbumContent>> GetRandomImages()
+    {
+        try
+        {
+            var albumContent = await _albumsService.GetRandomImages();
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+
+    }
+
+    // GET: /api/v1/valbums/recent
+    [HttpGet("recent")]
+    public async Task<ActionResult<VirtualAlbumContent>> GetRecentImages()
+    {
+        try
+        {
+            var albumContent = await _albumsService.GetRecentImages();
+            return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+
+
 
     // POST: /api/v1/valbums/settings
     [HttpPost("settings")]

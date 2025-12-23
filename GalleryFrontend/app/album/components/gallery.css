@@ -183,6 +183,12 @@
     border-radius: 12px;    
 }
 
+.gallery-banner-label h4 {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1.1rem;
+}
+
+
 .breadcrumbs {
     display: flex;    
     align-self: center;
@@ -259,7 +265,7 @@
 
 /* Albums selectors */
 
-.albums{
+.albums {
 	background-color: rgba(50, 50, 50, 0.8);
 	margin: 0 auto;
     width: 100%;

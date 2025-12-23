@@ -3,7 +3,7 @@ Pictures Gallery:
   folder: \public
   feature: \public\IMG_8337.jpg
 
-Colors of Barcelona:
+Barcelona:
   parent: Pictures Gallery
   description: From the 2023 trip to Barcelona, Montserrat, and Salvador Dali's residence at Portlligat 
   expression:
@@ -64,7 +64,7 @@ Andrew's Graduation:
   parent: Pictures Gallery
   description: Selections from 2021 trips to South Carolina's Hilton head Island and walks around Schaumburg neighborhoods
   folder: \2021\best
-  feature: \2021\best\IMG_1683.jpg
+  feature: \2021\best\_MG_2170.jpg
 
 2022: 
   parent: Pictures Gallery
@@ -93,5 +93,17 @@ Puerto Vallarta:
   description: Selections from trip to Puerto Vallarta, Mexico
   expression: puerto and (best 3369 3674 3624 3719) and not (3884_2)
   feature: \2008\puerto vallarta\best\IMG_3384 mexic.JPG 
+
+London:
+  parent: Pictures Gallery
+  description: Selections from trip to London
+  expression: londra and (1428 1432-2 1443 1415 2647 2638 2632 2630 2609 2606 2605 2599 2582 2580 2568 2527 2523 2522 2286 2283 1527 1521 1516 1507 1502 1498 1489 1483 
+   1474 1469 1468 1466 1461 1559 1458 1452 1448 1453 1419 1417 1416 1409 1401 1394 1393 1392 1390 1385 1381 1375 1372 1371 1356 1347 1345 1344 1341 1334  1331 1315 
+    1310 1308 1303 1295 1293 1291 1284 1276 1273 1262 1259 1255 1253 1248 1247 1246 1232 1226 1222 1219 1215 1210 1207 1204 1195 1189 1187 1185 1184 1181 1173 1161 1155 1151 1153 
+     1149 1148 1146 1144 1137 1135 1131 1126 1117 1112 1104 1101 1094 1090 1087 1086 1085 1081 1075 1074 1067 1068 1065 1064 1062 1061 1060 1058 1051 1045 1044 1043 1040 1036
+     1030 1018 1004 0998 0993 0987 0984 0981 0975 0964 0947 0953 0945 0940 0932 0929 0913 0907 0903 0896 0848 0821 0815 0806 0798 0796 0791 0788 0784 0775 0770 0767 0761 0760 0765 0742 0739)
+  feature: \2012\vacanta\londra\_MG_1259.jpg
+
+
 
 

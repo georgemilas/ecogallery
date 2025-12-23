@@ -14,7 +14,7 @@ CREATE TABLE
   public.album (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
     album_name character varying(500) NOT NULL,
-    album_type character varying(20) NOT NULL,
+    album_type character varying(50) NOT NULL,
     album_description character varying(1500) NULL,
     last_updated_utc timestamp with time zone NULL,          --when the record was last updated
     album_timestamp_utc timestamp with time zone NOT NULL,   --when the image file that caused the album to be created was last updated
@@ -45,7 +45,7 @@ CREATE TABLE
     album_description character varying(1500) NULL,
     album_expression character varying(2500) NULL,
     album_folder character varying(500) NULL,
-    album_type character varying(20) NOT NULL,               -- one of expression or folder 
+    album_type character varying(50) NOT NULL,               -- one of expression or folder 
     persistent_expression boolean NOT NULL DEFAULT false,    -- whether the expression is saved across sessions 
     is_public boolean NOT NULL DEFAULT true,                 -- whether the virtual album is public or private
     feature_image_path character varying(500) NULL,
@@ -146,7 +146,7 @@ CREATE TABLE
     camera character varying(100) NULL,
     lens character varying(100) NULL,
     focal_length character varying(150) NULL,
-    aperture character varying(20) NULL,
+    aperture character varying(50) NULL,
     exposure_time character varying(150) NULL,
     iso integer NULL,
     date_taken timestamp with time zone NULL,
@@ -155,7 +155,7 @@ CREATE TABLE
     flash character varying(150) NULL,
     metering_mode character varying(150) NULL,
     exposure_program character varying(150) NULL,
-    exposure_bias character varying(20) NULL,
+    exposure_bias character varying(50) NULL,
     exposure_mode character varying(150) NULL,
     white_balance character varying(150) NULL,
     color_space character varying(150) NULL,

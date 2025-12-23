@@ -137,6 +137,20 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// AlbumContentHierarchical Methods
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    public async Task<List<AlbumContentHierarchical>> GetRecentImages()
+    {
+        var sql = "SELECT * FROM get_recent_images_content_hierarchical(200)";
+        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader));
+        return albumContent;                 
+    } 
+
+    public async Task<List<AlbumContentHierarchical>> GetRandomImages()
+    {
+        var sql = "SELECT * FROM get_random_images_content_hierarchical(200)";
+        var albumContent = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader));
+        return albumContent;                 
+    }  
 
     public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalByExpression(string expression, bool groupByPHash = true)
     {
@@ -244,6 +258,13 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Virtual Album Methods
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public async Task<List<VirtualAlbum>> GetAllVirtualAlbumsAsync()
+    {
+        var sql = "select * from virtual_album";
+        var albums = await _db.QueryAsync(sql, reader => VirtualAlbum.CreateFromDataReader(reader));
+        return albums;                 
+    }
 
     public async Task<VirtualAlbum?> GetRootVirtualAlbumsAsync()
     {

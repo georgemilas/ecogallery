@@ -257,13 +257,8 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
                 Directory.CreateDirectory(thumbPathFolder);
             }
 
-            //thumbPath = Path.ChangeExtension(thumbPath, ".jpg");    //already done in GetThumbnailPath
             await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), TimeSpan.Zero);  
-            
-            // // Get video info
-            // var mediaInfo = await FFProbe.AnalyseAsync(filePath);
-            // var duration = mediaInfo.Duration;
-
+                        
             // // Extract frame from middle
             // var midpoint = mediaInfo.Duration / 2;
             // await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), midpoint);      
@@ -288,7 +283,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
                     Directory.CreateDirectory(thumbPathFolder);
                 }
 
-                // Clone the original for each size (preserves quality)
+                //Clone the original for each size (preserves quality and faster than re-loading from disk)
                 using var imageClone = originalImage.Clone(ctx => {
                     if (originalImage.Height > height)
                     {

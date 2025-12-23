@@ -28,7 +28,7 @@ public record Album
         {
             AlbumName = relativePath,   //includes the entire relative folder path  ex: 2025/vacation/Florida
             AlbumType  = "folder",   
-            AlbumDescription = relativePath,
+            //AlbumDescription = relativePath,
             LastUpdatedUtc = DateTimeOffset.UtcNow,
             AlbumTimestampUtc = lastUpdatedUtc,
             ParentAlbum = Path.GetDirectoryName(relativePath) ?? string.Empty
@@ -48,7 +48,7 @@ public record Album
         {
             AlbumName = albumName,   //includes the entire relative folder path  ex: 2025/vacation/Florida
             AlbumType  = "folder",
-            AlbumDescription = albumName,   
+            //AlbumDescription = albumName,   
             FeatureImagePath = relativePath,
             LastUpdatedUtc = DateTimeOffset.UtcNow,
             AlbumTimestampUtc = lastUpdatedUtc,

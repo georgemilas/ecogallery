@@ -14,7 +14,8 @@ public class PicturesDataConfiguration
     public List<string> FeaturePhotoSuffix { get; set; } = new List<string> { "_label", "_feature" };
     public List<string> FeaturePhotoPrefix { get; set; } = new List<string> { "label_", "feature_" };
     public List<string> ImageExtensions { get; set; } = new List<string> { ".jpg", ".jpeg", ".png", ".webp" }; 
-    public List<string> MovieExtensions { get; set; } = new List<string> { ".mp4", ".mov", ".avi", ".mkv" };
+    public List<string> MovieExtensions { get; set; } = new List<string> { ".mp4", ".mov", ".avi", ".3gp", ".mts" };
+    // { ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".webm", ".flv", ".3gp", ".mts", ".m2ts" };
 
     private List<string> _extensions = new List<string>();
     public List<string> Extensions 

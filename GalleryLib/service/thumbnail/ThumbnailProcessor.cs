@@ -228,10 +228,6 @@ public class ThumbnailProcessor : EmptyProcessor
         //thumbPath = Path.ChangeExtension(thumbPath, ".jpg");    //already done in GetThumbnailPath
         await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), TimeSpan.Zero);  
         
-        // // Get video info
-        // var mediaInfo = await FFProbe.AnalyseAsync(filePath);
-        // var duration = mediaInfo.Duration;
-
         // // Extract frame from middle
         // var midpoint = mediaInfo.Duration / 2;
         // await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), midpoint);

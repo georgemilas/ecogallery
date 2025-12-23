@@ -15,6 +15,7 @@ export interface VirtualAlbumHierarchyProps {
   onAlbumClick: (albumId: number | null) => void;
   onImageClick: (image: ImageItemContent) => void;
   onSearchSubmit: (expression: string) => void;
+  onGetApiUrl: (apiUrl: string) => void;
   lastViewedImage?: number | null;
   settings: AlbumSettings;
   router: AppRouterInstance;
@@ -195,15 +196,18 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
               <button onClick={() => props.onAlbumClick(null)} className="page-button" title="Albums">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-                </svg>Albums</button>
+                </svg>Albums
+              </button>
 
               <button
                 onClick={() => props.router.push(user ? '/album' : '/login')}
                 className="page-button"
                 title={user ? 'Go to private albums' : 'Login to access private albums'}
               >
-                {user ? 'Private Albums' : 'Login'}
+                {user ? 'Private' : 'Login'}
               </button>
+              <button onClick={() => props.onGetApiUrl('random')} className="page-button" title="Random Images">Random</button>
+              <button onClick={() => props.onGetApiUrl('recent')} className="page-button" title="Recent Images">Recent</button>
 
               <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>

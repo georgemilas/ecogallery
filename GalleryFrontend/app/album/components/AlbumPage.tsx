@@ -96,6 +96,35 @@ export function AlbumPage(): JSX.Element {
     }
   };
 
+const getApiUrl = async (apiUrl: string) => {
+   setLoading(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
+      const url = apiBase ? `${apiBase}/api/v1/albums/${apiUrl}` : `/api/v1/albums/${apiUrl}`;
+      console.log('Fetching apiUrl:', { raw: apiUrl, url });
+      const res = await apiFetch(url);
+      if (!res.ok) {
+        console.error('Failed to fetch api url', res.status);
+        setAlbum(null);
+      } else {
+        const data = await res.json();  // We need to convert plain json data object to AlbumHierarchy class instances
+        const convertToAlbum = (obj: any): AlbumItemHierarchy => {
+          const album = Object.assign(new AlbumItemHierarchy(), obj);
+          if (album.content) { 
+            album.content = album.content.map(convertToAlbum);  //Recursively convert nested content
+          }
+          return album;
+        };
+        setAlbum(convertToAlbum(data));
+      }
+    } catch (e) {
+      console.error('Error fetching api url', e);
+      setAlbum(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Wait for auth to resolve; if no user, redirect and skip fetch
     if (authLoading) return;
@@ -196,6 +225,7 @@ export function AlbumPage(): JSX.Element {
                 setCurrentSettings(settings);
               }}
               onSearchSubmit={(expr) => postSearchAlbum(expr)}
+              onGetApiUrl={(apiUrl) => getApiUrl(apiUrl)} 
               clearLastViewedImage={() => setLastViewedImage(null)}
             />
           )}
