@@ -103,6 +103,78 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
     }
   };
 
+
+  useEffect(() => {
+      // Wait for images to load before calculating layout
+      const gallery = document.querySelector('.gallery');
+      if (!gallery) return;
+  
+      //////////////////////////////////////////////////////////////
+      //image load handling
+      const images = Array.from(gallery.querySelectorAll('img'));
+      let loadedCount = 0;
+      const totalImages = images.length;
+  
+      if (totalImages === 0) return;
+  
+      const onImageLoad = () => {
+        loadedCount++;
+        if (loadedCount === totalImages) {
+          setIsLayouting(true);
+          justifyGallery('.gallery', getResponsiveHeight(), () => {
+            setIsLayouting(false);
+            if (props.lastViewedImage) {
+              scrollToLastViewedImage(props.lastViewedImage);
+            }
+          });
+        }
+      };
+  
+      // Add load listeners to all images
+      images.forEach(img => {
+        if (img.complete) {
+          onImageLoad(); // Already loaded
+        } else {
+          img.addEventListener('load', onImageLoad);
+          img.addEventListener('error', onImageLoad); // Count errors too
+        }
+      });
+  
+      // Fallback: call after a delay if images don't load
+      const fallbackTimer = setTimeout(() => {
+        setIsLayouting(true);
+        justifyGallery('.gallery', getResponsiveHeight(), () => {
+          setIsLayouting(false);
+          if (props.lastViewedImage) {
+            scrollToLastViewedImage(props.lastViewedImage);
+          }
+        });
+      }, 1000);
+  
+      //////////////////////////////////////////////////////////////
+      //page  resize (scroll etc.) handling
+      const handleResize = debounce(() => {
+        setIsLayouting(true);
+        justifyGallery('.gallery', getResponsiveHeight(), () => {
+          setIsLayouting(false);
+          // if (props.lastViewedImage) {
+          //   scrollToLastViewedImage(props.lastViewedImage);
+          // }
+        });
+      }, 150);    
+      window.addEventListener('resize', handleResize);    
+      
+      return () => {
+        clearTimeout(fallbackTimer);
+        window.removeEventListener('resize', handleResize);
+        images.forEach(img => {
+          img.removeEventListener('load', onImageLoad);
+          img.removeEventListener('error', onImageLoad);
+        });
+      };
+  }, [props.album]); //, props.lastViewedImage]); 
+
+
   return (
     <>
       <DraggableBanner 
