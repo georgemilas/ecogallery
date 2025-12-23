@@ -5,6 +5,8 @@ import { SortControl } from './Sort';
 import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
 import { DraggableBanner } from './DraggableBanner';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { apiFetch } from '@/app/utils/apiFetch';
+
 
 export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
@@ -12,30 +14,37 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
   const [isLayouting, setIsLayouting] = React.useState(false);
   const [bannerEditMode, setBannerEditMode] = React.useState(false);
   const { user } = useAuth();
+  const { settings, onSortChange } = props;
   
-  const handleBannerPositionSave = async (objectPositionY: number) => {
-    console.log('Banner position saved:', objectPositionY);
-    props.album.settings.banner_position_y = Math.floor(objectPositionY);
-    
+  const saveSettings = async (settings: any) => {
+    console.log(`saveSettings settings: ${JSON.stringify(settings)}`);
     if (user) {
-      props.album.settings.user_id = user.id;
-      props.album.settings.album_id = props.album.id;
-      
-      try {
-        const response = await fetch(`/api/v1/albums/settings`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
-            },
-            body: JSON.stringify(props.album.settings)
-          });
-        if (!response.ok) throw new Error('Failed to save position');
-      } catch (e) {
-        console.error('Error saving banner position:', e);
-      }  
-    }
+      settings.user_id = user.id;
+      settings.album_id = props.album.id;
 
+      try {
+        const response = await apiFetch(`/api/v1/albums/settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(settings),
+        });
+        const data = await response.json();  
+
+        if (!response.ok) throw new Error('Failed to save settings');
+      } catch (e) {
+        console.error('Error saving settings:', e);
+      }
+    }
+  };
+
+
+  const handleBannerPositionSave = async (objectPositionY: number) => {
+    const newSettings = { ...settings, banner_position_y: Math.floor(objectPositionY) };
+    onSortChange?.(newSettings);
+    console.log(`handleBannerPositionSave newSettings: ${JSON.stringify(newSettings)}`);
+    await saveSettings(newSettings);
   };
   
   const getResponsiveHeight = () => {
@@ -62,28 +71,9 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
     }
   };
 
-  const saveSettings = async (settings: any) => {
-    if (user) {
-      settings.user_id = user.id;
-      try {
-        const response = await fetch(`/api/v1/albums/settings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
-          },
-          body: JSON.stringify(settings)
-        });
-        if (!response.ok) throw new Error('Failed to save settings');
-      } catch (e) {
-        console.error('Error saving settings:', e);
-      }
-    }
-  };
 
   const handleSortedAlbumsChange = useCallback(() => {
-    console.log('AlbumHierarchyComponent: sorted albums changed', props.album.albums[0]?.name);
-    saveSettings(props.album.settings);
+    saveSettings(settings);
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
@@ -91,11 +81,11 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
         setIsLayouting(false);
       });
     }, 100);
-  }, [user]);
+  }, [user, settings]);
 
   const handleSortedImagesChange = useCallback(() => {
     props.clearLastViewedImage?.();
-    saveSettings(props.album.settings);
+    saveSettings(settings);
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
@@ -103,7 +93,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
         setIsLayouting(false);
       });
     }, 100);
-  }, [props.clearLastViewedImage, user]);
+  }, [props.clearLastViewedImage, user, settings]);
 
 
   useEffect(() => {
@@ -187,6 +177,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
         isEditMode={bannerEditMode}
         onEditModeChange={setBannerEditMode}
         onPositionSave={handleBannerPositionSave}
+        objectPositionY={settings.banner_position_y}
         label={
           <>
             <h1>{props.album.album_name()}</h1>
@@ -239,8 +230,8 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
 
       {props.album.albums.length > 0 && (
       <div className='albums'>
-        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={props.albumSort} 
-          onSortUpdate={(sort) => props.onSortChange?.(sort, props.imageSort || 'timestamp-desc')}
+        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={settings.album_sort} 
+          onSortUpdate={(sort) => props.onSortChange?.({ ...settings, album_sort: sort })}
         />
         <ul className='albums-container'>
         {(props.album.albums).map(r => (
@@ -265,8 +256,8 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
           type="images"
           album={props.album} 
           onSortChange={handleSortedImagesChange}
-          initialSort={props.imageSort}
-          onSortUpdate={(sort) => props.onSortChange?.(props.albumSort || 'timestamp-desc', sort)}
+          initialSort={settings.image_sort}
+          onSortUpdate={(sort) => props.onSortChange?.({ ...settings, image_sort: sort })}
         />
         {isLayouting && props.album.images.length > 100 && (
           <div className="gallery-loading">

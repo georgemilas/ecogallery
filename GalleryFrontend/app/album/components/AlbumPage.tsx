@@ -3,7 +3,7 @@
 import './gallery.css';
 
 import { AlbumHierarchyView } from './AlbumHierarchyView';
-import { AlbumItemHierarchy, ImageItemContent } from './AlbumHierarchyProps';
+import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from './AlbumHierarchyProps';
 import { ImageView } from './ImageView';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -20,11 +20,15 @@ export function AlbumPage(): JSX.Element {
   const searchParams = useSearchParams();
   const albumNameParam = searchParams.get('name') || '';
   const imageIdParam = searchParams.get('image') ? parseInt(searchParams.get('image') || '', 10) : null;
+  const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
   
-  // Local sort state - updated immediately without routing
-  const [currentAlbumSort, setCurrentAlbumSort] = useState(searchParams.get('albumSort') || 'timestamp-desc');
-  const [currentImageSort, setCurrentImageSort] = useState(searchParams.get('imageSort') || 'timestamp-desc');
   
+    // Sync currentSettings with album.settings when album changes
+  useEffect(() => {
+    if (album?.settings) setCurrentSettings(album.settings);
+  }, [album?.settings]);
+
+
   const viewMode = imageIdParam ? 'image' : 'gallery';
   const selectedImage = album?.images.find(item => item.id === imageIdParam) || null;
 
@@ -138,8 +142,8 @@ export function AlbumPage(): JSX.Element {
   const handleAlbumClick = (newAlbumName: string) => {
     // Build URL with properly encoded params
     const params = new URLSearchParams({
-      albumSort: currentAlbumSort,
-      imageSort: currentImageSort
+      albumSort: currentSettings.album_sort,
+      imageSort: currentSettings.image_sort
     });
     if (newAlbumName) {params.set('name', newAlbumName);}
     const targetUrl = `/album?${params.toString()}`;
@@ -157,8 +161,8 @@ export function AlbumPage(): JSX.Element {
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.set('image', image.id.toString());
     // Persist current sort preferences to URL on navigation
-    currentParams.set('albumSort', currentAlbumSort);
-    currentParams.set('imageSort', currentImageSort);
+    currentParams.set('albumSort', currentSettings.album_sort);
+    currentParams.set('imageSort', currentSettings.image_sort);
     router.push(`/album?${currentParams.toString()}`);
   };
 
@@ -185,13 +189,11 @@ export function AlbumPage(): JSX.Element {
               onAlbumClick={handleAlbumClick} 
               onImageClick={handleImageClick} 
               lastViewedImage={lastViewedImage}
-              albumSort={currentAlbumSort}
-              imageSort={currentImageSort}
+              settings={currentSettings}
               router={router}
-              onSortChange={(albumSort, imageSort) => {
+              onSortChange={(settings) => {
                 // Update local state immediately without routing
-                setCurrentAlbumSort(albumSort);
-                setCurrentImageSort(imageSort);
+                setCurrentSettings(settings);
               }}
               onSearchSubmit={(expr) => postSearchAlbum(expr)}
               clearLastViewedImage={() => setLastViewedImage(null)}

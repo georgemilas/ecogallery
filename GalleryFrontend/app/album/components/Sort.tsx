@@ -23,6 +23,17 @@ export function SortControl(props: SortControlProps): JSX.Element {
     const [, order] = (props.initialSort || 'timestamp-desc').split('-') as [SortField, SortOrder];
     return order;
   });
+  console.log('SortControl initialized with', { initialSort: props.initialSort, sortField, sortOrder });
+
+  // Reset sort state if initialSort changes (e.g., after loading from server)
+  React.useEffect(() => {
+    if (props.initialSort) {
+      const [field, order] = props.initialSort.split('-') as [SortField, SortOrder];
+      setSortField(field);
+      setSortOrder(order);
+      console.log('SortControl now loaded with', { sortField, sortOrder });
+    }
+  }, [props.initialSort]);
 
   const isAlbumType = props.type === 'albums';
   const items = isAlbumType ? props.album.albums : props.album.images;
