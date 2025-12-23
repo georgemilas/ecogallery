@@ -8,13 +8,31 @@ public class ServiceBase
     
     protected readonly AlbumRepository _albumRepository;
     protected readonly PicturesDataConfiguration _picturesConfig;
-    protected readonly IHttpContextAccessor _httpContextAccessor;
+    protected readonly IHttpContextAccessor _httpContextAccessor;   
 
     public ServiceBase(AlbumRepository albumRepository, PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
     {
         _albumRepository = albumRepository;
         _picturesConfig = picturesConfig;
         _httpContextAccessor = httpContextAccessor;
+    }
+
+    /// <summary>
+    /// Access the authenticated user (if any) 
+    /// </summary>
+    protected GalleryLib.Model.Auth.User? AuthenticatedUser
+    {
+        get
+        {
+            return _httpContextAccessor.HttpContext?.Items["User"] as GalleryLib.Model.Auth.User;
+        }
+    }
+
+    public async Task<GalleryLib.model.album.AlbumSettings> SaveAlbumSettingsAsync(GalleryLib.model.album.AlbumSettings settings)
+    {
+        settings.LastUpdatedUtc = DateTimeOffset.UtcNow;
+        var savedSettings = await _albumRepository.AddOrUpdateAlbumSettingsAsync(settings);
+        return savedSettings;
     }
 
 

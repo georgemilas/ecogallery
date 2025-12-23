@@ -1,7 +1,7 @@
 /* Gallery banner */  
 
 .gallery-banner {
-    height: 500px !important; 
+    height: 550px !important; 
 	width: 100%;
 	margin: 0 auto;	
 	padding: 0 4px;
@@ -65,6 +65,109 @@
     z-index: 10;
     object-fit: cover;
     object-position: 50% 38%; 
+}
+
+.gallery-banner-img {
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    object-fit: cover;
+}
+
+/* Draggable banner edit controls */
+.banner-edit-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 16px;
+    pointer-events: none;
+}
+
+.banner-edit-info {
+    color: #DDDDDD;
+    text-align: center;
+    pointer-events: none;
+}
+
+.banner-edit-info p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+}
+
+.position-display {
+    font-weight: bold;
+    color: #e8f09e;
+    font-size: 1.1rem;
+}
+
+.banner-edit-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.save-button,
+.cancel-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.save-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.save-button:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+.save-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.cancel-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.cancel-button:hover {
+    background-color: #da190b;
+}
+
+/* Banner edit button in corner */
+.banner-edit-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 25;
+    background-color: rgba(232, 240, 158, 0.9);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.banner-edit-button:hover {
+    background-color: #e8f09e;
+    transform: scale(1.1);
 }
 
 .gallery-banner-label {

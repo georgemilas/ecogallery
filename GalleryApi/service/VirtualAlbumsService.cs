@@ -52,6 +52,15 @@ public class VirtualAlbumsService: ServiceBase
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute             
         album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
         album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));
+        
+        var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, AuthenticatedUser?.Id ?? 1, true);    //get admin settings if no user
+        album.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
+        {
+            AlbumId = valbum.Id,
+            IsVirtual = true,
+            UserId = AuthenticatedUser?.Id ?? 1
+        };        
+        
         album.Albums = new List<AlbumItemContent>();
         album.Images = new List<ImageItemContent>();
         Console.WriteLine($"Debug: Loading virtual album '{valbum.AlbumName}' with expression '{valbum.AlbumExpression}' and folder '{valbum.AlbumFolder}'");         

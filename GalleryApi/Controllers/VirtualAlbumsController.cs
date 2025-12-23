@@ -49,4 +49,24 @@ public class VirtualAlbumsController : ControllerBase
             return NotFound(new { error = ex.Message });
         }
     }
+
+    // POST: /api/v1/valbums/settings
+    [HttpPost("settings")]
+    public async Task<ActionResult<GalleryLib.model.album.AlbumSettings>> AddOrUpdateAlbumSettings([FromBody] GalleryLib.model.album.AlbumSettings albumSettings)
+    {
+        try
+        {
+            albumSettings.IsVirtual = true;
+            Console.WriteLine($"VirtualAlbumsController: AddOrUpdateAlbumSettings called for {albumSettings}");
+            var updatedSettings = await _albumsService.SaveAlbumSettingsAsync(albumSettings);
+            return Ok(updatedSettings);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+
+    }
+
+
 }

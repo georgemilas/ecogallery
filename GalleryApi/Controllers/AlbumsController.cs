@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using GalleryApi.model;
 using GalleryApi.service;
-using GalleryLib.model.configuration;
-using GalleryLib.repository;
+
 
 namespace GalleryApi.Controllers;
 
@@ -25,7 +23,7 @@ public class AlbumsController : ControllerBase
 
         try
         {
-            var albumContent = await _albumsService.GetAlbumContentHierarchical();
+            var albumContent = await _albumsService.GetAlbumContentHierarchicalByName();
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)
@@ -40,7 +38,7 @@ public class AlbumsController : ControllerBase
     {
         try
         {
-            var albumContent = await _albumsService.GetAlbumContentHierarchical();
+            var albumContent = await _albumsService.GetAlbumContentHierarchicalByName();
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)
@@ -55,7 +53,7 @@ public class AlbumsController : ControllerBase
     {
         try
         {
-            var albumContent = await _albumsService.GetAlbumContentHierarchical(albumName);
+            var albumContent = await _albumsService.GetAlbumContentHierarchicalByName(albumName);
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)
@@ -70,7 +68,7 @@ public class AlbumsController : ControllerBase
     {
         try
         {
-            var albumContent = await _albumsService.GetAlbumContentHierarchical(albumName);
+            var albumContent = await _albumsService.GetAlbumContentHierarchicalByName(albumName);
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)
@@ -84,7 +82,7 @@ public class AlbumsController : ControllerBase
     {
         try
         {
-            var albumContent = await _albumsService.GetAlbumContentHierarchical(albumId);
+            var albumContent = await _albumsService.GetAlbumContentHierarchicalById(albumId);
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)
@@ -103,6 +101,25 @@ public class AlbumsController : ControllerBase
         {
             var albumContent = await _albumsService.SearchContentByExpression(albumSearch);
             return Ok(albumContent);
+        }
+        catch(AlbumNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+
+    }
+
+
+    // POST: /api/v1/albums/settings
+    [HttpPost("settings")]
+    public async Task<ActionResult<GalleryLib.model.album.AlbumSettings>> AddOrUpdateAlbumSettings([FromBody] GalleryLib.model.album.AlbumSettings albumSettings)
+    {
+        try
+        {
+            albumSettings.IsVirtual = false;
+            Console.WriteLine($"AlbumsController: AddOrUpdateAlbumSettings called for {albumSettings}");
+            var updatedSettings = await _albumsService.SaveAlbumSettingsAsync(albumSettings);
+            return Ok(updatedSettings);
         }
         catch(AlbumNotFoundException ex)
         {

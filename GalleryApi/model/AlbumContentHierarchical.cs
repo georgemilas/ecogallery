@@ -22,6 +22,7 @@ public record AlbumContentHierarchical: AlbumItemContent
 {
     public List<AlbumItemContent> Albums { get; set; } = new List<AlbumItemContent>(); 
     public List<ImageItemContent> Images { get; set; } = new List<ImageItemContent>(); 
+    public AlbumSettings Settings { get; set; } = null!;
 }
 
 public record AlbumItemContent: ItemContent

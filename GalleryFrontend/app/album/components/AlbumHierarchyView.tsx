@@ -3,11 +3,40 @@ import './gallery.css';
 import { justifyGallery, debounce } from './gallery';
 import { SortControl } from './Sort';
 import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
+import { DraggableBanner } from './DraggableBanner';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   const [searchText, setSearchText] = React.useState('');
   const [isLayouting, setIsLayouting] = React.useState(false);
+  const [bannerEditMode, setBannerEditMode] = React.useState(false);
+  const { user } = useAuth();
+  
+  const handleBannerPositionSave = async (objectPositionY: number) => {
+    console.log('Banner position saved:', objectPositionY);
+    props.album.settings.banner_position_y = Math.floor(objectPositionY);
+    
+    if (user) {
+      props.album.settings.user_id = user.id;
+      props.album.settings.album_id = props.album.id;
+      
+      try {
+        const response = await fetch(`/api/v1/albums/settings`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
+            },
+            body: JSON.stringify(props.album.settings)
+          });
+        if (!response.ok) throw new Error('Failed to save position');
+      } catch (e) {
+        console.error('Error saving banner position:', e);
+      }  
+    }
+
+  };
   
   const getResponsiveHeight = () => {
     const width = window.innerWidth;
@@ -33,27 +62,48 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
     }
   };
 
+  const saveSettings = async (settings: any) => {
+    if (user) {
+      settings.user_id = user.id;
+      try {
+        const response = await fetch(`/api/v1/albums/settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
+          },
+          body: JSON.stringify(settings)
+        });
+        if (!response.ok) throw new Error('Failed to save settings');
+      } catch (e) {
+        console.error('Error saving settings:', e);
+      }
+    }
+  };
+
   const handleSortedAlbumsChange = useCallback(() => {
     console.log('AlbumHierarchyComponent: sorted albums changed', props.album.albums[0]?.name);
+    saveSettings(props.album.settings);
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
       justifyGallery('.gallery', getResponsiveHeight(), () => {
         setIsLayouting(false);
       });
-    }, 100);  
-  }, []);
+    }, 100);
+  }, [user]);
 
   const handleSortedImagesChange = useCallback(() => {
     props.clearLastViewedImage?.();
+    saveSettings(props.album.settings);
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
       justifyGallery('.gallery', getResponsiveHeight(), () => {
         setIsLayouting(false);
       });
-    }, 100);  
-  }, [props.clearLastViewedImage]);
+    }, 100);
+  }, [props.clearLastViewedImage, user]);
 
 
   useEffect(() => {
@@ -132,9 +182,19 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
 
   return (
     <>
-      <div className="gallery-banner">
-        <img src={props.album.image_hd_path} alt={props.album.album_name()} />
-        <div className="gallery-banner-menubar">
+      <DraggableBanner 
+        album={props.album}
+        isEditMode={bannerEditMode}
+        onEditModeChange={setBannerEditMode}
+        onPositionSave={handleBannerPositionSave}
+        label={
+          <>
+            <h1>{props.album.album_name()}</h1>
+            {props.album.description && <h4>{props.album.description}</h4>}
+          </>
+        }
+      />
+      <div className="gallery-banner-menubar">
           <nav className="breadcrumbs">
             <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick('');}}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
@@ -175,13 +235,8 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
               </button>
             </form>
           </div>
-        
 
-        <div className="gallery-banner-label">
-          <h1>{props.album.album_name()}</h1>     
-          {props.album.description && <h3>{props.album.description}</h3>}
-        </div>
-      </div>	
+
       {props.album.albums.length > 0 && (
       <div className='albums'>
         <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={props.albumSort} 

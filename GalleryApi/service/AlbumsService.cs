@@ -45,12 +45,12 @@ public class AlbumsService: ServiceBase
         return valbum;
     }    
 
-    public async Task<AlbumContentHierarchical> GetAlbumContentHierarchical(long albumId)
+    public async Task<AlbumContentHierarchical> GetAlbumContentHierarchicalById(long albumId)
     {
         var albumContent = await _albumRepository.GetAlbumContentHierarchicalById(albumId);        
         return await GetContent(albumContent.First().ParentAlbumName, albumContent);
     }
-    public async Task<AlbumContentHierarchical> GetAlbumContentHierarchical(string? albumName = null)
+    public async Task<AlbumContentHierarchical> GetAlbumContentHierarchicalByName(string? albumName = null)
     {
         var albumContent = albumName != null ? await _albumRepository.GetAlbumContentHierarchicalByName(albumName)
                                              : await _albumRepository.GetRootAlbumContentHierarchical();
@@ -67,6 +67,14 @@ public class AlbumsService: ServiceBase
         }    
         var album = new AlbumContentHierarchical();
         SetAlbumItemContent(album, albumName, libAlbum);
+        var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(libAlbum.Id, AuthenticatedUser?.Id ?? 1, false);    //get admin settings if no user
+        album.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
+        {
+            AlbumId = libAlbum.Id,
+            IsVirtual = false,
+            UserId = AuthenticatedUser?.Id ?? 1
+        };
+
         
         //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");            
         album.Albums = new List<AlbumItemContent>();
@@ -112,5 +120,6 @@ public class AlbumsService: ServiceBase
     }
 
     
+
  
 }

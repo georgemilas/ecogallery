@@ -82,6 +82,15 @@ export interface ImageItemContent extends ItemContent {
 
 export interface AlbumItemContent extends ItemContent {
   image_hd_path: string;
+  settings: AlbumSettings;
+}
+
+export interface AlbumSettings {
+  album_id: number;
+  user_id: number;
+  banner_position_y: number;   // Y position of the banner image (0-100%)
+  album_sort: string;          // name or timestamp & asc or desc
+  image_sort: string;          // name or timestamp & asc or desc
 }
 
 export class AlbumItemHierarchy implements AlbumItemContent {
@@ -91,10 +100,13 @@ export class AlbumItemHierarchy implements AlbumItemContent {
   navigation_path_segments: Array<string> = [];
   thumbnail_path: string = '';
   image_hd_path: string = '';
+  banner_position_y?: number; // Y position of the banner image (0-100%)
   last_updated_utc: Date = new Date();
   item_timestamp_utc: Date = new Date();
   albums: AlbumItemContent[] = [];
   images: ImageItemContent[] = [];
+  settings!: AlbumSettings;
+
 
   /**
    * Get the name out of a path, ex: \2025\vacation\Florida => Florida

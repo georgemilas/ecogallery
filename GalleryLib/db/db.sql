@@ -63,6 +63,34 @@ ADD
 CREATE UNIQUE INDEX IF NOT EXISTS ux_virtual_album_parent_album_album_name
 ON public.virtual_album (parent_album, album_name);
 
+
+------------------------------------------------------------------------------
+----------------- public.album_settings --------------------------------------  
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.album_settings;
+
+CREATE TABLE public.album_settings (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    album_id BIGINT NOT NULL,
+    is_virtual boolean NOT NULL DEFAULT false,
+    user_id BIGINT NOT NULL,
+    banner_position_y INT NOT NULL DEFAULT 38,
+    album_sort character varying(50) NOT NULL DEFAULT 'name-asc',
+    image_sort character varying(50) NOT NULL DEFAULT 'timestamp-desc',
+    last_updated_utc timestamp with time zone NULL          --when the record was last updated
+);
+
+
+ALTER TABLE
+  public.album_settings 
+ADD
+  CONSTRAINT album_settings_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_album_settings_album_id_user_id
+ON public.album_settings (album_id, user_id, is_virtual);
+
+
+
 ------------------------------------------------------------------------------
 ----------------- public.album_image -----------------------------------------  
 ------------------------------------------------------------------------------
@@ -212,6 +240,8 @@ ADD
   FOREIGN KEY (album_image_id)
   REFERENCES public.album_image (id)
   ON DELETE CASCADE;
+
+
 
 
 ------------------------------------------------------------------------------

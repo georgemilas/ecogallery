@@ -33,9 +33,14 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         await _db.DisposeAsync();
     }
 
-    
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Actual Album Methods
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /// <summary>
+    /// Ensure an album record exists for the given file path, creating parent albums as needed recursively
+    /// </summary>    
     public async Task<Album> EnsureAlbumExistsAsync(string filePath)
     {
         var album = Album.CreateFromFilePath(filePath, RootFolder);
@@ -60,33 +65,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         var albums = await _db.QueryAsync(sql, reader => Album.CreateFromDataReader(reader), album);
         return albums.FirstOrDefault();                         
     }
-    public async Task<AlbumContentHierarchical?> GetAlbumHierarchicalByNameAsync(string albumName)
-    {
-        Album album = Album.CreateFromAlbumPath(albumName, RootFolder);
-        var sql = @"SELECT 
-                        a.id, 
-                        a.album_name AS item_name, 
-                        a.album_description AS item_description,
-                        a.album_type AS item_type, 
-                        a.parent_album_id as parent_album_id, 
-                        a.parent_album AS parent_album_name,
-                        ai.image_type AS feature_item_type, 
-                        a.feature_image_path AS feature_item_path, 
-                        cai.image_type AS inner_feature_item_type, 
-                        ca.feature_image_path AS inner_feature_item_path, 
-                        a.last_updated_utc,
-                        a.album_timestamp_utc AS item_timestamp_utc,
-                        NULL::json AS image_exif,
-                        NULL::json AS video_metadata  
-                    FROM album AS a
-                    LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
-                    LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image
-                    LEFT JOIN album_image cai ON ca.feature_image_path = cai.image_path     --get the image record of the child album feature image
-                    WHERE a.album_name = @album_name";
-        var albums = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), album);
-        return albums.FirstOrDefault();                         
-    }
-
+    
     public async Task<Album?> GetAlbumByImageAsync(string filePath)
     {
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
@@ -95,9 +74,12 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return albums.FirstOrDefault();                 
     }
 
+
+    /// <summary>
+    /// checks if there are any images in this album or sub-album ("recursive")
+    /// </summary>
     public async Task<bool> AlbumHasContentAsync(string filePath)
     {
-        //this checks if there are any images in this album or any sub-albums
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
         // Escape backslashes for PostgreSQL LIKE pattern
         var albumEscapedLikePattern = album.AlbumName.Replace(@"\", @"\\") + "%";
@@ -152,6 +134,10 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     }
 
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// AlbumContentHierarchical Methods
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalByExpression(string expression, bool groupByPHash = true)
     {
         expression = System.Text.RegularExpressions.Regex.Replace(expression, @"\s+", " "); //normalize spaces
@@ -190,6 +176,40 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     } 
 
 
+    /// <summary>
+    /// Get only album record where album_name = albumName
+    /// </summary>    
+    public async Task<AlbumContentHierarchical?> GetAlbumHierarchicalByNameAsync(string albumName)
+    {
+        Album album = Album.CreateFromAlbumPath(albumName, RootFolder);
+        var sql = @"SELECT 
+                        a.id, 
+                        a.album_name AS item_name, 
+                        a.album_description AS item_description,
+                        a.album_type AS item_type, 
+                        a.parent_album_id as parent_album_id, 
+                        a.parent_album AS parent_album_name,
+                        ai.image_type AS feature_item_type, 
+                        a.feature_image_path AS feature_item_path, 
+                        cai.image_type AS inner_feature_item_type, 
+                        ca.feature_image_path AS inner_feature_item_path, 
+                        a.last_updated_utc,
+                        a.album_timestamp_utc AS item_timestamp_utc,
+                        NULL::json AS image_exif,
+                        NULL::json AS video_metadata  
+                    FROM album AS a
+                    LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
+                    LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image
+                    LEFT JOIN album_image cai ON ca.feature_image_path = cai.image_path     --get the image record of the child album feature image
+                    WHERE a.album_name = @album_name";
+        var albums = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), album);
+        return albums.FirstOrDefault();                         
+    }
+
+
+    /// <summary>
+    /// Get sub-albums and images where album_name = albumName
+    /// </summary>    
     public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalByName(string albumName)
     {
         var parameters = new { album_name = albumName };
@@ -198,6 +218,9 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return albumContent;                 
     }    
 
+    /// <summary>
+    /// Get sub-albums and images where album_id = albumId
+    /// </summary>    
     public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalById(long albumId)
     {
         var parameters = new { album_id = albumId };
@@ -206,7 +229,9 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return albumContent;                 
     }    
 
-    
+    /// <summary>
+    /// Get sub-albums and images for root
+    /// </summary>    
     public async Task<List<AlbumContentHierarchical>> GetRootAlbumContentHierarchical()
     {
         var sql = "SELECT * FROM get_root_album_content_hierarchical()";
@@ -215,6 +240,10 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
             reader => AlbumContentHierarchical.CreateFromDataReader(reader));
         return albumContent;                 
     }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Virtual Album Methods
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public async Task<VirtualAlbum?> GetRootVirtualAlbumsAsync()
     {
@@ -268,6 +297,32 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     }
 
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// AlbumSettings Methods
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    public async Task<AlbumSettings?> GetAlbumSettingsByAlbumIdAsync(long albumId, long userId, bool isVirtual = false)
+    {
+        var sql = "SELECT * FROM album_settings WHERE album_id = @album_id AND user_id = @user_id AND is_virtual = @is_virtual";
+        var parameters = new { album_id = albumId, user_id = userId, is_virtual = isVirtual };
+        var albumSettings = await _db.QueryAsync(sql, reader => AlbumSettings.CreateFromDataReader(reader), parameters);
+        return albumSettings.FirstOrDefault();                 
+    }
+
+    public async Task<AlbumSettings> AddOrUpdateAlbumSettingsAsync(AlbumSettings settings)
+    {
+        var sql = $@"INSERT INTO album_settings (album_id, user_id, is_virtual, banner_position_y, album_sort, image_sort, last_updated_utc)
+                               VALUES (@album_id, @user_id, @is_virtual, @banner_position_y, @album_sort, @image_sort, @last_updated_utc)
+                    ON CONFLICT (album_id, user_id, is_virtual) DO UPDATE
+                    SET
+                        banner_position_y = EXCLUDED.banner_position_y,
+                        album_sort = EXCLUDED.album_sort,
+                        image_sort = EXCLUDED.image_sort,
+                        last_updated_utc = EXCLUDED.last_updated_utc
+                    RETURNING id;";        
+        settings.Id = await _db.ExecuteScalarAsync<long>(sql, settings);    
+        return settings; 
+    }
 
 }
 

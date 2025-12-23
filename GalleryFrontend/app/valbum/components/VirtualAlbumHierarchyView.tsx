@@ -2,9 +2,11 @@ import React, { useEffect, useCallback } from 'react';
 import '../../album/components/gallery.css';
 import { justifyGallery, debounce } from '../../album/components/gallery';
 import { SortControl } from '../../album/components/Sort';
-import { AlbumItemHierarchy, ImageItemContent } from '../../album/components/AlbumHierarchyProps';
+import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from '../../album/components/AlbumHierarchyProps';
+import { DraggableBanner } from '../../album/components/DraggableBanner';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { apiFetch } from '@/app/utils/apiFetch';
 
 
 
@@ -14,10 +16,9 @@ export interface VirtualAlbumHierarchyProps {
   onImageClick: (image: ImageItemContent) => void;
   onSearchSubmit: (expression: string) => void;
   lastViewedImage?: number | null;
-  albumSort?: string;
-  imageSort?: string;
+  settings: AlbumSettings;
   router: AppRouterInstance;
-  onSortChange?: (albumSort: string, imageSort: string) => void;
+  onSortChange?: (settings: AlbumSettings) => void;
   clearLastViewedImage?: () => void;
 }
 
@@ -27,7 +28,62 @@ export interface VirtualAlbumHierarchyProps {
 export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {
   const { user } = useAuth();
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-    const [isLayouting, setIsLayouting] = React.useState(false);
+  const [isLayouting, setIsLayouting] = React.useState(false);
+  const [bannerEditMode, setBannerEditMode] = React.useState(false);
+  const { settings, onSortChange } = props;
+
+  const saveSettings = async (settings: any) => {
+    console.log(`saveSettings settings: ${JSON.stringify(settings)}`);
+    if (user) {
+      settings.user_id = user.id;
+      settings.album_id = props.album.id;
+
+      try {
+        const response = await apiFetch(`/api/v1/valbums/settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(settings),
+        });
+        const data = await response.json();  
+
+        if (!response.ok) throw new Error('Failed to save settings');
+      } catch (e) {
+        console.error('Error saving settings:', e);
+      }
+    }
+  };
+
+  const handleBannerPositionSave = async (objectPositionY: number) => {
+    const newSettings = { ...settings, banner_position_y: Math.floor(objectPositionY) };
+    onSortChange?.(newSettings);
+    console.log(`handleBannerPositionSave newSettings: ${JSON.stringify(newSettings)}`);
+    await saveSettings(newSettings);
+  };
+
+  const handleSortedAlbumsChange = useCallback(() => {
+    saveSettings(settings);
+    forceUpdate(); // Force re-render after in-place sort
+    setIsLayouting(true);
+    setTimeout(() => {
+      justifyGallery('.gallery', getResponsiveHeight(), () => {
+        setIsLayouting(false);
+      });
+    }, 100);
+  }, [user, settings]);
+
+  const handleSortedImagesChange = useCallback(() => {
+    props.clearLastViewedImage?.();
+    saveSettings(settings);
+    forceUpdate(); // Force re-render after in-place sort
+    setIsLayouting(true);
+    setTimeout(() => {
+      justifyGallery('.gallery', getResponsiveHeight(), () => {
+        setIsLayouting(false);
+      });
+    }, 100);
+  }, [props.clearLastViewedImage, user, settings]);
   
   const getResponsiveHeight = () => {
     const width = window.innerWidth;
@@ -47,108 +103,22 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
     }
   };
 
-  const handleSortedAlbumsChange = useCallback(() => {
-    console.log('VirtualAlbumHierarchyView: sorted albums changed', props.album.albums[0]?.name);
-    forceUpdate(); // Force re-render after in-place sort
-    setIsLayouting(true);
-    setTimeout(() => {
-      justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);
-      });
-    }, 100);  
-  }, []);
-
-  const handleSortedImagesChange = useCallback(() => {
-    props.clearLastViewedImage?.();
-    forceUpdate(); // Force re-render after in-place sort
-    setIsLayouting(true);
-    setTimeout(() => {
-      justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);
-      });
-    }, 100);  
-  }, [props.clearLastViewedImage]);
-
-
-  useEffect(() => {
-    // Wait for images to load before calculating layout
-    const gallery = document.querySelector('.gallery');
-    if (!gallery) return;
-
-    //////////////////////////////////////////////////////////////
-    //image load handling
-    const images = Array.from(gallery.querySelectorAll('img'));
-    let loadedCount = 0;
-    const totalImages = images.length;
-
-    if (totalImages === 0) return;
-
-    const onImageLoad = () => {
-      loadedCount++;
-      if (loadedCount === totalImages) {
-        setIsLayouting(true);
-        justifyGallery('.gallery', getResponsiveHeight(), () => {
-          setIsLayouting(false);
-          if (props.lastViewedImage) {
-            scrollToLastViewedImage(props.lastViewedImage);
-          }
-        });
-      }
-    };
-
-    // Add load listeners to all images
-    images.forEach(img => {
-      if (img.complete) {
-        onImageLoad(); // Already loaded
-      } else {
-        img.addEventListener('load', onImageLoad);
-        img.addEventListener('error', onImageLoad); // Count errors too
-      }
-    });
-
-    // Fallback: call after a delay if images don't load
-    const fallbackTimer = setTimeout(() => {
-      setIsLayouting(true);
-      justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);
-        if (props.lastViewedImage) {
-          scrollToLastViewedImage(props.lastViewedImage);
-        }
-      });
-    }, 1000);
-
-    //////////////////////////////////////////////////////////////
-    //page  resize (scroll etc.) handling
-    const handleResize = debounce(() => {
-      setIsLayouting(true);
-      justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);
-        // if (props.lastViewedImage) {
-        //   scrollToLastViewedImage(props.lastViewedImage);
-        // }
-      });
-    }, 150);    
-    window.addEventListener('resize', handleResize);    
-    
-    return () => {
-      clearTimeout(fallbackTimer);
-      window.removeEventListener('resize', handleResize);
-      images.forEach(img => {
-        img.removeEventListener('load', onImageLoad);
-        img.removeEventListener('error', onImageLoad);
-      });
-    };
-  }, [props.album]); //, props.lastViewedImage]); 
-
-  
-  
-
-
   return (
     <>
-      <div className="gallery-banner">
-        <img src={props.album.image_hd_path} alt={props.album.album_name()} />
-        <div className="gallery-banner-menubar">                  
+      <DraggableBanner 
+        album={props.album}
+        isEditMode={bannerEditMode}
+        onEditModeChange={setBannerEditMode}
+        onPositionSave={handleBannerPositionSave}
+        objectPositionY={settings.banner_position_y}
+        label={
+          <>
+            <h1>{props.album.album_name()}</h1>
+            {props.album.description && <h4>{props.album.description}</h4>}
+          </>
+        }
+      />
+      <div className="gallery-banner-menubar">                  
             <nav className="menu">
               <button onClick={() => props.onAlbumClick(null)} className="page-button" title="Albums">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
@@ -170,18 +140,14 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
                 Top
               </button>
             </nav>                      
-          </div>       
+          </div>
 
-        <div className="gallery-banner-label">
-          <h1>{props.album.album_name()}</h1>
-          {props.album.description && <h3>{props.album.description}</h3>}      
-        </div>
-      </div>	
+
       {props.album.albums.length > 0 && (
       <div className='albums'>
-        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={props.albumSort} 
-                  onSortUpdate={(sort) => props.onSortChange?.(sort, props.imageSort || 'timestamp-desc')}
-                />
+        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={settings.album_sort}
+          onSortUpdate={(sort) => onSortChange?.({ ...settings, album_sort: sort })}
+        />
         <ul className='albums-container'>
         {(props.album.albums).map(r => (
           <li className='albums-item' key={r.id}>
@@ -203,8 +169,8 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
           type="images"
           album={props.album} 
           onSortChange={handleSortedImagesChange}
-          initialSort={props.imageSort}
-          onSortUpdate={(sort) => props.onSortChange?.(props.albumSort || 'timestamp-desc', sort)}
+          initialSort={settings.image_sort}
+          onSortUpdate={(sort) => onSortChange?.({ ...settings, image_sort: sort })}
         />
         {isLayouting && props.album.images.length > 100 && (
           <div className="gallery-loading">
