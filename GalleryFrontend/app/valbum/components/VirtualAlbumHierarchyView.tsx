@@ -34,8 +34,9 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
   const { settings, onSortChange } = props;
 
   const saveSettings = async (settings: any) => {
-    console.log(`saveSettings settings: ${JSON.stringify(settings)}`);
+    //console.log(`saveSettings for user?: ${user ? user.id : 'null'}`);
     if (user) {
+      //console.log(`saveSettings settings: ${JSON.stringify(settings)}`);
       settings.user_id = user.id;
       settings.album_id = props.album.id;
 
@@ -64,7 +65,6 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
   };
 
   const handleSortedAlbumsChange = useCallback(() => {
-    saveSettings(settings);
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
@@ -76,7 +76,6 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
 
   const handleSortedImagesChange = useCallback(() => {
     props.clearLastViewedImage?.();
-    saveSettings(settings);
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
@@ -221,8 +220,16 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
 
       {props.album.albums.length > 0 && (
       <div className='albums'>
-        <SortControl type="albums" album={props.album} onSortChange={handleSortedAlbumsChange} initialSort={settings.album_sort}
-          onSortUpdate={(sort) => onSortChange?.({ ...settings, album_sort: sort })}
+        <SortControl 
+          type="albums" 
+          album={props.album} 
+          onSortChange={handleSortedAlbumsChange} 
+          initialSort={settings.album_sort}
+          onSortUpdate={async (sort) => {
+            const newSettings = { ...settings, album_sort: sort };
+            onSortChange?.(newSettings);
+            await saveSettings(newSettings);
+          }}
         />
         <ul className='albums-container'>
         {(props.album.albums).map(r => (
@@ -246,7 +253,11 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
           album={props.album} 
           onSortChange={handleSortedImagesChange}
           initialSort={settings.image_sort}
-          onSortUpdate={(sort) => onSortChange?.({ ...settings, image_sort: sort })}
+          onSortUpdate={async (sort) => {
+            const newSettings = { ...settings, image_sort: sort };
+            onSortChange?.(newSettings);
+            await saveSettings(newSettings);
+          }}
         />
         {isLayouting && props.album.images.length > 100 && (
           <div className="gallery-loading">

@@ -16,6 +16,7 @@ public record AlbumContentHierarchical
     public string FeatureItemPath { get; set; } = string.Empty; 
     public string? InnerFeatureItemType { get; set; } = string.Empty;   //not null only if FeatureItemType is null
     public string? InnerFeatureItemPath { get; set; } = string.Empty;   //not null only if FeatureItemType is null
+    public string ImageSha256 { get; set; } = string.Empty;  //SHA-256 hash of 400px thumbnail for duplicate detection
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset ItemTimestampUtc { get; set; }
     public ImageMetadata? ImageExif { get; set; }  
@@ -36,6 +37,7 @@ public record AlbumContentHierarchical
             FeatureItemPath = reader.GetString(reader.GetOrdinal("feature_item_path")),
             InnerFeatureItemType = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_type")) ? null :  reader.GetString(reader.GetOrdinal("inner_feature_item_type")),
             InnerFeatureItemPath = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_path")) ? null : reader.GetString(reader.GetOrdinal("inner_feature_item_path")),
+            ImageSha256 = reader.IsDBNull(reader.GetOrdinal("image_sha256")) ? string.Empty : reader.GetString(reader.GetOrdinal("image_sha256")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
             ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc")),
             ImageExif = reader.IsDBNull(reader.GetOrdinal("image_exif")) 

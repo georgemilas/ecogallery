@@ -17,3 +17,33 @@
    * sorting is now global, make it by album    
    * extract movie metadata
 
+### ffmpeg
+To convert an .mts file to .mp4 using FFmpeg, use:
+```powershell
+ffmpeg -i input.mts -c:v libx264 -c:a aac output.mp4
+```
+ * input.mts: your source file
+ * output.mp4: your desired output file
+ * -c:v libx264: encodes video to H.264 (widely supported)
+ * -c:a aac: encodes audio to AAC (widely supported)
+
+```powershell
+#powershell
+Get-ChildItem *.mts | ForEach-Object {
+    ffmpeg -i $_.FullName -c:v libx264 -c:a aac ($_.BaseName + '.mp4')
+}
+```
+
+```powershell
+#command prompt (cmd)
+for %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~nf.mp4"
+```
+
+The Windows Command Prompt for loop does not support recursion by default, but you can use the /R flag to process files in all subfolders:
+```powershell
+#command prompt (cmd)
+for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
+```
+ * /R makes the loop recursive.
+ * %f is each file found.
+ * %~dpnf expands to the full path and filename (without extension), so the .mp4 is created next to the source.

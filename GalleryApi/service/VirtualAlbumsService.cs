@@ -73,6 +73,7 @@ public class VirtualAlbumsService: ServiceBase
                        await _albumRepository.GetAlbumContentHierarchicalByName(album.AlbumFolder);
             all.AddRange(content);
         }
+        all = all.GroupBy(i => i.ImageSha256).Select(g => g.First()).ToList(); //remove duplicates based on SHA256
         var filteredContent = filter(all);
         
         var valbum = new VirtualAlbumContent();
