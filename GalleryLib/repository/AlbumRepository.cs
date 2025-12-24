@@ -7,6 +7,7 @@ using ExpParser.BooleanLogic.SQL;
 using GalleryLib.model.album;
 using GalleryLib.model.configuration;
 using GalleryLib.service.database;
+using YamlDotNet.Core.Tokens;
 
 namespace GalleryLib.repository;
 
@@ -176,7 +177,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     {
         expression = System.Text.RegularExpressions.Regex.Replace(expression, @"\s+", " "); //normalize spaces
         var te = new SQLTokenEvaluator("image_path", SQLTokenEvaluator.OPERATOR_TYPE.ILIKE_ANY_ARRAY, SQLTokenEvaluator.FIELD_TYPE.STRING);
-        var parser = new BooleanLogicExpressionParser(expression, new SQLSemantic(te));
+        var parser =  new KeywordsExpressionParser(expression, new SQLSemantic(te));
         string where = (string)parser.Evaluate(null);        
         Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
         
