@@ -4,6 +4,7 @@ using GalleryLib.service.album;
 
 namespace GalleryLib.model.album;
 
+
 public record VirtualAlbum
 {
     public long Id { get; set; }   //Int64

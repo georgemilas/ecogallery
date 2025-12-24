@@ -78,7 +78,7 @@ public class VirtualAlbumsService: ServiceBase
         
         var valbum = new VirtualAlbumContent();
         valbum.Expression = "";
-        valbum.NavigationPathSegments = new List<string>();
+        valbum.NavigationPathSegments = new List<AlbumPathElement>();
         valbum.LastUpdatedUtc = DateTimeOffset.UtcNow;
         valbum.ItemTimestampUtc = DateTimeOffset.UtcNow;
         var item = filteredContent.FirstOrDefault();
@@ -100,7 +100,8 @@ public class VirtualAlbumsService: ServiceBase
         valbum.Images = new List<ImageItemContent>();
         foreach (var image in filteredContent.Where(i => !i.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase)))
         {
-            var contentImage = GetImageItemContent(null, image);
+            var contentImage = GetImageItemContent(image);
+            contentImage.NavigationPathSegments = valbum.NavigationPathSegments;
             valbum.Images.Add(contentImage);
         }
         return valbum;
@@ -117,7 +118,8 @@ public class VirtualAlbumsService: ServiceBase
         album.Name = valbum.AlbumName;
         album.Description = valbum.AlbumDescription;
         album.Expression = valbum.AlbumExpression;
-        album.NavigationPathSegments = new List<string>();
+        var parents = await _albumRepository.GetVirtualAlbumParentsAsync(valbum.Id);
+        album.NavigationPathSegments = parents.Select(p => new AlbumPathElement { Id = p.Id, Name = p.Path }).Reverse().ToList();
         album.LastUpdatedUtc = valbum.LastUpdatedUtc;
         album.ItemTimestampUtc = valbum.LastUpdatedUtc;
         string path = valbum.FeatureImagePath ?? "";
@@ -143,7 +145,8 @@ public class VirtualAlbumsService: ServiceBase
         Console.WriteLine($"Debug: Virtual album '{valbum.AlbumName}' returned {content.Count} items.");
         foreach (var image in content.Where(i => !i.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase)))
         {
-            var contentImage = GetImageItemContent(null, image);
+            var contentImage = GetImageItemContent(image);
+            contentImage.NavigationPathSegments = album.NavigationPathSegments;
             album.Images.Add(contentImage);                
         }
 
@@ -154,7 +157,8 @@ public class VirtualAlbumsService: ServiceBase
             albumItem.Id = calbum.Id;
             albumItem.Name = calbum.AlbumName;
             albumItem.Description = calbum.AlbumDescription;
-            albumItem.NavigationPathSegments = new List<string>();
+            var cparents = await _albumRepository.GetAlbumParentsAsync(calbum.Id);
+            albumItem.NavigationPathSegments = cparents.Select(p => new AlbumPathElement { Id = p.Id, Name = p.Path }).Reverse().ToList();
             albumItem.LastUpdatedUtc = calbum.LastUpdatedUtc;
             albumItem.ItemTimestampUtc = calbum.LastUpdatedUtc;
             path = calbum.FeatureImagePath ?? "";                                        

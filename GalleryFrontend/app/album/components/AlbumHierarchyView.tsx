@@ -186,27 +186,22 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
       />
       <div className="gallery-banner-menubar">
           <nav className="breadcrumbs">
-            <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick('');}}>
+            <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
               <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-            </svg>
+            </svg>Home
           </a>
-            {props.album.navigation_path_segments.map((segment, index) => {
-              const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
+            {props.album.navigation_path_segments.slice(1).map((segment, index) => {
+              //const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
               return (
                 <span key={index}>
-                  {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(pathToSegment);}}>{segment}</a>
+                  {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(segment.id);}}>{segment.name}</a>
                 </span>
               );
             })}
           </nav>
           
             <nav className="menu">
-              <button onClick={() => props.onAlbumClick('')} className="page-button" title="Private Albums">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-                </svg>Home
-              </button>
               <button onClick={() => props.router.push('/valbum')} className="page-button" title="Public Albums">Public</button>
               <button onClick={() => props.onGetApiUrl('random')} className="page-button" title="Random Images">Random</button>
               <button onClick={() => props.onGetApiUrl('recent')} className="page-button" title="Recent Images">Recent</button>
@@ -245,7 +240,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
         <ul className='albums-container'>
         {(props.album.albums).map(r => (
           <li className='albums-item' key={r.id}>
-            <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.name);}}>
+            <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.id);}}>
               <img src={r.thumbnail_path} alt={props.album.get_name(r.name)} />
               <span className="albums-item-label">{props.album.get_name(r.name)}</span>
               <svg className="albums-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">

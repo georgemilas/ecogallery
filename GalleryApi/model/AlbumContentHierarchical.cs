@@ -13,6 +13,13 @@ public record AlbumSearch
     public bool GroupByPHash { get; set; } = true;  // If true, group results by image hash to show only one image per duplicate group
 }
 
+public record AlbumPathElement
+{
+    public string Name { get; set; } = string.Empty;
+    public long Id { get; set; } = 0;
+}   
+
+
 public record VirtualAlbumContent: AlbumContentHierarchical
 {
     public string Expression { get; set; } = string.Empty;    
@@ -45,7 +52,7 @@ public record ItemContent
     public long Id { get; set; }   //Int64
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty; 
-    public List<string> NavigationPathSegments { get; set; } = new List<string>();
+    public List<AlbumPathElement> NavigationPathSegments { get; set; } = new List<AlbumPathElement>();
     public string ThumbnailPath { get; set; } = string.Empty;         
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset ItemTimestampUtc { get; set; }

@@ -186,7 +186,7 @@ export function VirtualAlbumPage(): JSX.Element {
             <ImageView 
               image={selectedImage} 
               album={album} 
-              onAlbumClick={() => {}} 
+              onAlbumClick={handleAlbumClick} 
               onClose={handleCloseImage} 
               router={router}
               isFullscreen={isFullscreen}

@@ -134,6 +134,26 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     }
 
 
+    public async Task<List<AlbumParents>> GetAlbumParentsAsync(long id)
+    {
+        var sql = @"WITH RECURSIVE ancestors AS (
+                        SELECT id, album_name, parent_album::text, regexp_replace(album_name, '.*\\', '')::text AS path, 0 AS depth
+                        FROM album
+                        WHERE id = @id
+                        
+                        UNION ALL
+                        
+                        SELECT t.id, t.album_name, t.parent_album::text, regexp_replace(t.album_name, '.*\\', '')::text as path, a.depth + 1
+                        FROM album t
+                        JOIN ancestors a ON t.album_name = a.parent_album
+                        WHERE a.depth < 100  -- safety limit
+                    )
+                    SELECT * FROM ancestors ORDER BY depth;";
+        var parameters = new { id = id };
+        var albumContent = await _db.QueryAsync(sql, reader => AlbumParents.CreateFromDataReader(reader), parameters);
+        return albumContent;
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// AlbumContentHierarchical Methods
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -318,6 +338,27 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         //Console.WriteLine($"ran album save db: {album.AlbumName}");        
         return album; 
     }
+
+    public async Task<List<AlbumParents>> GetVirtualAlbumParentsAsync(long id)
+    {
+        var sql = @"WITH RECURSIVE ancestors AS (
+                        SELECT id, album_name, parent_album::text, album_name::text AS path, 0 AS depth
+                        FROM virtual_album
+                        WHERE id = @id
+                        
+                        UNION ALL
+                        
+                        SELECT t.id, t.album_name, t.parent_album::text, t.album_name::text AS path, a.depth + 1
+                        FROM virtual_album t
+                        JOIN ancestors a ON t.album_name = a.parent_album
+                        WHERE a.depth < 100  -- safety limit
+                    )
+                    SELECT * FROM ancestors ORDER BY depth;";
+        var parameters = new { id = id };
+        var albumContent = await _db.QueryAsync(sql, reader => AlbumParents.CreateFromDataReader(reader), parameters);
+        return albumContent;
+    }
+
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

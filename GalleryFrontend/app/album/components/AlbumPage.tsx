@@ -18,7 +18,7 @@ export function AlbumPage(): JSX.Element {
   const [lastViewedImage, setLastViewedImage] = useState<number | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const albumNameParam = searchParams.get('name') || '';
+  const albumIdParam = searchParams.get('id') ? parseInt(searchParams.get('id') || '', 10) : null;
   const imageIdParam = searchParams.get('image') ? parseInt(searchParams.get('image') || '', 10) : null;
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
   
@@ -32,13 +32,13 @@ export function AlbumPage(): JSX.Element {
   const viewMode = imageIdParam ? 'image' : 'gallery';
   const selectedImage = album?.images.find(item => item.id === imageIdParam) || null;
 
-  const fetchAlbum = async (albumNameParam: string = '') => {
+  const fetchAlbum = async (albumId: number | null) => {
     setLoading(true);
     try {
-      const encodedAlbumName = albumNameParam ? encodeURIComponent(albumNameParam) : '';
+      //const encodedAlbumName = albumNameParam ? encodeURIComponent(albumNameParam) : '';
       const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/albums/${encodedAlbumName}` : `/api/v1/albums/${encodedAlbumName}`;
-      console.log('Fetching album:', { raw: albumNameParam, encoded: encodedAlbumName, url });
+      const url = apiBase ? `${apiBase}/api/v1/albums/${albumId ?? ''}` : `/api/v1/albums/${albumId ?? ''}`;
+      console.log('Fetching album:', { albumId, url });
       const res = await apiFetch(url);
       if (!res.ok) {
         console.error('Failed to fetch album', res.status);
@@ -133,8 +133,8 @@ const getApiUrl = async (apiUrl: string) => {
       return;
     }
 
-    fetchAlbum(albumNameParam);
-  }, [albumNameParam, authLoading, user]);
+    fetchAlbum(albumIdParam);
+  }, [albumIdParam, authLoading, user]);
 
   
   useEffect(() => {
@@ -168,18 +168,18 @@ const getApiUrl = async (apiUrl: string) => {
     };
   }, []);
 
-  const handleAlbumClick = (newAlbumName: string) => {
+  const handleAlbumClick = (newAlbumId: number | null) => {
     // Build URL with properly encoded params
     const params = new URLSearchParams({
       albumSort: currentSettings.album_sort,
       imageSort: currentSettings.image_sort
     });
-    if (newAlbumName) {params.set('name', newAlbumName);}
+    if (newAlbumId) {params.set('id', newAlbumId.toString());}
     const targetUrl = `/album?${params.toString()}`;
     const currentUrl = `${window.location.pathname}${window.location.search}`;
     if (currentUrl === targetUrl) {
       // If URL is unchanged (e.g., navigating to root when already at root), force a refresh/fetch
-      fetchAlbum(newAlbumName || '');
+      fetchAlbum(newAlbumId);
       router.refresh();
     } else {
       router.push(targetUrl);
@@ -213,7 +213,7 @@ const getApiUrl = async (apiUrl: string) => {
         <>
           {viewMode === 'gallery' && (
             <AlbumHierarchyView 
-              key={albumNameParam} 
+              key={albumIdParam || 'root'} 
               album={album} 
               onAlbumClick={handleAlbumClick} 
               onImageClick={handleImageClick} 

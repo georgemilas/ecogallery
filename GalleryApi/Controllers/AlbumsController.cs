@@ -32,20 +32,6 @@ public class AlbumsController : ControllerBase
         }
     }
 
-    // GET: /api/v1/albums/root/hierarchy
-    [HttpGet("root/hierarchy")]
-    public async Task<ActionResult<AlbumContentHierarchical>> GetRootHierarchy()
-    {
-        try
-        {
-            var albumContent = await _albumsService.GetAlbumContentHierarchicalByName();
-            return Ok(albumContent);
-        }
-        catch(AlbumNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-    }
 
     // GET: /api/v1/albums/{albumName}
     [HttpGet("{albumName}")]
@@ -62,22 +48,9 @@ public class AlbumsController : ControllerBase
         }
 
     }
-    // GET: /api/v1/albums/{albumName}/hierarchy
-    [HttpGet("{albumName}/hierarchy")]
-    public async Task<ActionResult<AlbumContentHierarchical>> GetAlbumContentHierarchicalByName(string albumName)
-    {
-        try
-        {
-            var albumContent = await _albumsService.GetAlbumContentHierarchicalByName(albumName);
-            return Ok(albumContent);
-        }
-        catch(AlbumNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-    }
-    // GET: /api/v1/albums/{albumId}/hierarchy
-    [HttpGet("{albumId:long}/hierarchy")]
+    
+    // GET: /api/v1/albums/{albumId}
+    [HttpGet("{albumId:long}")]
     public async Task<ActionResult<AlbumContentHierarchical>> GetAlbumContentHierarchicalById(long albumId)
     {
         try
@@ -90,8 +63,6 @@ public class AlbumsController : ControllerBase
             return NotFound(new { error = ex.Message });
         }
     }
-
-
 
     // POST: /api/v1/albums/search
     [HttpPost("search")]

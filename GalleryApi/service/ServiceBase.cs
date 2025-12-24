@@ -36,7 +36,7 @@ public class ServiceBase
     }
 
 
-    protected ImageItemContent GetImageItemContent(string? albumName, GalleryLib.model.album.AlbumContentHierarchical item)
+    protected ImageItemContent GetImageItemContent(GalleryLib.model.album.AlbumContentHierarchical item)
     {
         var image = new ImageItemContent();
         image.Id = item.Id;
@@ -51,8 +51,7 @@ public class ServiceBase
         image.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.UHD));
         image.ImageOriginalPath = GetUrl(path);
         image.IsMovie = _picturesConfig.IsMovieFile(path);
-        image.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()
-                                                         : new List<string>();
+        
         image.LastUpdatedUtc = item.LastUpdatedUtc;
         image.ItemTimestampUtc = item.ItemTimestampUtc;
         image.ImageExif = item.ImageExif;

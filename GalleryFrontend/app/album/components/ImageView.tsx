@@ -8,7 +8,7 @@ import './imageContent.css';
 interface ImageViewProps {
   image: ImageItemContent;
   album: AlbumItemHierarchy;
-  onAlbumClick: (albumPath: string) => void;
+  onAlbumClick: (albumId: number | null) => void;
   onClose: () => void;
   router: AppRouterInstance;
   isFullscreen: boolean;  
@@ -191,16 +191,16 @@ export function ImageView(props: ImageViewProps): JSX.Element {
         {/* Content - full viewport */}
         <div className="content" ref={containerRef}>
               <nav className="breadcrumbs">
-              <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick('');}}>
+              <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
                   <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
                 </svg>
               </a>
-              {props.album.navigation_path_segments.map((segment, index) => {
-                const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
+              {props.album.navigation_path_segments.slice(1).map((segment, index) => {
+                //const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
                 return (
                   <span key={index}>
-                    {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(pathToSegment);}}>{segment}</a>
+                    {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(segment.id);}}>{segment.name}</a>
                   </span>
                 );
               })}

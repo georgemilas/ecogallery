@@ -190,21 +190,24 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
           </>
         }
       />
-      <div className="gallery-banner-menubar">                  
-            <nav className="menu">
-              <button onClick={() => props.onAlbumClick(null)} className="page-button" title="Albums">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-                </svg>Albums
-              </button>
+      <div className="gallery-banner-menubar">      
+          <nav className="breadcrumbs">
+            <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
+              <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+            </svg>Home
+          </a>
+            {props.album.navigation_path_segments.slice(1).map((segment, index) => {
+              //const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
+              return (
+                <span key={index}>
+                  {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(segment.id);}}>{segment.name}</a>
+                </span>
+              );
+            })}
+          </nav>
 
-              <button
-                onClick={() => props.router.push(user ? '/album' : '/login')}
-                className="page-button"
-                title={user ? 'Go to private albums' : 'Login to access private albums'}
-              >
-                {user ? 'Private' : 'Login'}
-              </button>
+            <nav className="menu">
               <button onClick={() => props.onGetApiUrl('random')} className="page-button" title="Random Images">Random</button>
               <button onClick={() => props.onGetApiUrl('recent')} className="page-button" title="Recent Images">Recent</button>
 
@@ -215,7 +218,17 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
                 Top
               </button>
             </nav>                      
-          </div>
+
+            <div className="menu">
+              <button
+                onClick={() => props.router.push(user ? '/album' : '/login')}
+                className="page-button"
+                title={user ? 'Go to private albums' : 'Login to access private albums'}
+              >
+                {user ? 'Private Albums' : 'Login'}
+              </button>
+            </div>
+        </div>
 
 
       {props.album.albums.length > 0 && (

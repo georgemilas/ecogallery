@@ -61,11 +61,18 @@ export interface VideoMetadata {
   last_updated_utc: string;
 }
 
+
+
+export interface AlbumPathElement {
+  name: string;
+  id: number;
+}
+
 export interface ItemContent {
   id: number;
   name: string;
   description?: string;
-  navigation_path_segments: Array<string>;
+  navigation_path_segments: Array<AlbumPathElement>;
   thumbnail_path: string;
   last_updated_utc: Date;
   item_timestamp_utc: Date;
@@ -97,7 +104,7 @@ export class AlbumItemHierarchy implements AlbumItemContent {
   id: number = 0;
   name: string = '';
   description?: string;   // optional in AlbumItemContent interface therefor we must add it here
-  navigation_path_segments: Array<string> = [];
+  navigation_path_segments: Array<AlbumPathElement> = [];
   thumbnail_path: string = '';
   image_hd_path: string = '';
   banner_position_y?: number; // Y position of the banner image (0-100%)
@@ -132,7 +139,7 @@ export class AlbumItemHierarchy implements AlbumItemContent {
 
 export interface AlbumHierarchyProps {
   album: AlbumItemHierarchy;
-  onAlbumClick: (albumName: string) => void;
+  onAlbumClick: (albumId: number | null) => void;
   onImageClick: (image: ImageItemContent) => void;
   onSearchSubmit: (expression: string) => void;
   onGetApiUrl: (apiUrl: string) => void;

@@ -50,7 +50,7 @@ public class AlbumsService: ServiceBase
     {
         var valbum = new VirtualAlbumContent();
         valbum.Id = 0;
-        valbum.NavigationPathSegments = new List<string>();
+        valbum.NavigationPathSegments = new List<AlbumPathElement>();
         valbum.LastUpdatedUtc = DateTimeOffset.UtcNow;
         valbum.ItemTimestampUtc = DateTimeOffset.UtcNow;
         var item = content.FirstOrDefault();
@@ -64,7 +64,8 @@ public class AlbumsService: ServiceBase
         valbum.Images = new List<ImageItemContent>();
         foreach (var image in content)
         {
-            var contentImage = GetImageItemContent(null, image);
+            var contentImage = GetImageItemContent(image);
+            contentImage.NavigationPathSegments = valbum.NavigationPathSegments;
             valbum.Images.Add(contentImage);
             continue;
         }
@@ -92,7 +93,7 @@ public class AlbumsService: ServiceBase
             throw new AlbumNotFoundException(albumName);
         }    
         var album = new AlbumContentHierarchical();
-        SetAlbumItemContent(album, albumName, libAlbum);
+        await SetAlbumItemContent(album, albumName, libAlbum);
         var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(libAlbum.Id, AuthenticatedUser?.Id ?? 1, false);    //get admin settings if no user
         album.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
         {
@@ -110,12 +111,13 @@ public class AlbumsService: ServiceBase
             if (item.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase))
             {
                 var contentAlbum = new AlbumItemContent();
-                SetAlbumItemContent(contentAlbum, albumName, item);
+                await SetAlbumItemContent(contentAlbum, albumName, item);
                 album.Albums.Add(contentAlbum);
                 continue;
             }
             else {
-                var contentImage = GetImageItemContent(albumName, item);
+                var contentImage = GetImageItemContent(item);
+                contentImage.NavigationPathSegments = album.NavigationPathSegments;
                 album.Images.Add(contentImage);
                 continue;
             }            
@@ -123,7 +125,7 @@ public class AlbumsService: ServiceBase
         return album;
     }
 
-    private void SetAlbumItemContent(AlbumItemContent album, string? albumName, GalleryLib.model.album.AlbumContentHierarchical item)
+    private async Task SetAlbumItemContent(AlbumItemContent album, string? albumName, GalleryLib.model.album.AlbumContentHierarchical item)
     {
         album.Id = item.Id;
         album.Name = item.ItemName;
@@ -139,8 +141,12 @@ public class AlbumsService: ServiceBase
         
         album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
         album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));    
-        album.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()
-                                                         : new List<string>();
+        
+        var parents = await _albumRepository.GetAlbumParentsAsync(item.Id);
+        album.NavigationPathSegments = parents.Select(p => new AlbumPathElement { Id = p.Id, Name = p.Path }).Reverse().ToList();
+        // album.NavigationPathSegments = albumName != null ? albumName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).ToList()
+        //                                                  : new List<string>();
+        
         album.LastUpdatedUtc = item.LastUpdatedUtc;
         album.ItemTimestampUtc = item.ItemTimestampUtc;                
     }
