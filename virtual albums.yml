@@ -16,7 +16,8 @@ Barcelona:
 Acasa:
   parent: Pictures Gallery
   description: Acasa in Arad, Sinpaul, Firiteaz si Dudesti - Selectii din 2022 si 2016 
-  expression: ((acasa and arad) or (sinpaul _4532 _4529 luni miercuri)) and not (arad\arad 2009\ strand select castel hunedoara vaca pestera nidi peru lulu _5352 mvi_5673 _5388 _5353 _5334 _5384 _5374 _1476 _5567 _5560 _1487)
+  expression: ((acasa and arad) or (sinpaul _4532 _4529 luni miercuri)) and not (arad\arad 2009\ strand select 
+   castel hunedoara vaca pestera nidi peru lulu _5352 mvi_5673 _5388 _5353 _5334 _5384 _5374 _1476 _5567 _5560 _1487 "de la moni")
   feature: \2022\Arad\joi sinpaul\feature__MG_5648.jpg
 
 
@@ -60,11 +61,26 @@ Andrew's Graduation:
     and not (selected\mimi\20240518_141618.jpg mimi\20240520_095452.mp4 mimi\20240518_165615.mp4)
   feature: \2024\Andrew selected\_MG_9744-Enhanced-NR-1.jpg
 
-2021: 
+2023:
   parent: Pictures Gallery
-  description: Selections from 2021 trips to South Carolina's Hilton head Island and walks around Schaumburg neighborhoods
-  expression: \2021 and (2021\best or island\best)
-  feature: \2021\best\_MG_2170.jpg
+  description: Selections from 2023 trips to Washington, Barcelona, and walks around Chicago neighborhoods
+  expression: (\2023 and (_8847 _8855 _8842 _8836 _8790 _8784 _8771 _8759 _8755 _8751 _8722 _8175 _8159 _8152 _8139 _8141 _152323 _153521_3
+   _153235 _145032 _113350 _114649 _114743 _114738 _192149 _6926 _6935 _6913 _6878 _6865 _6862 _6891) and not (_6865-2))
+   (\2023 and Washington and (_125732_copy _125714_copy _155836 _132043 _112007 _223044 _101827 _8702 _8681 _8669 _8663 _8667 _8660 _8657 _8652
+    _8643 _8632 _8623 _8594 _8599 _8604 _8577 _8574 _134558 _133645 _8570 _8566 _8562 _8558 _8553 _8526 _8522 _8514 _8511 _8505 _8492 
+    _8482 _8476 _8464 _8469 _8466 _8459 _8424 _8434 _8437 _8416 _152022 _121538 _8461 _8445 _8443 _8432 _8425 _8420 _8384 _155322 
+    _125041 _104832 _104723 _8394 _8389 _8380 _8360 _8329 _8377 _8366 _8369 _8357 _8223 _8354 _132043 _131843 _130933 _121254 _8693 _8673 _8689 _8598) 
+    and not ({phone.*?_152022} {phone.*?_130933} {phone.*?_121254})) 
+  feature: \2023\Washington\_MG_8689.jpg
+
+Barcelona, Spain:
+  parent: 2023
+  description: Selections from 2023 trip to Barcelona, Spain 
+  expression: ((barcelona and (8024 8004 981 939 25-2 883 818 787 781 736 709 717 948 958 933 Pano 733 723 674 676 661 656 650 
+                     618 607 534 532 462 442 447 378 377 374 368 348 331 337 309 317 301 293 288 268 253 233 200 193 
+                     142 114 086 7067 7047 7080 127 184 210 319))
+        or (barcelona and phone and (3932 448 flamingo 50745 2321 2336 2412 0329 1648 5429 3520 5453))) and not (_MG_7871 333_04)
+  feature: \2023\Barcelona\feature__MG_7939.jpg  
 
 2022: 
   parent: Pictures Gallery
@@ -75,6 +91,12 @@ Andrew's Graduation:
                       _4104 day\_MG_4297 _4301 _4157 _4075-2 _4059 _4029 _3936 _3894 _3880 _221919)
     and not (_5689 _5687 _5685 _5676 _5672 _5637 _5450 _5353)
   feature: \2022\Arad\select\_MG_5459.jpg
+
+2021: 
+  parent: Pictures Gallery
+  description: Selections from 2021 trips to South Carolina's Hilton head Island and walks around Schaumburg neighborhoods
+  expression: \2021 and (2021\best or island\best)
+  feature: \2021\best\_MG_2170.jpg
 
 2019:
   parent: Pictures Gallery

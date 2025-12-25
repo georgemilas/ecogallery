@@ -2,9 +2,9 @@
 ### Todo
    * convert .mov to .mp4 during thumbnail processor for reliable viewing
    * theme for an album (background, border, roundings)
-   * going back to album on large albums (wait for gallery to render before setting to last image - show loading?)
+   * going back to album on large albums (wait for gallery to render before setting to last image - show loading - pagination?)
    * movie hash ?
-   * random 100, recent 100
+   * {r:} regex, {s:} fuzzy search, {d=:} {d!=:} {d>:} {d>=:} {d<:} {d<=:} date 
       
 
 ### Changes
@@ -16,6 +16,7 @@
    * get rid of duplicates in search result like the same image in all these 3 folders album\select\best (image hash?)
    * sorting is now global, make it by album    
    * extract movie metadata
+   * random 100, recent 100
 
 ### ffmpeg
 To convert an .mts file to .mp4 using FFmpeg, use:

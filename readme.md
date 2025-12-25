@@ -79,6 +79,12 @@ The solution folder consists of several projects:
         cd ecogallery
         dotnet run --project GalleryService -- thumbnails -h 400, 1440 -f E:\TotulAici\TutuLaptop\pictures
         ```
+    * Build virtual albums from a yml file 
+        ```powershell
+        cd ecogallery
+        dotnet run --project GalleryService -- valbum -f E:\TotulAici\TutuLaptop\pictures -y "virtual albums.yml"
+        ```
+        
 3) GalleryApi - Api powering the gallery. Exposes data at "/api/v1/pictures" and also to run as a docker container
     ```powershell
 	cd ecogallery

@@ -186,11 +186,13 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
       />
       <div className="gallery-banner-menubar">          
             <nav className="breadcrumbs">
-              <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
-                <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-              </svg>
-              </a>
+              {props.album.navigation_path_segments.length > 1 && (
+                <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
+                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+                </svg>
+                </a>
+              )}
               {props.album.navigation_path_segments.slice(1).map((segment, index) => {
                 //const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
                 return (
@@ -198,7 +200,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
                     {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(segment.id);}}>{segment.name}</a>
                   </span>
                 );
-              })}
+              })}              
             </nav>          
             
             <nav className="menu">

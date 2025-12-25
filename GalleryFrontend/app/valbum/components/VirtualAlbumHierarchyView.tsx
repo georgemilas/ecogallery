@@ -192,11 +192,13 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
       />
       <div className="gallery-banner-menubar">      
           <nav className="breadcrumbs">
-            <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
-              <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-            </svg>
-          </a>
+            {props.album.navigation_path_segments.length > 1 && (
+              <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
+                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+                </svg>
+              </a>
+            )}
             {props.album.navigation_path_segments.slice(1).map((segment, index) => {
               //const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
               return (
@@ -207,34 +209,31 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
             })}
           </nav>
 
-            <nav className="menu">
-              <button onClick={() => props.onGetApiUrl('')} className="page-button" title="Home">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
-                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-                </svg>Home
-              </button>
-              <button
-                onClick={() => props.router.push(user ? '/album' : '/login')}
-                className="page-button"
-                title={user ? 'Go to private albums' : 'Login to access private albums'}
-              >
-                {user ? 'Private' : 'Login'}
-              </button>
-              <button onClick={() => props.onGetApiUrl('random')} className="page-button" title="Random Images">Random</button>
-              <button onClick={() => props.onGetApiUrl('recent')} className="page-button" title="Recent Images">Recent</button>
+          <nav className="menu">
+            <button onClick={() => props.onGetApiUrl('')} className="page-button" title="Home">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
+                <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+              </svg>Home
+            </button>
+            <button
+              onClick={() => props.router.push(user ? '/album' : '/login')}
+              className="page-button"
+              title={user ? 'Go to private albums' : 'Login to access private albums'}
+            >
+              {user ? 'Private' : 'Login'}
+            </button>
+            <button onClick={() => props.onGetApiUrl('random')} className="page-button" title="Random Images">Random</button>
+            <button onClick={() => props.onGetApiUrl('recent')} className="page-button" title="Recent Images">Recent</button>
 
-              <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-                  <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
-                </svg>
-                Top
-              </button>
-            </nav>                      
-
-            <div>
-              
-            </div>
-        </div>
+            <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+                <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
+              </svg>
+              Top
+            </button>
+          </nav>                      
+          <div></div>
+      </div>
 
 
       {props.album.albums.length > 0 && (
