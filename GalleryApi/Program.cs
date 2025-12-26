@@ -61,7 +61,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AlbumRepository>();  
 builder.Services.AddScoped<AlbumImageRepository>();
 builder.Services.AddScoped<AuthRepository>();
-builder.Services.AddScoped<PasswordResetRepository>();
+builder.Services.AddScoped<UserTokenRepository>();
 builder.Services.AddScoped<GalleryApi.service.auth.AppAuthService>();
 builder.Services.AddScoped<GalleryApi.service.auth.UserAuthService>();
 builder.Services.AddScoped<GalleryApi.service.AlbumsService>();

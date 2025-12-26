@@ -69,7 +69,7 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         return await _db.ExecuteAsync(sql, image);               
     }
 
-    public async Task<ImageMetadata?> GetImageExifAsync(AlbumImage albumImage)
+    public async Task<ImageMetadata?> GetImageMetadataAsync(AlbumImage albumImage)
     {
         var sql = "SELECT * FROM image_exif WHERE album_image_id = @album_image_id";
         var sqlParams = new { album_image_id = albumImage.Id };
@@ -100,7 +100,7 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         videoMetadata.Id = await _db.ExecuteScalarAsync<long>(sql, videoMetadata);            
         return videoMetadata;                        
     }
-    public async Task<ImageMetadata> AddNewImageExifAsync(ImageMetadata exif)
+    public async Task<ImageMetadata> AddNewImageMetadataAsync(ImageMetadata exif)
     {
         var sql = @"INSERT INTO public.image_exif(album_image_id, camera, lens, focal_length, aperture, exposure_time, iso, date_taken, 
                                                 rating, date_modified, flash, metering_mode, exposure_program, exposure_bias, exposure_mode, 

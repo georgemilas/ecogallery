@@ -318,17 +318,18 @@ ADD
 
 
 ------------------------------------------------------------------------------
------------------ public.password_reset_token --------------------------------  
+----------------- public.user_token --------------------------------  
 ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS public.password_reset_token;
+DROP TABLE IF EXISTS public.user_token;
 
-CREATE TABLE public.password_reset_token (
+CREATE TABLE public.user_token (
     id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES public.user(id),
+    token_type VARCHAR(50) NOT NULL DEFAULT 'password_reset',  -- e.g., 'password_reset', 'user_registration'
     token VARCHAR(128) NOT NULL UNIQUE,
     created_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW(),
     expires_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW() + INTERVAL '1 hour',
     used BOOLEAN NOT NULL DEFAULT FALSE
 );
-CREATE INDEX idx_password_reset_token_token ON public.password_reset_token(token);
+CREATE INDEX idx_user_token_token ON public.user_token(token);
 

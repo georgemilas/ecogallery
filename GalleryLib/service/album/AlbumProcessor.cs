@@ -74,7 +74,7 @@ public class AlbumProcessor: EmptyProcessor
             }
             return Tuple.Create(albumImage, 1);
         }
-        if (albumImage.ImageSha256 == null)
+        if (string.IsNullOrWhiteSpace(albumImage.ImageSha256))
         {
             await UpdateImageHashAsync(filePath, logIfCreated, albumImage);
         }

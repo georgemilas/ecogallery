@@ -9,14 +9,14 @@ namespace GalleryApi.service.auth;
 public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
 {
     private readonly TimeSpan _sessionDuration = TimeSpan.FromDays(7); // 7 days default
-    private readonly PasswordResetRepository _passwordResetRepository;
+    private readonly UserTokenRepository _userTokenRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConfiguration _configuration;
 
-    public UserAuthService(AuthRepository authRepository, PasswordResetRepository passwordResetRepository, IConfiguration configuration,  IHttpContextAccessor httpContextAccessor)
+    public UserAuthService(AuthRepository authRepository, UserTokenRepository userTokenRepository, IConfiguration configuration,  IHttpContextAccessor httpContextAccessor)
         : base(authRepository)
     {
-        _passwordResetRepository = passwordResetRepository;
+        _userTokenRepository = userTokenRepository;
         _httpContextAccessor = httpContextAccessor;
         _configuration = configuration;
     }
@@ -24,13 +24,13 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
     public override void Dispose()
     {
         base.Dispose();
-        _passwordResetRepository.Dispose();
+        _userTokenRepository.Dispose();
     }
 
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
-        await _passwordResetRepository.DisposeAsync();  
+        await _userTokenRepository.DisposeAsync();  
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, string? ipAddress = null, string? userAgent = null)
@@ -152,7 +152,7 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
         // Generate token
         var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("=", "").Replace("+", "");
         var expires = DateTime.UtcNow.AddHours(1);
-        await _passwordResetRepository.CreateAsync(user.Id, token, expires);
+        await _userTokenRepository.CreateTokenAsync(user.Id, token, expires);
 
         // Build reset link
         var frontendUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
@@ -183,7 +183,7 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
         if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             throw new InvalidInputException("Reset token is invalid or expired or password is not at least 6 characters.");
 
-        var tokenEntry = await _passwordResetRepository.GetByTokenAsync(request.Token);
+        var tokenEntry = await _userTokenRepository.GetByTokenAsync(request.Token, "password_reset");
         if (tokenEntry == null)
             throw new InvalidInputException("Reset token is invalid or expired or password is not at least 6 characters.");
 
@@ -193,7 +193,7 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
 
         var newPasswordHash = AuthRepository.HashPassword(request.Password);
         await _authRepository.UpdateUserPasswordAsync(tokenEntry.UserId, newPasswordHash);
-        await _passwordResetRepository.MarkUsedAsync(request.Token);
+        await _userTokenRepository.MarkUsedAsync(request.Token, "password_reset");
     }
 
 }

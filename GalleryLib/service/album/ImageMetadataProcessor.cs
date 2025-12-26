@@ -37,7 +37,8 @@ public class ImageMetadataProcessor: AlbumProcessor
     /// </summary>
     protected override async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath, bool logIfCreated)
     {
-        var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath, logIfCreated);                
+        var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath, logIfCreated);                       
+
         if (_configuration.IsMovieFile(filePath))
         {
             var dbVideoMetadata = await imageRepository.GetVideoMetadataAsync(albumImage);
@@ -56,16 +57,9 @@ public class ImageMetadataProcessor: AlbumProcessor
             }
             return Tuple.Create(albumImage, count); 
             //TODO: movie hash?
-        }        
-        
+        }                        
 
-        var dbImage = await imageRepository.GetAlbumImageAsync(filePath);
-        if (String.IsNullOrWhiteSpace(dbImage?.ImageSha256))
-        {
-            await UpdateImageHashAsync(filePath, logIfCreated, dbImage ?? albumImage);
-        }
-
-        var dbExif = await imageRepository.GetImageExifAsync(albumImage);
+        var dbExif = await imageRepository.GetImageMetadataAsync(albumImage);
         if (dbExif == null)
         {
             ImageMetadata? exif = await ExtractImageMetadata(filePath); 
@@ -74,7 +68,7 @@ public class ImageMetadataProcessor: AlbumProcessor
                 exif.AlbumImageId = albumImage.Id;
                 exif.FilePath = albumImage.ImagePath;
                 exif.LastUpdatedUtc = DateTimeOffset.UtcNow;
-                await imageRepository.AddNewImageExifAsync(exif);            
+                await imageRepository.AddNewImageMetadataAsync(exif);            
                 if (logIfCreated)
                 {
                     Console.WriteLine($"Extracted and stored EXIF data in image_exif table: {filePath}");
