@@ -314,3 +314,21 @@ ADD
   FOREIGN KEY (user_id)
   REFERENCES public.user (id)
   ON DELETE CASCADE;
+
+
+
+------------------------------------------------------------------------------
+----------------- public.password_reset_token --------------------------------  
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.password_reset_token;
+
+CREATE TABLE public.password_reset_token (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES public.user(id),
+    token VARCHAR(128) NOT NULL UNIQUE,
+    created_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW(),
+    expires_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW() + INTERVAL '1 hour',
+    used BOOLEAN NOT NULL DEFAULT FALSE
+);
+CREATE INDEX idx_password_reset_token_token ON public.password_reset_token(token);
+

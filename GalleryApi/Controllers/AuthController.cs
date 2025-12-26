@@ -1,7 +1,8 @@
+
 using GalleryLib.Model.Auth;
-using GalleryLib.model.configuration;
-using GalleryLib.Service.Auth;
 using Microsoft.AspNetCore.Mvc;
+using GalleryApi.model;
+using GalleryApi.service.auth;
 
 namespace GalleryApi.Controllers;
 
@@ -9,13 +10,15 @@ namespace GalleryApi.Controllers;
 [Route("api/v1/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
-
-    public AuthController(AuthService authService)
+    private readonly UserAuthService _authService;
+    private readonly IConfiguration _config;
+    
+    public AuthController(UserAuthService authService, IConfiguration config)
     {
-        _authService = authService;
+        _config = config;
+        _authService = authService;        
     }
-
+    
     
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -99,12 +102,45 @@ public class AuthController : ControllerBase
         
         return BadRequest(new { success = false, message = "Registration failed. Username or email may already exist." });
     }
+
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> RequestPasswordReset([FromBody] PasswordResetRequest request)
+    {
+        try
+        {
+            await _authService.SetPasswordResetRequest(request);
+            return Ok(new { success = true });
+        }
+        catch (InvalidInputException)
+        {
+            // Ignore errors to avoid leaking user existence
+            return Ok(new { success = true });
+        }
+        catch (Exception)
+        {
+            return BadRequest(new { success = false, message = "Failed to process request" });
+        }                
+    }
+
+
+
+    [HttpPost("set-password")]
+    public async Task<IActionResult> SetNewPassword([FromBody] SetPasswordRequest request)
+    {
+        try 
+        {
+            await _authService.UpdateUserPasswordAsync(request);
+            return Ok(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+
+
 }
 
-public class RegisterRequest
-{
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string? FullName { get; set; }
-}
+

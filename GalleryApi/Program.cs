@@ -61,10 +61,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AlbumRepository>();  
 builder.Services.AddScoped<AlbumImageRepository>();
 builder.Services.AddScoped<AuthRepository>();
-builder.Services.AddScoped<GalleryLib.Service.Auth.AuthService>();
+builder.Services.AddScoped<PasswordResetRepository>();
+builder.Services.AddScoped<GalleryApi.service.auth.AppAuthService>();
+builder.Services.AddScoped<GalleryApi.service.auth.UserAuthService>();
 builder.Services.AddScoped<GalleryApi.service.AlbumsService>();
 builder.Services.AddScoped<GalleryApi.service.VirtualAlbumsService>();
-
 
 
 // Swagger/OpenAPI https://aka.ms/aspnetcore/swashbuckle

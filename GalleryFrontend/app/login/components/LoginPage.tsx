@@ -73,10 +73,16 @@ export function LoginPage(): JSX.Element {
             </div>
           )}
 
+
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+        <div style={{ textAlign: 'center', marginTop: '1em' }}>
+          <a href="#" className="forgot-password-link" onClick={e => { e.preventDefault(); router.push('/login/reset-password'); }}
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Forgot password?
+          </a>
+        </div>
       </div>
     </div>
   );

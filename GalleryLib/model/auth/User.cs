@@ -16,7 +16,7 @@ public class User
 
 
 
-    public User CreateFromDataReader(DbDataReader reader)
+    public static User CreateFromDataReader(DbDataReader reader)
     {
         return new User
         {

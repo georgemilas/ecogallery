@@ -1,3 +1,4 @@
+    
 using System.Security.Cryptography;
 using System.Text;
 using GalleryLib.Model.Auth;
@@ -30,9 +31,17 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     // User methods
     public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        const string sql = "SELECT * FROM public.user WHERE username = @user_name AND is_active = true";
-        var parameters = new { user_name = username };
-        var result = await _db.QueryAsync<User>(sql, reader => new User().CreateFromDataReader(reader), parameters);
+        const string sql = "SELECT * FROM public.user WHERE username = @username AND is_active = true";
+        var parameters = new { username };
+        var result = await _db.QueryAsync<User>(sql, reader => User.CreateFromDataReader(reader), parameters);
+        return result.FirstOrDefault();
+    }
+
+    public async Task<User?> GetUserByEmailAsync(string email)
+    {
+        const string sql = "SELECT * FROM public.user WHERE email = @email AND is_active = true";
+        var parameters = new { email };
+        var result = await _db.QueryAsync(sql, reader => User.CreateFromDataReader(reader), parameters);
         return result.FirstOrDefault();
     }
 
@@ -40,7 +49,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     {
         const string sql = "SELECT * FROM public.user WHERE id = @id AND is_active = true";
         var parameters = new { id = userId };
-        var result = await _db.QueryAsync<User>(sql, reader => new User().CreateFromDataReader(reader), parameters);
+        var result = await _db.QueryAsync(sql, reader => User.CreateFromDataReader(reader), parameters);
         return result.FirstOrDefault();
     }
 
@@ -141,5 +150,10 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     {
         var hash = HashPassword(password);
         return hash == passwordHash;
+    }
+    public async Task UpdateUserPasswordAsync(long userId, string newPasswordHash)
+    {
+        const string sql = "UPDATE public.user SET password_hash = @password_hash WHERE id = @id";
+        await _db.ExecuteAsync(sql, new { id = userId, password_hash = newPasswordHash });
     }
 }

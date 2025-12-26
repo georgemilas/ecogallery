@@ -1,0 +1,60 @@
+using GalleryLib.Model.Auth;
+using GalleryLib.Repository.Auth;
+
+namespace GalleryApi.service.auth;
+
+public class AppAuthService: IDisposable, IAsyncDisposable
+{
+    protected readonly AuthRepository _authRepository;
+
+    public AppAuthService(AuthRepository authRepository)
+    {
+        _authRepository = authRepository;
+    }
+    public virtual void Dispose()
+    {
+        _authRepository.Dispose();
+    }
+
+    public virtual async ValueTask DisposeAsync()
+    {
+        await _authRepository.DisposeAsync();
+    }
+
+    public async Task<UserInfo?> ValidateSessionAsync(string sessionToken)
+    {
+        try
+        {
+            var session = await _authRepository.GetSessionByTokenAsync(sessionToken);
+            if (session == null)
+            {
+                return null;
+            }
+
+            // Update session activity
+            await _authRepository.UpdateSessionActivityAsync(sessionToken);
+
+            // Get user info
+            var user = await _authRepository.GetUserByIdAsync(session.UserId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserInfo
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                IsAdmin = user.IsAdmin
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+
+}

@@ -1,5 +1,7 @@
 using GalleryLib.model.configuration;
-using GalleryLib.Service.Auth;
+using GalleryApi.service;
+using GalleryLib.Repository.Auth;
+using GalleryApi.service.auth;
 
 namespace GalleryApi.Middleware;
 
@@ -25,7 +27,8 @@ public class SessionAuthMiddleware
 
         var dbConfig = _configuration.GetSection(DatabaseConfiguration.SectionName).Get<DatabaseConfiguration>()
                     ?? throw new InvalidOperationException("Database configuration not found");
-        using var authService = new AuthService(dbConfig);
+        var repo = new AuthRepository(dbConfig);
+        using var authService = new AppAuthService(repo);
 
 
         // All endpoints require authentication and we may have only Authorization:Bearer header or we have a fully managed cookie from a logged in user

@@ -86,8 +86,8 @@ public class VirtualAlbumsService: ServiceBase
         string path = item?.FeatureItemPath ?? string.Empty;     //get the relative path first                                
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
-        valbum.ThumbnailPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb)) : string.Empty;
-        valbum.ImageHDPath = item != null ? GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
+        valbum.ThumbnailPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb)) : string.Empty;
+        valbum.ImageHDPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
 
         var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, AuthenticatedUser?.Id ?? 1, true);    //get admin settings if no user
         valbum.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
@@ -126,8 +126,8 @@ public class VirtualAlbumsService: ServiceBase
         string path = valbum.FeatureImagePath ?? "";
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute             
-        album.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
-        album.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));
+        album.ThumbnailPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
+        album.ImageHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));
         
         var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, AuthenticatedUser?.Id ?? 1, true);    //get admin settings if no user
         album.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
@@ -165,8 +165,8 @@ public class VirtualAlbumsService: ServiceBase
             path = calbum.FeatureImagePath ?? "";                                        
             path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
             path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute             
-            albumItem.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
-            albumItem.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));                
+            albumItem.ThumbnailPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
+            albumItem.ImageHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));                
             album.Albums.Add(albumItem);
         }
         return album;

@@ -46,10 +46,10 @@ public class ServiceBase
         string path = item.FeatureItemPath ?? string.Empty;     //get the relative path first                                
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
-        image.ThumbnailPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
-        image.ImageHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));    
-        image.ImageUHDPath = GetUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.UHD));
-        image.ImageOriginalPath = GetUrl(path);
+        image.ThumbnailPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
+        image.ImageHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));    
+        image.ImageUHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.UHD));
+        image.ImageOriginalPath = GetPicturesUrl(path);
         image.IsMovie = _picturesConfig.IsMovieFile(path);
         
         image.LastUpdatedUtc = item.LastUpdatedUtc;
@@ -59,11 +59,14 @@ public class ServiceBase
         return image;
     }
 
-    protected string GetBaseUrl()
+    public string GetBaseUrl()
     {
-        var request = _httpContextAccessor.HttpContext?.Request;
-        if (request == null) return string.Empty;
-        
+        return GetBaseUrl(_httpContextAccessor);
+    }
+    public static string GetBaseUrl(IHttpContextAccessor httpContextAccessor)
+    {
+        var request = httpContextAccessor.HttpContext?.Request;
+        if (request == null) return string.Empty;        
         
         // Respect forwarded headers when the app is behind a proxy        
         //Console.WriteLine($"Debug: {request.Headers["X-Forwarded-Proto"]}/{request.Headers["X-Forwarded-Host"]} | {request.Headers["Origin"]} | {request.Scheme}://{request.Host.Value}");
@@ -82,7 +85,7 @@ public class ServiceBase
         return $"{request.Scheme}://{request.Host.Value}";        
     }
 
-    protected string GetUrl(string path)
+    protected string GetPicturesUrl(string path)
     {
         var baseUrl = GetBaseUrl();
         path = path.Replace(_picturesConfig.RootFolder.FullName, $"{baseUrl}/pictures");  //make it url
