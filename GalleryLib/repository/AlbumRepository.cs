@@ -173,20 +173,22 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return albumContent;                 
     }  
 
-    public async Task<List<AlbumContentHierarchical>> GetAlbumContentHierarchicalByExpression(string expression, bool groupByPHash = true)
+    public async Task<(List<AlbumContentHierarchical>, AlbumSearch)> GetAlbumContentHierarchicalByExpression(AlbumSearch albumSearch)
     {
-        expression = System.Text.RegularExpressions.Regex.Replace(expression, @"\s+", " "); //normalize spaces
+        var expression = System.Text.RegularExpressions.Regex.Replace(albumSearch.Expression, @"\s+", " "); //normalize spaces
         var te = new SQLTokenEvaluator("image_path", SQLTokenEvaluator.OPERATOR_TYPE.ILIKE_ANY_ARRAY, SQLTokenEvaluator.FIELD_TYPE.STRING);
         var parser =  new KeywordsExpressionParser(expression, new SQLSemantic(te));
         string where = (string)parser.Evaluate(null);        
         Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
         
         // Group by SHA-256 (text) with image_path fallback (stable natural key)
-        var select = groupByPHash ? "SELECT DISTINCT ON (COALESCE(ai.image_sha256, ai.image_path))" : "SELECT";
+        var select = albumSearch.GroupByPHash ? "SELECT DISTINCT ON (COALESCE(ai.image_sha256, ai.image_path))" : "SELECT";
         // Ensure ORDER BY starts with the DISTINCT ON expression; add a deterministic tie-breaker
-        var orderby = groupByPHash ? "ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC, ai.id DESC" : "ORDER BY ai.image_timestamp_utc DESC, ai.id DESC";
-                    
-        var sql = $@"{select}
+        var orderby = albumSearch.GroupByPHash ? "ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC, ai.id DESC" : "ORDER BY ai.image_timestamp_utc DESC, ai.id DESC";
+        var limitOffset1 = albumSearch.Limit > 0 ? $"select * from (" : "";
+        var limitOffset2 = albumSearch.Limit > 0 ? $") LIMIT {albumSearch.Limit} OFFSET {albumSearch.Offset}" : "";
+        var sql = $@"{limitOffset1}
+                    {select}
                     ai.id, 
                     ai.image_name AS item_name, 
                     ai.image_description AS item_description,
@@ -206,9 +208,25 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
                 LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
                 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
                 WHERE {where}
-                {orderby}";
+                {orderby}
+                {limitOffset2};";
+        Console.WriteLine($"Debug: AlbumContentByExpression SQL: {sql}");
         var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader));
-        return content;                
+        if (albumSearch.Limit > 0)
+        {
+            select = albumSearch.GroupByPHash ? ", COALESCE(ai.image_sha256, ai.image_path)" : "";
+            // Ensure ORDER BY starts with the DISTINCT ON expression; add a deterministic tie-breaker
+            var groupBy = albumSearch.GroupByPHash ? "GROUP BY COALESCE(ai.image_sha256, ai.image_path)" : "";
+            sql = $@"select count(*) FROM ( 
+                        SELECT count(*) as count{select}
+                        FROM album_image ai
+                        WHERE {where}
+                        {groupBy}
+                    )";
+            Console.WriteLine($"Debug: AlbumContentByExpression Count SQL: {sql}");
+            albumSearch.Count = await _db.ExecuteScalarAsync<long>(sql);
+        }
+        return (content, albumSearch);                
     } 
 
 

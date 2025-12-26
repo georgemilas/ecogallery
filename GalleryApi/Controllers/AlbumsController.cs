@@ -66,7 +66,7 @@ public class AlbumsController : ControllerBase
 
     // POST: /api/v1/albums/search
     [HttpPost("search")]
-    public async Task<ActionResult<VirtualAlbumContent>> SearchAlbumData([FromBody] AlbumSearch albumSearch)
+    public async Task<ActionResult<VirtualAlbumContent>> SearchAlbumData([FromBody] GalleryLib.model.album.AlbumSearch albumSearch)
     {
         try
         {

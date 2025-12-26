@@ -5,13 +5,7 @@ using System.IO;
 namespace GalleryApi.model;
 
 
-public record AlbumSearch
-{
-    public string Expression { get; set; } = string.Empty;    
-    public int Limit { get; set; } = 0;
-    public int Offset { get; set; } = 0;
-    public bool GroupByPHash { get; set; } = true;  // If true, group results by image hash to show only one image per duplicate group
-}
+
 
 public record AlbumPathElement
 {
@@ -30,6 +24,7 @@ public record AlbumContentHierarchical: AlbumItemContent
     public List<AlbumItemContent> Albums { get; set; } = new List<AlbumItemContent>(); 
     public List<ImageItemContent> Images { get; set; } = new List<ImageItemContent>(); 
     public AlbumSettings Settings { get; set; } = null!;
+    public AlbumSearch? SearchInfo { get; set; } = null;
 }
 
 public record AlbumItemContent: ItemContent

@@ -66,11 +66,12 @@ public class VirtualAlbumsService: ServiceBase
     {
         var albums = await _albumRepository.GetAllVirtualAlbumsAsync();
         var all = new List<GalleryLib.model.album.AlbumContentHierarchical>();
+        
         foreach (var album in albums)
         {
-            var content = !String.IsNullOrWhiteSpace(album.AlbumExpression) ?
-                       await _albumRepository.GetAlbumContentHierarchicalByExpression(album.AlbumExpression) :
-                       await _albumRepository.GetAlbumContentHierarchicalByName(album.AlbumFolder);
+            var (content, _) = !String.IsNullOrWhiteSpace(album.AlbumExpression) ?
+                       await _albumRepository.GetAlbumContentHierarchicalByExpression(new AlbumSearch() { Limit = 0, Expression = album.AlbumExpression }) :   //no limit
+                       (await _albumRepository.GetAlbumContentHierarchicalByName(album.AlbumFolder), null);
             all.AddRange(content);
         }
         all = all.GroupBy(i => i.ImageSha256).Select(g => g.First()).ToList(); //remove duplicates based on SHA256
@@ -139,9 +140,9 @@ public class VirtualAlbumsService: ServiceBase
         album.Albums = new List<AlbumItemContent>();
         album.Images = new List<ImageItemContent>();
         Console.WriteLine($"Debug: Loading virtual album '{valbum.AlbumName}' with expression '{valbum.AlbumExpression}' and folder '{valbum.AlbumFolder}'");         
-        var content =  !String.IsNullOrWhiteSpace(album.Expression) ?
-                       await _albumRepository.GetAlbumContentHierarchicalByExpression(album.Expression) :
-                       await _albumRepository.GetAlbumContentHierarchicalByName(valbum.AlbumFolder);       
+        var (content, _) =  !String.IsNullOrWhiteSpace(album.Expression) ?
+                       await _albumRepository.GetAlbumContentHierarchicalByExpression(new AlbumSearch() { Limit = 0, Expression = valbum.AlbumExpression }) :   //no limit for virtual albums
+                       (await _albumRepository.GetAlbumContentHierarchicalByName(valbum.AlbumFolder), null);       
         Console.WriteLine($"Debug: Virtual album '{valbum.AlbumName}' returned {content.Count} items.");
         foreach (var image in content.Where(i => !i.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase)))
         {

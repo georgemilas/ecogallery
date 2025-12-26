@@ -89,7 +89,7 @@ export interface ImageItemContent extends ItemContent {
 
 export interface AlbumItemContent extends ItemContent {
   image_hd_path: string;
-  settings: AlbumSettings;
+  settings: AlbumSettings | null;
 }
 
 export interface AlbumSettings {
@@ -98,6 +98,14 @@ export interface AlbumSettings {
   banner_position_y: number;   // Y position of the banner image (0-100%)
   album_sort: string;          // name or timestamp & asc or desc
   image_sort: string;          // name or timestamp & asc or desc
+}
+
+export interface SearchInfo {
+  expression: string;
+  limit: number;
+  offset: number;
+  count: number;
+  group_by_p_hash: boolean;
 }
 
 export class AlbumItemHierarchy implements AlbumItemContent {
@@ -113,7 +121,7 @@ export class AlbumItemHierarchy implements AlbumItemContent {
   albums: AlbumItemContent[] = [];
   images: ImageItemContent[] = [];
   settings!: AlbumSettings;
-
+  search_info: SearchInfo | null = null;
 
   /**
    * Get the name out of a path, ex: \2025\vacation\Florida => Florida
@@ -141,7 +149,7 @@ export interface AlbumHierarchyProps {
   album: AlbumItemHierarchy;
   onAlbumClick: (albumId: number | null) => void;
   onImageClick: (image: ImageItemContent) => void;
-  onSearchSubmit: (expression: string) => void;
+  onSearchSubmit: (expression: string, offset: number) => void;
   onGetApiUrl: (apiUrl: string) => void;
   lastViewedImage?: number | null;
   settings: AlbumSettings;

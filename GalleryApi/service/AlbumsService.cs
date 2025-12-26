@@ -34,15 +34,23 @@ public class AlbumsService: ServiceBase
         return valbum;
     }
     
-    public async Task<VirtualAlbumContent> SearchContentByExpression(AlbumSearch albumSearch)
+    public async Task<VirtualAlbumContent> SearchContentByExpression(GalleryLib.model.album.AlbumSearch albumSearch)
     {
         var expr = albumSearch.Expression;
-        var content = await _albumRepository.GetAlbumContentHierarchicalByExpression(expr, groupByPHash: albumSearch.GroupByPHash);
+        var (content, search) = await _albumRepository.GetAlbumContentHierarchicalByExpression(albumSearch);
         
         var valbum = GetVirtualContent(content);
         valbum.Name = "Search Result";
         valbum.Expression = albumSearch.Expression;
-        valbum.Description = content.Any() ? $"{content.Count} images matching '{albumSearch.Expression}'" : "No images found";
+        valbum.SearchInfo = search;
+        if (albumSearch.Count > albumSearch.Limit)
+        {
+            valbum.Description = $"{albumSearch.Offset+1}-{albumSearch.Offset+content.Count}/{albumSearch.Count} images matching '{albumSearch.Expression}'";
+        }
+        else
+        {
+            valbum.Description = content.Any() ? $"{content.Count} images matching '{albumSearch.Expression}'" : "No images found";
+        }        
         return valbum;
     }
 

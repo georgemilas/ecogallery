@@ -41,7 +41,7 @@
     padding: 6px 0 6px 12px;
 }
 
-.gallery-banner-menubar .menu {
+.gallery-banner-menubar .menu, .search-info {
     display: flex;
     gap: 8px;
     align-self: flex;
@@ -50,11 +50,11 @@
     background-color: rgba(50, 50, 50, 1); 
     color: white
 }
-.gallery-banner-menubar .menu button {
+.gallery-banner-menubar .menu button, .search-info .page-button {
     color: #e8f09e;
     padding: 4px 8px;            
 }
-.gallery-banner-menubar .menu button:hover {
+.gallery-banner-menubar .menu button:hover, .search-info .page-button:hover {
     background-color: rgba(200, 200, 200, 0.4); 
     color: white;    
 }
@@ -73,6 +73,7 @@
     z-index: 10;
     object-fit: cover;
 }
+
 
 /* Draggable banner edit controls */
 .banner-edit-controls {
@@ -348,4 +349,21 @@
     padding: 20px;
     color: #999;
     font-size: 14px;
+}
+
+.loader-spinner {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    margin-left: 0.7em;
+    border: 0.18em solid #f8f9f0;
+    border-top: 0.18em solid #7e7a7a;
+    border-radius: 50%;
+    animation: loader-spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes loader-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

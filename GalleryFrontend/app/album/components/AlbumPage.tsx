@@ -62,16 +62,18 @@ export function AlbumPage(): JSX.Element {
     }
   };
 
-  const postSearchAlbum = async (expression: string) => {
+  const postSearchAlbum = async (expression: string, offset: number) => {
     setLoading(true);
     try {
       const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
       const url = apiBase ? `${apiBase}/api/v1/albums/search` : `/api/v1/albums/search`;
       console.log('Searching albums:', { expression, url });
+      var searchInfo = album != null && album.search_info ? { ...album.search_info, expression: expression, offset: offset } : { expression: expression, limit: 1500, offset: offset, count: 0, group_by_p_hash: true };
+      console.log('Using search info:', searchInfo);
       const res = await apiFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expression })
+        body: JSON.stringify( searchInfo )
       });
       if (!res.ok) {
         console.error('Search failed', res.status);
@@ -86,6 +88,7 @@ export function AlbumPage(): JSX.Element {
           return album;
         };
         setAlbum(convertToAlbum(data));
+        //setTimeout(() => console.log('Search results:', data['search_info'], album?.search_info), 1000);
         // Do not change route; show results directly
       }
     } catch (e) {
@@ -224,7 +227,7 @@ const getApiUrl = async (apiUrl: string) => {
                 // Update local state immediately without routing
                 setCurrentSettings(settings);
               }}
-              onSearchSubmit={(expr) => postSearchAlbum(expr)}
+              onSearchSubmit={(expr, offset) => postSearchAlbum(expr, offset)}
               onGetApiUrl={(apiUrl) => getApiUrl(apiUrl)} 
               clearLastViewedImage={() => setLastViewedImage(null)}
             />

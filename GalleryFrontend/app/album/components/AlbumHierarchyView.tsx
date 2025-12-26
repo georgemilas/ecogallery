@@ -58,7 +58,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchText.trim().length === 0) return;
-    props.onSearchSubmit(searchText.trim());
+    props.onSearchSubmit(searchText.trim(), 0);
   };
     
   const scrollToLastViewedImage = (imageId: number) => {
@@ -200,7 +200,18 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
                     {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(segment.id);}}>{segment.name}</a>
                   </span>
                 );
-              })}              
+              })}  
+              {(props.album.search_info && props.album.search_info.count > props.album.search_info.limit) && (
+                <div className="search-info">
+                  {props.album.search_info.offset > 0 && (
+                    <button onClick={() => props.onSearchSubmit(props.album.search_info!.expression, props.album.search_info!.offset - props.album.search_info!.limit)} className="page-button" title="Prev">Previous</button>
+                  )}
+                  {setTimeout(() => console.log('Pagination check: ', props.album.search_info!.offset + props.album.search_info!.limit, props.album.search_info!.count), 1000) != undefined && (<> </>)}
+                  {props.album.search_info.offset + props.album.search_info.limit <= props.album.search_info.count && (
+                    <button onClick={() => props.onSearchSubmit(props.album.search_info!.expression, props.album.search_info!.offset + props.album.search_info!.limit)} className="page-button" title="Next">Next</button>
+                  )}
+                </div>
+              )}            
             </nav>          
             
             <nav className="menu">
@@ -276,7 +287,10 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
         />
         {isLayouting && props.album.images.length > 100 && (
           <div className="gallery-loading">
-            <span>Laying out {props.album.images.length} images...</span>
+            <span>
+              Laying out {props.album.images.length} images
+              <span className="loader-spinner" aria-label="Loading"></span>              
+            </span>
           </div>
         )}
         <ul className="gallery">

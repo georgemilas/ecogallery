@@ -3,7 +3,6 @@ using System.IO;
 
 namespace GalleryLib.model.album;
 
-
 public record Album
 {
     public long Id { get; set; }   //Int64
