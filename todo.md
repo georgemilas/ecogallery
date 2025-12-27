@@ -43,7 +43,7 @@ for %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~nf.mp4"
 The Windows Command Prompt for loop does not support recursion by default, but you can use the /R flag to process files in all subfolders:
 ```powershell
 #command prompt (cmd)
-for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
+for /R %f in (*.avi) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
 ```
  * /R makes the loop recursive.
  * %f is each file found.

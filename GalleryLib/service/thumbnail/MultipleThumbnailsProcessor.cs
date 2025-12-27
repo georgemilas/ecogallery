@@ -73,7 +73,13 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
             foreach (var height in heightsToCreate)
             {
                 string thumbPath = GetThumbnailPath(filePath, height);
-                await BuildVideoThumbnailAsync(height, filePath, thumbPath, () => {});
+                await BuildVideoThumbnailAsync(height, filePath, thumbPath, () =>
+                {
+                    if (logIfCreated)
+                    {
+                        Console.WriteLine($"Created Thumbnail for video/height {height}: {GetThumbnailPath(filePath, height)}");
+                    }
+                });
                 created = true;
             }
         }
@@ -83,7 +89,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
             {
                 if (logIfCreated)
                 {
-                    Console.WriteLine($"Created Thumbnail for height {height}: {GetThumbnailPath(filePath, height)}");
+                    Console.WriteLine($"Created Thumbnail for image/height {height}: {GetThumbnailPath(filePath, height)}");
                 }
             });
             created = true;
@@ -115,7 +121,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         foreach (var height in _heights)
         {
             string thumbPath = GetThumbnailPath(filePath, height);
-            int result = await CleanupThumbnail(thumbPath);
+            int result = await CleanupThumbnail(thumbPath, true);
             if (result > 0) deleted = true;
         }   
         return deleted ? 1 : 0;
@@ -126,7 +132,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         foreach (var height in _heights)
         {
             string oldThumbPath = GetThumbnailPath(oldPath, height);
-            await CleanupThumbnail(oldThumbPath);            
+            await CleanupThumbnail(oldThumbPath, true);            
         }
 
         if (newValid)
@@ -149,7 +155,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         
     }
 
-    public override async Task<int> OnEnsureCleanup(string skipFilePath)
+    public override async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
     {
         string skipFolder = Path.GetDirectoryName(skipFilePath) ?? string.Empty;
         string skipFileName = Path.GetFileName(skipFilePath);
@@ -172,7 +178,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
             foreach (var height in heights) 
             {
                 string thumbnailPath = GetThumbnailPath(Path.Combine(f, n), height);
-                int result = await CleanupThumbnail(thumbnailPath);
+                int result = await CleanupThumbnail(thumbnailPath, logIfCleaned);
                 if (result > 0) deleted = true;
             }   
             return deleted ? 1 : 0 ;                    
@@ -228,19 +234,25 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         return totalDeleted;
     }
 
-    private async Task<int> CleanupThumbnail(string thumbnailPath)
+    private async Task<int> CleanupThumbnail(string thumbnailPath, bool logIfCleaned = false)
     {
         if (File.Exists(thumbnailPath))
         {
             File.Delete(thumbnailPath);
-            //Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
+            if (logIfCleaned)
+            {
+                Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
+            }
 
             // Clean up empty directories
             var directory = Path.GetDirectoryName(thumbnailPath);
             if (directory != null && Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any())
             {
                 Directory.Delete(directory, recursive: true);
-                //Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
+                if (logIfCleaned)
+                {
+                    Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
+                }
             }
             return 1;
         }

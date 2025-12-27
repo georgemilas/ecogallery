@@ -112,14 +112,14 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         return album; 
     }
 
-    public async Task<int> DeleteAlbumAsync(string filePath)
+    public async Task<int> DeleteAlbumAsync(string filePath, bool logIfCleaned = false)
     {
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
         
         var sql = "DELETE FROM album WHERE album_name = @album_name";
         var rowsAffected = await _db.ExecuteAsync(sql, album);
         
-        if (rowsAffected > 0)
+        if (rowsAffected > 0 && logIfCleaned)
         {
             Console.WriteLine($"Deleted album record: {album.AlbumName}");
         }
@@ -128,7 +128,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         {
            if (!await AlbumHasContentAsync(album.ParentAlbum))
            {
-                rowsAffected += await DeleteAlbumAsync(album.ParentAlbum);
+                rowsAffected += await DeleteAlbumAsync(album.ParentAlbum, logIfCleaned);
            } 
         }
         return rowsAffected;

@@ -101,16 +101,16 @@ public class AlbumProcessor: EmptyProcessor
     /// <summary>
     /// delete image record and if album is empty delete album records recursively as well
     /// </summary>
-    protected virtual async Task<int> CleanupImageAndAlbumRecords(string filePath)
+    protected virtual async Task<int> CleanupImageAndAlbumRecords(string filePath, bool logIfCleaned = false)
     {
         int deletedCount = await imageRepository.DeleteAlbumImageAsync(filePath);
-        if (deletedCount > 0)
+        if (deletedCount > 0 && logIfCleaned)
         {
             Console.WriteLine($"Deleted album_image record: {filePath}");
         }
         if (deletedCount > 0 && !await albumRepository.AlbumHasContentAsync(filePath))
         {        
-            await albumRepository.DeleteAlbumAsync(filePath);
+            await albumRepository.DeleteAlbumAsync(filePath, logIfCleaned);
         }
         return deletedCount;    
     }
@@ -142,7 +142,7 @@ public class AlbumProcessor: EmptyProcessor
 
     public override async Task<int> OnFileDeleted(string filePath)
     {
-        return await CleanupImageAndAlbumRecords(filePath);
+        return await CleanupImageAndAlbumRecords(filePath, true);
     }
     
     public override async Task OnFileRenamed(string oldPath, string newPath,  bool newValid)
@@ -157,7 +157,7 @@ public class AlbumProcessor: EmptyProcessor
     ///<summary>
     /// need to find the original file path from the skip file path and ensure its records are deleted
     /// </summary> 
-    public override async Task<int> OnEnsureCleanup(string skipFilePath)
+    public override async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
     {
         string skipFolder = Path.GetDirectoryName(skipFilePath) ?? string.Empty;
         string skipFileName = Path.GetFileName(skipFilePath);
@@ -180,7 +180,7 @@ public class AlbumProcessor: EmptyProcessor
             var prefix = fileNameStartWith.First();
             var originalName = skipFileName.Replace(prefix, string.Empty);
             string originalPath = Path.Combine(skipFolder, originalName);
-            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
 
         if (fileNameEndsWith.Any())
@@ -189,7 +189,7 @@ public class AlbumProcessor: EmptyProcessor
             var suffix = fileNameEndsWith.First();
             var originalName = skipFileName.Replace(suffix, string.Empty);
             string originalPath = Path.Combine(skipFolder, originalName);
-            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
 
         //Console.WriteLine($"Ensuring cleanup for folder contains suffixOrPrefix {suffixOrPrefix}: {skipFileName}");                
@@ -199,7 +199,7 @@ public class AlbumProcessor: EmptyProcessor
             var suffix = folderContainsSuffix.First();
             var originalFolderPath = skipFolder.Replace(suffix, string.Empty);
             string originalPath = Path.Combine(originalFolderPath, skipFileName);
-            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
 
         if (folderContainsPrefix.Any())
@@ -208,7 +208,7 @@ public class AlbumProcessor: EmptyProcessor
             var prefix = folderContainsPrefix.First();
             var originalFolderPath = skipFolder.Replace(prefix, string.Empty);
             string originalPath = Path.Combine(originalFolderPath, skipFileName);
-            totalDeleted += await CleanupImageAndAlbumRecords(originalPath);
+            totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
 
         // if (filePathContains.Any())
@@ -227,7 +227,7 @@ public class AlbumProcessor: EmptyProcessor
         return totalDeleted;
     }
 
-    public override async Task OnScanStart(string skipFilePath)
+    public override async Task OnScanStart()
     {
         //only keep repositories open during the scan
         await imageRepository.DisposeAsync(); 
@@ -235,7 +235,7 @@ public class AlbumProcessor: EmptyProcessor
         imageRepository = new AlbumImageRepository(_configuration, _dbConfig);
         albumRepository = new AlbumRepository(_configuration, _dbConfig);        
     }
-    public override async Task OnScanEnd(string skipFilePath)
+    public override async Task OnScanEnd()
     {
         await imageRepository.DisposeAsync(); 
         await albumRepository.DisposeAsync();

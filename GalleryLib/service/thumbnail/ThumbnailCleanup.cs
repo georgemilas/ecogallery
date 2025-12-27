@@ -58,15 +58,18 @@ public class ThumbnailCleanup: EmptyProcessor
         return res;
     }
 
-    private void deleteEmptyFolder(string thumbnailPath)
+    private void deleteEmptyFolder(string thumbnailPath, bool logIfCreated = false)
     {
         // Clean up empty directories
         var directory = Path.GetDirectoryName(thumbnailPath);
         if (directory != null && Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any())
         {
             Directory.Delete(directory, recursive: true);
-            Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
-            deleteEmptyFolder(directory); //recursively delete parent if empty
+            if (logIfCreated)
+            {
+                Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
+            }
+            deleteEmptyFolder(directory, logIfCreated); //recursively delete parent if empty
         }
     }        
 
@@ -84,8 +87,11 @@ public class ThumbnailCleanup: EmptyProcessor
         {
             //shouldCleanFile(thumbnailPath);
             File.Delete(thumbnailPath);
-            Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
-            deleteEmptyFolder(thumbnailPath);
+            if (logIfCreated)
+            {
+                Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
+            }
+            deleteEmptyFolder(thumbnailPath, logIfCreated);
             return 1;
         }
         return 0;       
@@ -109,7 +115,7 @@ public class ThumbnailCleanup: EmptyProcessor
         await Task.CompletedTask;
     }
      
-    public override async Task<int> OnEnsureCleanup(string thumbnailPath)
+    public override async Task<int> OnEnsureCleanup(string thumbnailPath, bool logIfCleaned = false)
     {
         //no additional cleanup needed on the _thumbnail folder itself as 
         //thumbnails should not be manually changed/renamed/moved etc.

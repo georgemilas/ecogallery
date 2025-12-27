@@ -14,8 +14,8 @@ public interface IFileProcessor
     /// need to find the original file path from the skip file path and ensure its records are deleted
     /// This will get called during periodic scans to ensure any files that were previously included but now match skip criteria are cleaned up
     /// </summary> 
-    Task<int> OnEnsureCleanup(string skipFilePath);
+    Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false);
 
-    Task OnScanStart(string skipFilePath);
-    Task OnScanEnd(string skipFilePath);
+    Task OnScanStart();
+    Task OnScanEnd();
 }

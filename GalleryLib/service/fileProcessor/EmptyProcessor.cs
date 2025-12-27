@@ -48,16 +48,16 @@ public class EmptyProcessor: IFileProcessor
         await Task.CompletedTask;
     }
      
-    public virtual async Task<int> OnEnsureCleanup(string thumbnailPath)
+    public virtual async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
     {
         return 0;
     }
 
-    public virtual async Task OnScanStart(string skipFilePath)
+    public virtual async Task OnScanStart()
     {
         await Task.CompletedTask;
     }
-    public virtual async Task OnScanEnd(string skipFilePath)
+    public virtual async Task OnScanEnd()
     {
         await Task.CompletedTask;
     }       

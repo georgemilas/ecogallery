@@ -100,7 +100,7 @@ public class ThumbnailProcessor : EmptyProcessor
         }
     }
 
-    public override async Task<int> OnEnsureCleanup(string skipFilePath)
+    public override async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
     {
         string skipFolder = Path.GetDirectoryName(skipFilePath) ?? string.Empty;
         string skipFileName = Path.GetFileName(skipFilePath);
@@ -123,7 +123,7 @@ public class ThumbnailProcessor : EmptyProcessor
             var prefix = fileNameStartWith.First();
             var originalName = skipFileName.Replace(prefix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(skipFolder, originalName));
-            totalDeleted += await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath, logIfCleaned);
         }
 
         if (fileNameEndsWith.Any())
@@ -132,7 +132,7 @@ public class ThumbnailProcessor : EmptyProcessor
             var suffix = fileNameEndsWith.First();
             var originalName = skipFileName.Replace(suffix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(skipFolder, originalName));
-            totalDeleted += await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath, logIfCleaned);
         }
 
         //Console.WriteLine($"Ensuring cleanup for folder contains suffixOrPrefix {suffixOrPrefix}: {skipFileName}");                
@@ -142,7 +142,7 @@ public class ThumbnailProcessor : EmptyProcessor
             var suffix = folderContainsSuffix.First();
             var originalPath = skipFolder.Replace(suffix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(originalPath, skipFileName));
-            totalDeleted += await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath, logIfCleaned);
         }
 
         if (folderContainsPrefix.Any())
@@ -151,7 +151,7 @@ public class ThumbnailProcessor : EmptyProcessor
             var prefix = folderContainsPrefix.First();
             var originalPath = skipFolder.Replace(prefix, string.Empty);
             string thumbnailPath = GetThumbnailPath(Path.Combine(originalPath, skipFileName));
-            totalDeleted += await CleanupThumbnail(thumbnailPath);
+            totalDeleted += await CleanupThumbnail(thumbnailPath, logIfCleaned);
         }
 
         // if (filePathContains.Any())
@@ -170,18 +170,25 @@ public class ThumbnailProcessor : EmptyProcessor
         return totalDeleted;
     }
 
-    private async Task<int> CleanupThumbnail(string thumbnailPath)
+    private async Task<int> CleanupThumbnail(string thumbnailPath, bool logIfCleaned = false)
     {
         if (File.Exists(thumbnailPath))
         {
             File.Delete(thumbnailPath);
-            //Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
+            if (logIfCleaned)
+            {
+                Console.WriteLine($"Deleted thumbnail: {thumbnailPath}");
+            }
 
             // Clean up empty directories
             var directory = Path.GetDirectoryName(thumbnailPath);
             if (directory != null && Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any())
             {
                 Directory.Delete(directory, recursive: true);
+                if (logIfCleaned)
+                {
+                    Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
+                }
                 //Console.WriteLine($"Deleted empty thumbnail directory: {directory}");
             }
             return 1;

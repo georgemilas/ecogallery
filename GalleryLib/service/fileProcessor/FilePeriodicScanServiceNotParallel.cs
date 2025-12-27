@@ -19,6 +19,7 @@ public class FilePeriodicScanServiceNotParallel : FilePeriodicScanService
         if (_processing) return;
         Console.WriteLine("Performing periodic scan (Not Parallel)...");
         _processing = true;
+        await _processor.OnScanStart();
         try
         {
             Stopwatch sw = Stopwatch.StartNew();    
@@ -81,7 +82,7 @@ public class FilePeriodicScanServiceNotParallel : FilePeriodicScanService
                 if (stoppingToken.IsCancellationRequested) break;
                 await InvokeHandlerSafe(async () => 
                 { 
-                    int cleaned = await _processor.OnEnsureCleanup(file);
+                    int cleaned = await _processor.OnEnsureCleanup(file, false);
                     actualCleanup += cleaned;                      
                 }, $"cleanup (scan): {file}"); 
             }
@@ -92,6 +93,7 @@ public class FilePeriodicScanServiceNotParallel : FilePeriodicScanService
         }
         finally
         {
+            await _processor.OnScanEnd();
             _processing = false;
         }
     }
