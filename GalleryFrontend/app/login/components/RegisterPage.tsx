@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import './login.css';
 
-export function SetNewPasswordPage(): JSX.Element {
+export function RegisterPage(): JSX.Element {
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -16,7 +19,7 @@ export function SetNewPasswordPage(): JSX.Element {
 
   useEffect(() => {
     if (!token) {
-      setError('Invalid or missing reset token.');
+      setError('Invalid or missing registration token.');
     }
   }, [token]);
 
@@ -24,8 +27,8 @@ export function SetNewPasswordPage(): JSX.Element {
     e.preventDefault();
     setError('');
     setMessage('');
-    if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!username || !fullName || !email || !password || password.length < 6) {
+      setError('All fields are required and password must be at least 6 characters.');
       return;
     }
     if (password !== confirm) {
@@ -34,17 +37,17 @@ export function SetNewPasswordPage(): JSX.Element {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/auth/set-password', {
+      const res = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ username, fullName, email, password, token }),
       });
       if (res.ok) {
-        setMessage('Password reset successful. You can now log in.');
+        setMessage('Registration successful. You can now log in.');
         setTimeout(() => router.push('/login'), 3000);
       } else {
         const data = await res.json();
-        setError(data.message || 'Failed to reset password.');
+        setError(data.message || 'Registration failed.');
       }
     } catch {
       setError('Unable to connect to server.');
@@ -55,18 +58,54 @@ export function SetNewPasswordPage(): JSX.Element {
 
   return (
     <div className="login-container">
-       <img src="/pictures/_thumbnails/1440/public/IMG_8337.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />
+      <img src="/pictures/_thumbnails/1440/public/IMG_8337.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />  
       <div className="login-box">
-        <h1>Set New Password</h1>
+        <h1>Register</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="password">New Password</label>
+            <label htmlFor="username">Username</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="Enter username"
+              required
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="fullName">Full Name</label>
+            <input
+              id="fullName"
+              type="text"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+              placeholder="Enter your full name"
+              required
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Enter email"
+              required
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Enter new password"
+              placeholder="Enter password"
               required
               minLength={6}
               disabled={loading}
@@ -79,7 +118,7 @@ export function SetNewPasswordPage(): JSX.Element {
               type="password"
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
-              placeholder="Confirm new password"
+              placeholder="Confirm password"
               required
               minLength={6}
               disabled={loading}
@@ -88,7 +127,7 @@ export function SetNewPasswordPage(): JSX.Element {
           {error && <div className="error-message">{error}</div>}
           {message && <div className="success-message">{message}</div>}
           <button type="submit" className="login-button" disabled={loading || !token}>
-            {loading ? 'Setting...' : 'Set Password'}
+            {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
       </div>

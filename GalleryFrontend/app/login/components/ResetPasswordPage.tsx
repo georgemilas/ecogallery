@@ -37,6 +37,7 @@ export function ResetPasswordPage(): JSX.Element {
 
   return (
     <div className="login-container">
+      <img src="/pictures/_thumbnails/1440/public/IMG_8337.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />  
       <div className="login-box">
         <h1>Reset Password</h1>
         <form onSubmit={handleSubmit}>

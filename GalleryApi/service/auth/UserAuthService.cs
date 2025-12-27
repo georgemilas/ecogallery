@@ -103,18 +103,18 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
         }
     }
 
-    public async Task<bool> CreateUserAsync(string username, string email, string password, string? fullName = null, bool isAdmin = false)
-    {
-        try
-        {
-            var passwordHash = AuthRepository.HashPassword(password);
-            await _authRepository.CreateUserAsync(username, email, passwordHash, fullName, isAdmin);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+    public async Task CreateUserAsync(RegisterRequest request, bool isAdmin = false)
+    {        
+        if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            throw new InvalidInputException("Token is either invalid or expired or password is insecure.");
+
+        var tokenEntry = await _userTokenRepository.GetByTokenAsync(request.Token, "user_registration");
+        if (tokenEntry == null)
+            throw new InvalidInputException("Token is either invalid or expired or password is insecure.");
+
+        var passwordHash = AuthRepository.HashPassword(request.Password);
+        await _authRepository.CreateUserAsync(request.Username, request.Email, passwordHash, request.FullName, isAdmin);                    
+        await _userTokenRepository.MarkUsedAsync(request.Token, "user_registration");
     }
 
     public async Task<User?> GetUserByEmailAsync(string email)
@@ -181,11 +181,11 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
     public async Task UpdateUserPasswordAsync(SetPasswordRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-            throw new InvalidInputException("Reset token is invalid or expired or password is not at least 6 characters.");
+            throw new InvalidInputException("Either token is invalid or expired or password is insecure.");
 
         var tokenEntry = await _userTokenRepository.GetByTokenAsync(request.Token, "password_reset");
         if (tokenEntry == null)
-            throw new InvalidInputException("Reset token is invalid or expired or password is not at least 6 characters.");
+            throw new InvalidInputException("Either token is invalid or expired or password is insecure.");
 
         var user = await GetUserByIdAsync(tokenEntry.UserId);
         if (user == null)

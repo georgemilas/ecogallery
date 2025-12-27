@@ -1,3 +1,4 @@
+
 import { SetNewPasswordPage } from '../components/SetNewPasswordPage';
 import { Suspense } from 'react';
 

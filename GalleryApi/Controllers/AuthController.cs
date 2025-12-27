@@ -3,6 +3,7 @@ using GalleryLib.Model.Auth;
 using Microsoft.AspNetCore.Mvc;
 using GalleryApi.model;
 using GalleryApi.service.auth;
+using YamlDotNet.Core.Tokens;
 
 namespace GalleryApi.Controllers;
 
@@ -93,14 +94,22 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var success = await _authService.CreateUserAsync(request.Username, request.Email, request.Password, request.FullName);
-        
-        if (success)
+        try 
         {
-            return Ok(new { success = true, message = "User registered successfully" });
+            await _authService.CreateUserAsync(request);
+            return Ok(new { success = true, message = "User registration was successful, you can now login" });
+        }
+        catch (InvalidInputException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { success = false, message = "Registration failed. Username or email may already exist." });
         }
         
-        return BadRequest(new { success = false, message = "Registration failed. Username or email may already exist." });
+        
+            
     }
 
 

@@ -324,7 +324,7 @@ DROP TABLE IF EXISTS public.user_token;
 
 CREATE TABLE public.user_token (
     id SERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES public.user(id),
+    user_id BIGINT NULL REFERENCES public.user(id),
     token_type VARCHAR(50) NOT NULL DEFAULT 'password_reset',  -- e.g., 'password_reset', 'user_registration'
     token VARCHAR(128) NOT NULL UNIQUE,
     created_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW(),

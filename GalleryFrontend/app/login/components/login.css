@@ -3,8 +3,16 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0d0f19 0%, #19131f 100%);
   padding: 20px;
+}
+
+.login-container img {
+  position: absolute;
+  width: auto;
+  height: 90%;
+  object-position: center;  
+  z-index: 10;
 }
 
 .login-box {
@@ -13,7 +21,8 @@
   padding: 40px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 400px;  
+  z-index:100;
 }
 
 .login-box h1 {
@@ -79,7 +88,7 @@
 .login-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #191b24 0%, #b5052b 100%);
   color: white;
   border: none;
   border-radius: 8px;

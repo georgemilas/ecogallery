@@ -137,12 +137,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // If we have no local auth hints (no user and no token), skip hitting the backend and redirect
+
+      // List of public routes that do NOT require authentication
+      const publicRoutes = [
+        '/login',
+        '/login/reset-password',
+        '/login/set-password',
+        '/login/register',
+        '/valbum',
+        '/',
+      ];
+      const isPublic = publicRoutes.includes(pathname) || publicRoutes.some(r => pathname.startsWith(r + '?'));
+
       if (!storedUser && !token) {
         setUser(null);
         setLoading(false);
-
-        if (pathname !== '/login' && pathname !== '/valbum' && !pathname.startsWith('/valbum?') && pathname !== '/') {
+        if (!isPublic) {
           router.push('/login');
         }
         return;
@@ -154,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
 
       // Redirect to login if not authenticated and not already on login or public pages
-      if (!isValid && pathname !== '/login' && pathname !== '/valbum' && !pathname.startsWith('/valbum?') && pathname !== '/') {
+      if (!isValid && !isPublic) {
         router.push('/login');
       }
     };
