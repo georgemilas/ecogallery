@@ -1,7 +1,9 @@
 'use client';
 
+
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/app/utils/apiFetch';
 import './login.css';
 
 export function RegisterPage(): JSX.Element {
@@ -37,7 +39,7 @@ export function RegisterPage(): JSX.Element {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/auth/register', {
+      const res = await apiFetch('/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, fullName, email, password, token }),

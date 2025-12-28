@@ -30,8 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const validateSession = async (): Promise<boolean> => {
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/auth/validate` : `/api/v1/auth/validate`;
+      const url = `/api/v1/auth/validate`;
       const token = localStorage.getItem('sessionToken');
 
       const response = await apiFetch(url, {
@@ -61,8 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/auth/login` : `/api/v1/auth/login`;
+      const url = `/api/v1/auth/login`;
       
       const response = await apiFetch(url, {
         method: 'POST',
@@ -95,8 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async (): Promise<void> => {
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/auth/logout` : `/api/v1/auth/logout`;
+      const url = `/api/v1/auth/logout`;
       
       await fetch(url, {
         method: 'POST',

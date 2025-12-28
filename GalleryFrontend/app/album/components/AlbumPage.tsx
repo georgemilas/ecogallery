@@ -36,8 +36,7 @@ export function AlbumPage(): JSX.Element {
     setLoading(true);
     try {
       //const encodedAlbumName = albumNameParam ? encodeURIComponent(albumNameParam) : '';
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/albums/${albumId ?? ''}` : `/api/v1/albums/${albumId ?? ''}`;
+      const url = `/api/v1/albums/${albumId ?? ''}`;
       console.log('Fetching album:', { albumId, url });
       const res = await apiFetch(url);
       if (!res.ok) {
@@ -65,8 +64,7 @@ export function AlbumPage(): JSX.Element {
   const postSearchAlbum = async (expression: string, offset: number) => {
     setLoading(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/albums/search` : `/api/v1/albums/search`;
+      const url = `/api/v1/albums/search`;
       console.log('Searching albums:', { expression, url });
       var searchInfo = album != null && album.search_info ? { ...album.search_info, expression: expression, offset: offset } : { expression: expression, limit: 1500, offset: offset, count: 0, group_by_p_hash: true };
       console.log('Using search info:', searchInfo);
@@ -102,8 +100,7 @@ export function AlbumPage(): JSX.Element {
 const getApiUrl = async (apiUrl: string) => {
    setLoading(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/albums/${apiUrl}` : `/api/v1/albums/${apiUrl}`;
+      const url = `/api/v1/albums/${apiUrl}`;
       console.log('Fetching apiUrl:', { raw: apiUrl, url });
       const res = await apiFetch(url);
       if (!res.ok) {

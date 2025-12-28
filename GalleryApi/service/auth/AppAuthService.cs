@@ -21,6 +21,12 @@ public class AppAuthService: IDisposable, IAsyncDisposable
         await _authRepository.DisposeAsync();
     }
 
+
+    /// <summary>
+    /// Validates a user session already exists and is valid and then return the user associated with the session 
+    /// </summary>
+    /// <param name="sessionToken"></param>
+    /// <returns>UserInfo?</returns>
     public async Task<UserInfo?> ValidateSessionAsync(string sessionToken)
     {
         try

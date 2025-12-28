@@ -18,7 +18,19 @@ public class SessionAuthMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Skip user authentication for auth endpoints
+        bool isValidApp = AppAuthMiddleware.IsAppAuthenticated(context, _configuration);        
+        if (!isValidApp)
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                success = false, 
+                message = "Not authorized to access this API"
+            });
+            return;
+        }
+
+        // Skip user authentication for auth endpoints but still require valid application bearer token
         if (context.Request.Path.StartsWithSegments("/api/v1/auth"))
         {
             await _next(context);
@@ -31,20 +43,18 @@ public class SessionAuthMiddleware
         using var authService = new AppAuthService(repo);
 
 
-        // All endpoints require authentication and we may have only Authorization:Bearer header or we have a fully managed cookie from a logged in user
+        // we may get the user session token either because the browser send the user cookie or we may have it as an "Authorization:Bearer token" header 
         var sessionToken = context.Request.Cookies["session_token"];        
         if (string.IsNullOrEmpty(sessionToken))
         {
-            // Try to get from Authorization Bearer header
             var authHeader = context.Request.Headers["Authorization"].ToString();
             if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             {
-                sessionToken = authHeader.Substring("Bearer ".Length).Trim();
+                sessionToken = authHeader.Substring("Bearer ".Length).Trim();                
             }
         }
 
-
-        // Virtual albums are accessible without user auth, but app still needs to be authenticated
+        // Virtual albums are accessible without user authentication, but the application itself still needs to be authenticated
         // User auth is optional here - if user is logged in, include their info for role-based filtering
         if (context.Request.Path.StartsWithSegments("/api/v1/valbums"))
         {
@@ -86,7 +96,7 @@ public class SessionAuthMiddleware
             await context.Response.WriteAsJsonAsync(new
             {
                 success = false,
-                message = "Invalid or expired session"
+                message = "Invalid or expired user session"
             });
             return;
         }

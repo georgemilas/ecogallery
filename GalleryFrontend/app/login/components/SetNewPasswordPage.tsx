@@ -1,7 +1,9 @@
 'use client';
 
+
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/app/utils/apiFetch';
 import './login.css';
 
 export function SetNewPasswordPage(): JSX.Element {
@@ -34,7 +36,7 @@ export function SetNewPasswordPage(): JSX.Element {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/auth/set-password', {
+      const res = await apiFetch('/api/v1/auth/set-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),

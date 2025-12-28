@@ -22,25 +22,31 @@ public class AppAuthMiddleware
             return;
         }
 
-        // Get app API key from header or query param
-        var apiKey = context.Request.Headers["X-API-Key"].ToString() 
-                  ?? context.Request.Query["api_key"].ToString();
+        bool isAppAuthenticated = IsAppAuthenticated(context, _configuration);
 
-        var expectedApiKey = _configuration["AppAuth:ApiKey"];
-        
-        if (string.IsNullOrEmpty(apiKey) || apiKey != expectedApiKey)
+        if (!isAppAuthenticated)
         {
             context.Response.StatusCode = 401;
             await context.Response.WriteAsJsonAsync(new
             {
                 success = false,
-                message = "App authentication required"
+                message = "Not authorized to access this API"
             });
             return;
         }
 
         // App is authenticated, continue to session auth
         await _next(context);
+    }
+
+    public static bool IsAppAuthenticated(HttpContext context, IConfiguration configuration)
+    {
+        var apiKey = context.Request.Headers["X-API-Key"].ToString() 
+                  ?? context.Request.Query["api_key"].ToString();
+
+        var expectedApiKey = configuration["AppAuth:ApiKey"];
+        
+        return !string.IsNullOrEmpty(apiKey) && apiKey == expectedApiKey;
     }
 }
 

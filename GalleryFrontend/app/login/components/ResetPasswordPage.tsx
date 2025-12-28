@@ -1,7 +1,9 @@
 'use client';
 
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/app/utils/apiFetch';
 import './login.css';
 
 export function ResetPasswordPage(): JSX.Element {
@@ -18,7 +20,7 @@ export function ResetPasswordPage(): JSX.Element {
     setLoading(true);
     try {
       // Replace with your API endpoint for password reset
-      const res = await fetch('/api/v1/auth/reset-password', {
+      const res = await apiFetch('/api/v1/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

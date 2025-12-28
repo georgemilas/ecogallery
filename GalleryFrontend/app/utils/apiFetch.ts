@@ -25,7 +25,10 @@ export async function apiFetch(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  return fetch(url, {
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
+  const apiUrl = apiBase ? `${apiBase}${url}` : url;
+
+  return fetch(apiUrl, {
     ...options,
     credentials: 'include',
     headers,

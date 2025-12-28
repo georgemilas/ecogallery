@@ -29,9 +29,8 @@ export function VirtualAlbumPage(): JSX.Element {
   const fetchAlbum = async (albumIdParam: number | null = null) => {
     setLoading(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
       const albumIdPath = albumIdParam !== null ? `/${albumIdParam}` : '';
-      const url = apiBase ? `${apiBase}/api/v1/valbums${albumIdPath}` : `/api/v1/valbums${albumIdPath}`;
+      const url = `/api/v1/valbums${albumIdPath}`;
       console.log('Fetching virtual album:', {albumIdParam, albumIdPath, url });
       const res = await apiFetch(url);
       if (!res.ok) {
@@ -59,8 +58,7 @@ export function VirtualAlbumPage(): JSX.Element {
   const getApiUrl = async (apiUrl: string) => {
    setLoading(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-      const url = apiBase ? `${apiBase}/api/v1/valbums/${apiUrl}` : `/api/v1/valbums/${apiUrl}`;
+      const url = `/api/v1/valbums/${apiUrl}`;
       console.log('Fetching apiUrl:', { raw: apiUrl, url });
       const res = await apiFetch(url);
       if (!res.ok) {
