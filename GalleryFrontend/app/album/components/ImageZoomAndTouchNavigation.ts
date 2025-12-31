@@ -36,6 +36,17 @@ export function ImageZoomAndTouchNavigation(
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
   const [is1to1, setIs1to1] = React.useState(false);
+  
+  function supportsNativeTouchZoom() {
+    // if (typeof navigator === 'undefined') return false;
+    // return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (typeof window === 'undefined') return false;
+    return (
+      ('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)) &&
+      window.matchMedia && window.matchMedia('(pointer: coarse)').matches
+    );
+  }
+  const isTouchDevice = supportsNativeTouchZoom();
 
   // Reset zoom when image changes
   React.useEffect(() => {
@@ -50,21 +61,26 @@ export function ImageZoomAndTouchNavigation(
     const touchEndX = { current: 0 };
     const initialPinchDistance = { current: 0 };
     const lastZoom = { current: 1 };
+    const isPinching = { current: false };
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2 && !isVideo) {
-        // Pinch zoom
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        initialPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
-        lastZoom.current = zoom;
+      if (e.touches.length === 2) {
+        isPinching.current = true;
+        // If not a video and not native touch device, handle pinch zoom
+        if (!isVideo && !isTouchDevice) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          initialPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
+          lastZoom.current = zoom;
+        }
       } else if (e.touches.length === 1) {
+        isPinching.current = false;
         touchStartX.current = e.touches[0].clientX;
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && !isVideo) {
+      if (e.touches.length === 2 && !isVideo && !isTouchDevice) {
         // Pinch zoom
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -79,7 +95,8 @@ export function ImageZoomAndTouchNavigation(
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length === 0 && zoom <= 1) {
+      // Only allow swipe if not pinching
+      if (e.touches.length === 0 && zoom <= 1 && !isPinching.current) {
         const swipeThreshold = 50;
         const diff = touchStartX.current - touchEndX.current;
 
@@ -90,10 +107,11 @@ export function ImageZoomAndTouchNavigation(
             onPrevImage?.();
           }
         }
-
-        touchStartX.current = 0;
-        touchEndX.current = 0;
       }
+      // Reset all refs
+      touchStartX.current = 0;
+      touchEndX.current = 0;
+      isPinching.current = false;
     };
 
     window.addEventListener('touchstart', handleTouchStart);
@@ -105,7 +123,7 @@ export function ImageZoomAndTouchNavigation(
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [zoom, isVideo, onPrevImage, onNextImage]);
+  }, [zoom, isVideo, onPrevImage, onNextImage, isTouchDevice]);
 
   // Mouse wheel zoom
   React.useEffect(() => {

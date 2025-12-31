@@ -279,7 +279,9 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
         />
         {isLayouting && props.album.images.length > 100 && (
           <div className="gallery-loading">
-            <span>Laying out {props.album.images.length} images...</span>
+            <span>Laying out {props.album.images.length} images
+              <span className="loader-spinner" aria-label="Loading"></span>
+            </span>
           </div>
         )}
         <ul className="gallery">

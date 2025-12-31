@@ -289,7 +289,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
           <div className="gallery-loading">
             <span>
               Laying out {props.album.images.length} images
-              <span className="loader-spinner" aria-label="Loading"></span>              
+              <span className="loader-spinner" aria-label="Loading"></span>
             </span>
           </div>
         )}

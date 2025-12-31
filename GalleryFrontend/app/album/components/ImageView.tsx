@@ -2,6 +2,16 @@ import React from 'react';
 import { AlbumItemHierarchy, ImageItemContent } from './AlbumHierarchyProps';
 import { ExifPanel } from './Exif';
 import { ImageZoomAndTouchNavigation } from './ImageZoomAndTouchNavigation';
+
+// function supportsNativeTouchZoom() {
+//   // if (typeof navigator === 'undefined') return false;
+//   // return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+//   if (typeof window === 'undefined') return false;
+//   return (
+//     ('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)) &&
+//     window.matchMedia && window.matchMedia('(pointer: coarse)').matches
+//   );
+// }
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import './imageContent.css';
 
@@ -45,8 +55,26 @@ export function ImageView(props: ImageViewProps): JSX.Element {
     props.router.push(`${props.path}?${currentParams.toString()}`);
   }, [props.album.images, props.image.id, props.router, props.path]);
 
-  // Use zoom hook for all zoom-related functionality
+
+  // Use zoom hook for all zoom-related functionality, but disable zoom if device supports native touch zoom
   const zoom = ImageZoomAndTouchNavigation(imageRef, containerRef, props.image.is_movie, props.image.id, handlePrevImage, handleNextImage);
+  // const zoom = React.useMemo(() => {
+  //   if (supportsNativeTouchZoom()) {
+  //     // Only enable swipe navigation, no zoom
+  //     return {
+  //       state: { zoom: 1, position: { x: 0, y: 0 }, isDragging: false, is1to1: false },
+  //       handlers: {
+  //         toggle1to1: () => {},
+  //         reset: () => {},
+  //         zoomIn: () => {},
+  //         zoomOut: () => {},
+  //       },
+  //       setZoom: () => {},
+  //       setIs1to1: () => {},
+  //     };
+  //   }
+  //   return ImageZoomAndTouchNavigation(imageRef, containerRef, props.image.is_movie, props.image.id, handlePrevImage, handleNextImage);
+  // }, [props.image.id, props.image.is_movie, handlePrevImage, handleNextImage]);
 
   
   // Sync state with actual fullscreen status on mount
@@ -191,19 +219,19 @@ export function ImageView(props: ImageViewProps): JSX.Element {
         {/* Content - full viewport */}
         <div className="content" ref={containerRef}>
               <nav className="breadcrumbs">
-              <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-                  <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-                </svg>
-              </a>
-              {props.album.navigation_path_segments.slice(1).map((segment, index) => {
-                //const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
-                return (
-                  <span key={index}>
-                    {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(segment.id);}}>{segment.name}</a>
-                  </span>
-                );
-              })}
+                <a href="#"onClick={(e) => {e.preventDefault(); props.onAlbumClick(null);}}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+                    <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+                  </svg>
+                </a>
+                {props.album.navigation_path_segments.slice(1).map((segment, index) => {
+                  //const pathToSegment = '\\' + props.album.navigation_path_segments.slice(0, index + 1).join('\\');
+                  return (
+                    <span key={index}>
+                      {' > '} <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(segment.id);}}>{segment.name}</a>
+                    </span>
+                  );
+                })}
             </nav>
             {props.image.is_movie 
                 ? (<video ref={videoRef} src={props.image.image_original_path}
