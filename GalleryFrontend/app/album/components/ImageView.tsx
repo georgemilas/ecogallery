@@ -232,7 +232,7 @@ export function ImageView(props: ImageViewProps): JSX.Element {
                     </span>
                   );
                 })}
-            </nav>
+              </nav>
             {props.image.is_movie 
                 ? (<video ref={videoRef} src={props.image.image_original_path}
                    poster={props.image.image_uhd_path || props.image.thumbnail_path}  

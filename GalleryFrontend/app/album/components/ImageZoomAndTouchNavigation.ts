@@ -1,5 +1,5 @@
-import { setTimeout } from 'node:timers/promises';
-import React from 'react';
+//import { setTimeout } from 'node:timers/promises';
+import React, { useMemo } from 'react';
 
 export interface ZoomState {
   zoom: number;
@@ -33,9 +33,25 @@ export function ImageZoomAndTouchNavigation(
 {
   const [zoom, setZoom] = React.useState(1);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
+  const [origX, setOrigX] = React.useState(0);
+  const [origY, setOrigY] = React.useState(0);
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
   const [is1to1, setIs1to1] = React.useState(false);
+
+
+  // Set origX and origY once per image load
+  React.useEffect(() => {
+    if (!imageRef.current) return;
+    // Wait for image to be fully loaded and rendered
+    const handle = setTimeout(() => {
+      if (imageRef.current) {
+        setOrigX(imageRef.current.getBoundingClientRect().left);
+        setOrigY(imageRef.current.getBoundingClientRect().top);
+      }
+    }, 100);
+    return () => clearTimeout(handle);
+  }, [imageId, imageRef]);
   
   function supportsNativeTouchZoom() {
     // if (typeof navigator === 'undefined') return false;
@@ -46,7 +62,7 @@ export function ImageZoomAndTouchNavigation(
       window.matchMedia && window.matchMedia('(pointer: coarse)').matches
     );
   }
-  const isTouchDevice = supportsNativeTouchZoom();
+  const isTouchDevice = false; //supportsNativeTouchZoom();
 
   // Reset zoom when image changes
   React.useEffect(() => {
@@ -70,8 +86,13 @@ export function ImageZoomAndTouchNavigation(
         if (!isVideo && !isTouchDevice) {
           const dx = e.touches[0].clientX - e.touches[1].clientX;
           const dy = e.touches[0].clientY - e.touches[1].clientY;
-          initialPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
-          lastZoom.current = zoom;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 10) { // Ignore if initial pinch is too small
+            initialPinchDistance.current = dist;
+            lastZoom.current = zoom;
+          } else {
+            initialPinchDistance.current = 0;
+          }
         }
       } else if (e.touches.length === 1) {
         isPinching.current = false;
@@ -82,13 +103,28 @@ export function ImageZoomAndTouchNavigation(
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2 && !isVideo && !isTouchDevice) {
         // Pinch zoom
+        const container = containerRef.current;
+        if (!container) return;
+        if (!initialPinchDistance.current || initialPinchDistance.current < 10) return; // Ignore if initial pinch was too small
+        const rect = container.getBoundingClientRect();
+        // Midpoint between the two touches
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const scale = distance / initialPinchDistance.current;
+        let scale = distance / initialPinchDistance.current;
+        // Clamp scale factor per gesture to avoid jumps
+        scale = Math.max(0.5, Math.min(scale, 2.0));
         const newZoom = Math.min(Math.max(0.5, lastZoom.current * scale), 10);
+        // Zoom towards the midpoint between the two touches, relative to the container
+        const zoomScale = newZoom / zoom;
         setZoom(newZoom);
-        setIs1to1(false);
+        setPosition({
+          x: midX - (midX - position.x) * zoomScale,
+          y: midY - (midY - position.y) * zoomScale,
+        });
+        setIs1to1(true);
       } else if (e.touches.length === 1 && zoom <= 1) {
         touchEndX.current = e.touches[0].clientX;
       }
@@ -131,24 +167,24 @@ export function ImageZoomAndTouchNavigation(
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      
       const container = containerRef.current;
       const img = imageRef.current;
       if (!container || !img) return;
 
       const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
+      const x = e.clientX - origX;
+      const y = e.clientY - origY;
+      
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.min(Math.max(0.5, zoom * delta), 10);
+      const newZoom = Math.min(Math.max(0.5, zoom * delta), 10);      
 
       // Zoom towards cursor position
       const scale = newZoom / zoom;
+
       setZoom(newZoom);
       setPosition({
-        x: x - (x - position.x) * scale,
-        y: y - (y - position.y) * scale,
+        x: x - ((x - (position.x)) * scale),
+        y: y - ((y - position.y) * scale),
       });
       setIs1to1(true);
     };
@@ -203,34 +239,36 @@ export function ImageZoomAndTouchNavigation(
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragStart, position, zoom, isVideo, containerRef]);
+  }, [isDragging, dragStart, position, zoom, isVideo, containerRef, origX, origY]);
 
+
+  //1 to 1
   const toggle1to1 = React.useCallback(() => {
     if (isVideo) return;
-    
     if (is1to1) {
       setZoom(1);
       setPosition({ x: 0, y: 0 });
       setIs1to1(false);
     } else {
-        const img = imageRef.current;
-        const container = containerRef.current;
-        if (!img || !container) return;
+      const img = imageRef.current;
+      const container = containerRef.current;
+      if (!img || !container) return;
 
-        const containerRect = container.getBoundingClientRect();
-        const naturalWidth = img.naturalWidth;
-        const naturalHeight = img.naturalHeight;
-        const displayedWidth = img.getBoundingClientRect().width;
-        
-        const actualZoom = naturalWidth / displayedWidth;
-        setZoom(actualZoom);
-    
-        setPosition({
-          x: (containerRect.width - naturalWidth) / 2,
-          y: (containerRect.height - naturalHeight) / 2,
-        });
-        setIs1to1(true);        
-      }
+      const containerRect = container.getBoundingClientRect();
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+      const displayedWidth = img.getBoundingClientRect().width;
+      const displayedHeight = img.getBoundingClientRect().height;
+      
+      const actualZoom = naturalWidth / displayedWidth;
+      setZoom(actualZoom);
+  
+      setPosition({
+        x: (displayedWidth - naturalWidth) / 2,
+        y: (displayedHeight - naturalHeight) / 2,
+      });
+      setIs1to1(true);        
+    }
   }, [isVideo, is1to1, imageRef, containerRef]);
 
   const reset = React.useCallback(() => {
