@@ -19,7 +19,7 @@
    * random 100, recent 100
 
 ### ffmpeg
-To convert an .mts file to .mp4 using FFmpeg, use:
+To convert an .mts (or .api or .mov etc) file to .mp4 using FFmpeg, use:
 ```powershell
 ffmpeg -i input.mts -c:v libx264 -c:a aac output.mp4
 ```
@@ -40,10 +40,10 @@ Get-ChildItem *.mts | ForEach-Object {
 for %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~nf.mp4"
 ```
 
-The Windows Command Prompt for loop does not support recursion by default, but you can use the /R flag to process files in all subfolders:
+You can use the /R flag to recurively process all files in all subfolders:
 ```powershell
 #command prompt (cmd)
-for /R %f in (*.avi) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
+for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
 ```
  * /R makes the loop recursive.
  * %f is each file found.

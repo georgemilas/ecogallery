@@ -1,8 +1,5 @@
 ## Configuration and Secrets Management
 
-### Database Password Security
-Passwords and sensitive configuration are kept out of Git using:
-
 **Development (User Secrets):**
 ```powershell
 # Set database password for GalleryApi

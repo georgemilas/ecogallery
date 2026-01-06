@@ -62,12 +62,8 @@ Search for quick adhoc albums on the fly
 
 ## Project structure and some details
 The solution folder consists of several projects:
-1) GalleryLib - This is a library containing most of the logic for the solution. 
-    * model folder: data models 
-    * service folder: main business logic
-    * database: all database scripts, tables, stored procs, indeces etc.
-    * repository: database abstractions 
-
+1) GalleryLib - This is a library containing core logic for gallery sync. 
+    
 2) GalleryService - This project contains the heart of the syncronization logic as a thin layer on top of the library above.
     * Syncronize pictures folder with the database 
         ```powershell
@@ -85,12 +81,12 @@ The solution folder consists of several projects:
         dotnet run --project GalleryService -- valbum -f E:\TotulAici\TutuLaptop\pictures -y "virtual albums.yml"
         ```
         
-3) GalleryApi - Api powering the gallery. Exposes data at "/api/v1/pictures" and also to run as a docker container
+3) GalleryApi - Api powering the gallery. Exposes data at "/api/v1/..." 
     ```powershell
 	cd ecogallery
     dotnet run --project GalleryApi
     # Swagger UI: http://localhost:5001/swagger
-    # Endpoint:   http://localhost:5001/api/v1/pictures
+    # Endpoints:   http://localhost:5001/api/v1/albums, /valbums, /auth
     ```
 4) GalleryFrontend - The main gallery app (a React/Type Script/NextJS) app
     * start a dev server for accessing the app locally from your network
@@ -103,8 +99,7 @@ The solution folder consists of several projects:
    * start a production server to access the app from the internet 
    ```powershell
     cd ecogallery    
-    #Remove-Item -Recurse -Force -Path '.next*' -ErrorAction SilentlyContinue  #delete previous builds, must cd to GelleryFrontend
-    #npm run build -prefix GalleryFrontend   #rebuild if necesary
+    npm run build -prefix GalleryFrontend   #rebuild if necesary
     npm run start -prefix GalleryFrontend -- --hostname 0.0.0.0 --port 3000
     # Internet Endpoint:   http://your.public.ip
     # Additional 1: Configure your router/firewall to port forward 80 from your public IP to your local server 

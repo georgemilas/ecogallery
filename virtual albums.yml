@@ -23,7 +23,7 @@ Acasa:
 
 2025:
   parent: Pictures Gallery
-  description: From trips to Maine and Victoria Island and just walking around Chicago neighborhoods 
+  description: From trips to Maine and Victoria Island and walks around Chicago neighborhoods 
   expression: 2025 and ((main and (4144 4224 4201 4168 4160  4153 4083 4064 4033 3938 4008 3954 3965 3959 3892 3940 3918 3915 3908 3903 3878)) 
      or (_4567 4534 4524  4530 4518 4522 4515 4526) 
      or (victoria and (4484 4509 4500 4464 4471 4440  4428 4407 4417 4377 4356 4365 4345 4343 4330 4284 4272 4277 4268 4265 4492))) 
@@ -31,7 +31,7 @@ Acasa:
 
 2024:
   parent: Pictures Gallery
-  description: From 2024 trips to Florida, Montreal, Tennessee, South Carolina, Colorado, and the beautiful botanical garden in north Chicago
+  description: From trips to Florida, Montreal, Tennessee, South Carolina, Colorado and the beautiful botanical garden in north Chicago
   expression: 2024\ and not (andrew dcim eclipse 4th razvan anthony _8940. _8881. _8871. _8870. race _1429 _1575 _1376 _1333 _1195 _112234 _113634 _175050 _3524 _3522 
    mimi\bird mimi\20240502_070002.mp4 mimi\20240501_181732.mp4 _2713 _2569)
   feature: \2024\Colorado\_MG_2981-Pano-Edit.jpg
@@ -84,7 +84,7 @@ Barcelona, Spain:
 
 2022: 
   parent: Pictures Gallery
-  description: Selections from 2022 trips to Romania, Anthony at Northwestern, wippets racing and walks around Chicago neighborhoods
+  description: Selections from the trip to Romania, Anthony at Northwestern, wippets racing and walks around Chicago neighborhoods
   expression: 
     \2022 and (select _6826 _6441-Edit _6762-Edit _6833 _6560 _6653 _6636 _6659 _5529 _6634 _6622 _6299 _6501 _6367 _172001_2 _6220 172240 _6126 trophy _6033 _6045 _154511
                       _6027 _5914 _5887 _5875 _5817 _5815 _5757 _5727 _5740 _5722 _5718
