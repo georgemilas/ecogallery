@@ -366,3 +366,10 @@ FodyWeavers.xsd
 
 # Local secrets and overrides (never commit)
 **/appsettings.Local.json
+
+# Teraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
