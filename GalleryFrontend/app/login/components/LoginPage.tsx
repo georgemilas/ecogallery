@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import './login.css';
+import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
 
 export function LoginPage(): JSX.Element {
   const [username, setUsername] = useState('');
@@ -36,7 +37,7 @@ export function LoginPage(): JSX.Element {
 
   return (
     <div className="login-container">
-      <img src="/pictures/_thumbnails/1440/public/IMG_8337.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />
+      <AuthenticatedImage src="/pictures/_thumbnails/1440/public/IMG_8337.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />
       <div className="login-box">
         <h1>Gallery Login</h1>
         <form onSubmit={handleSubmit}>
