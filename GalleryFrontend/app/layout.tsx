@@ -1,7 +1,7 @@
 import { AuthProvider } from './contexts/AuthContext';
 
 export const metadata = {
-  title: 'Pictures',
+  title: 'Milas Gallery',
   description: 'GM Pictures Gallery',
 };
 

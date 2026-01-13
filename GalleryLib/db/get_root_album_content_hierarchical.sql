@@ -16,7 +16,7 @@ RETURNS TABLE (
     image_sha256 VARCHAR,
     last_updated_utc TIMESTAMP WITH TIME ZONE,
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
-    image_exif JSON,
+    image_metadata JSON,
     video_metadata JSON
 ) AS $$
 WITH ra AS (
@@ -39,7 +39,7 @@ SELECT
     COALESCE(ai.image_sha256, cai.image_sha256, '') AS image_sha256,
     a.last_updated_utc,
     a.album_timestamp_utc AS item_timestamp_utc,
-    NULL::json AS image_exif,
+    NULL::json AS image_metadata,
     NULL::json AS video_metadata  
 FROM ra
 JOIN album AS a ON a.parent_album = ra.album_name
@@ -64,11 +64,11 @@ SELECT
     ai.image_sha256 AS image_sha256,
     ai.last_updated_utc,
     ai.image_timestamp_utc AS item_timestamp_utc,
-    row_to_json(exif) AS image_exif,
+    row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata
 FROM ra
 JOIN album_image ai ON ai.album_name = ra.album_name
-LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
+LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
 
 ORDER BY item_type

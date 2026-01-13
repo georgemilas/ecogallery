@@ -71,14 +71,14 @@ public class ImageMetadataProcessor: AlbumProcessor
                 await imageRepository.AddNewImageMetadataAsync(exif);            
                 if (logIfCreated)
                 {
-                    Console.WriteLine($"Extracted and stored EXIF data in image_exif table: {filePath}");
+                    Console.WriteLine($"Extracted and stored EXIF data in image_metadata table: {filePath}");
                 }
                 return Tuple.Create(albumImage, count + 1);
             }
         }
         return Tuple.Create(albumImage, count);
 
-        // Note: ON DELETE CASCADE should take care of exif data removal from album_image_exif table
+        // Note: ON DELETE CASCADE should take care of exif data removal from album_image_metadata table
         // so no need to override CleanupImageAndAlbumRecords 
     }
 
@@ -112,6 +112,19 @@ public class ImageMetadataProcessor: AlbumProcessor
                 videoMetadata.VideoCodec = videoStream.CodecName;
                 videoMetadata.FrameRate = (decimal?)videoStream.FrameRate;
                 videoMetadata.VideoBitRate = videoStream.BitRate;
+                
+                // Check for rotation metadata and swap dimensions if rotated 90° or 270°
+                // Rotation is often stored in video stream side data
+                if (videoStream.Rotation != 0)
+                {
+                    int rotation = Math.Abs(videoStream.Rotation);
+                    videoMetadata.Rotation = rotation;
+                    if (rotation == 90 || rotation == 270)
+                    {
+                        // Swap width and height for rotated videos
+                        (videoMetadata.VideoWidth, videoMetadata.VideoHeight) = (videoMetadata.VideoHeight, videoMetadata.VideoWidth);
+                    }
+                }
             }
 
             // Audio stream info (codec)
@@ -218,6 +231,26 @@ public class ImageMetadataProcessor: AlbumProcessor
                     using var image = await Image.LoadAsync(filePath);
                     exif.ImageWidth = image.Width;
                     exif.ImageHeight = image.Height;
+                }
+                
+                // Check orientation and swap dimensions if needed
+                // Orientation values 5, 6, 7, 8 require width/height swap (90° or 270° rotation)
+                // 1: Normal
+                // 2: Flip horizontal
+                // 3: Rotate 180°
+                // 4: Flip vertical
+                // 5: Transpose (flip horizontal + rotate 270°)
+                // 6: Rotate 90° clockwise ← Common for vertical photos
+                // 7: Transverse (flip horizontal + rotate 90°)
+                // 8: Rotate 270° clockwise ← Common for vertical photos
+                if (ifd0Directory.TryGetInt32(ExifDirectoryBase.TagOrientation, out int orientation))
+                {
+                    exif.Orientation = orientation;
+                    if (orientation >= 5 && orientation <= 8)
+                    {
+                        // Swap width and height for rotated images
+                        (exif.ImageWidth, exif.ImageHeight) = (exif.ImageHeight, exif.ImageWidth);
+                    }
                 }
             }
             // Get SubIFD directory (detailed photo info)

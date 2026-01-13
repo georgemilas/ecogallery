@@ -1,9 +1,9 @@
 import React from 'react';
-import { ImageItemContent, AlbumItemHierarchy, ImageExif, VideoMetadata } from './AlbumHierarchyProps';
+import { ImageItemContent, AlbumItemHierarchy, ImageMetadata, VideoMetadata } from './AlbumHierarchyProps';
 import './exif.css';
 
-interface ExifPanelProps {
-  exif: ImageExif | null;
+interface MetadataPanelProps {
+  exif: ImageMetadata | null;
   videoMetadata: VideoMetadata | null;
   album: AlbumItemHierarchy;
   image: ImageItemContent;
@@ -31,8 +31,30 @@ function formatDuration(durationStr: string | null): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function getOrientationDescription(orientation: number | null): string | null {
+  if (!orientation) return null;
+  
+  const descriptions: Record<number, string> = {
+    1: 'Normal',
+    2: 'Flip horizontal',
+    3: 'Rotate 180°',
+    4: 'Flip vertical',
+    5: 'Transpose (flip horizontal + rotate 270°)',
+    6: 'Rotate 90° clockwise',
+    7: 'Transverse (flip horizontal + rotate 90°)',
+    8: 'Rotate 270° clockwise'
+  };
+  
+  return descriptions[orientation] || `Unknown (${orientation})`;
+}
 
-export function ExifPanel({ exif, videoMetadata, album, image, onClose }: ExifPanelProps): JSX.Element {
+function getRotationDescription(rotation: number | null): string | null {
+  if (!rotation) return null;
+  return `${rotation}° clockwise`;
+}
+
+
+export function MetadataPanel({ exif, videoMetadata, album, image, onClose }: MetadataPanelProps): JSX.Element {
   const isVideo = image.is_movie;
   
   return (
@@ -77,6 +99,12 @@ export function ExifPanel({ exif, videoMetadata, album, image, onClose }: ExifPa
               <div className="exif-row">
                 <span className="exif-label">Dimensions:</span>
                 <span className="exif-value">{videoMetadata.video_width} × {videoMetadata.video_height}</span>
+              </div>
+            )}
+            {videoMetadata.rotation != null && videoMetadata.rotation !== 0 && (
+              <div className="exif-row">
+                <span className="exif-label">Rotation:</span>
+                <span className="exif-value">{getRotationDescription(videoMetadata.rotation)}</span>
               </div>
             )}
             {videoMetadata.video_codec && (
@@ -248,6 +276,12 @@ export function ExifPanel({ exif, videoMetadata, album, image, onClose }: ExifPa
               <div className="exif-row">
                 <span className="exif-label">Dimensions:</span>
                 <span className="exif-value">{exif.image_width} × {exif.image_height}</span>
+              </div>
+            )}
+            {exif.orientation != null && exif.orientation !== 1 && (
+              <div className="exif-row">
+                <span className="exif-label">Orientation:</span>
+                <span className="exif-value">{getOrientationDescription(exif.orientation)}</span>
               </div>
             )}
             {exif.software && (

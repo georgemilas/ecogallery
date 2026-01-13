@@ -31,7 +31,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     // User methods
     public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        const string sql = "SELECT * FROM public.user WHERE username = @username AND is_active = true";
+        const string sql = "SELECT * FROM public.users WHERE username = @username AND is_active = true";
         var parameters = new { username };
         var result = await _db.QueryAsync<User>(sql, reader => User.CreateFromDataReader(reader), parameters);
         return result.FirstOrDefault();
@@ -39,7 +39,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
 
     public async Task<User?> GetUserByEmailAsync(string email)
     {
-        const string sql = "SELECT * FROM public.user WHERE email = @email AND is_active = true";
+        const string sql = "SELECT * FROM public.users WHERE email = @email AND is_active = true";
         var parameters = new { email };
         var result = await _db.QueryAsync(sql, reader => User.CreateFromDataReader(reader), parameters);
         return result.FirstOrDefault();
@@ -47,7 +47,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
 
     public async Task<User?> GetUserByIdAsync(long userId)
     {
-        const string sql = "SELECT * FROM public.user WHERE id = @id AND is_active = true";
+        const string sql = "SELECT * FROM public.users WHERE id = @id AND is_active = true";
         var parameters = new { id = userId };
         var result = await _db.QueryAsync(sql, reader => User.CreateFromDataReader(reader), parameters);
         return result.FirstOrDefault();
@@ -56,7 +56,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     public async Task<long> CreateUserAsync(string username, string email, string passwordHash, string? fullName = null, bool isAdmin = false)
     {
         const string sql = @"
-            INSERT INTO public.user (username, email, password_hash, full_name, is_admin, created_utc)
+            INSERT INTO public.users (username, email, password_hash, full_name, is_admin, created_utc)
             VALUES (@username, @email, @password_hash, @full_name, @is_admin, @created_utc)
             RETURNING id";
         User user = new User() { Username = username, Email = email, PasswordHash = passwordHash, FullName = fullName, IsAdmin = isAdmin, CreatedUtc = DateTime.UtcNow };
@@ -66,7 +66,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
 
     public async Task UpdateLastLoginAsync(long userId)
     {
-        const string sql = "UPDATE public.user SET last_login_utc = @last_login_utc WHERE id = @id";
+        const string sql = "UPDATE public.users SET last_login_utc = @last_login_utc WHERE id = @id";
         await _db.ExecuteAsync(sql, new { id = userId, last_login_utc = DateTime.UtcNow });
     }
 
@@ -74,7 +74,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     public async Task<Session?> GetSessionByTokenAsync(string sessionToken)
     {
         const string sql = @"
-            SELECT * FROM public.session 
+            SELECT * FROM public.sessions 
             WHERE session_token = @session_token 
             AND expires_utc > @expired_utc";
         var parameters = new { session_token = sessionToken, expired_utc = DateTime.UtcNow };
@@ -89,7 +89,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
         var now = DateTime.UtcNow;
         
         const string sql = @"
-            INSERT INTO public.session (session_token, user_id, created_utc, expires_utc, last_activity_utc, ip_address, user_agent)
+            INSERT INTO public.sessions (session_token, user_id, created_utc, expires_utc, last_activity_utc, ip_address, user_agent)
             VALUES (@session_token, @user_id, @created_utc, @expires_utc, @last_activity_utc, @ip_address, @user_agent)";
         
         Session session = new Session() {  
@@ -107,25 +107,25 @@ public class AuthRepository : IDisposable, IAsyncDisposable
 
     public async Task UpdateSessionActivityAsync(string sessionToken)
     {
-        const string sql = "UPDATE public.session SET last_activity_utc = @last_activity_utc WHERE session_token = @session_token";
+        const string sql = "UPDATE public.sessions SET last_activity_utc = @last_activity_utc WHERE session_token = @session_token";
         await _db.ExecuteAsync(sql, new { session_token = sessionToken, last_activity_utc = DateTime.UtcNow });
     }
 
     public async Task DeleteSessionAsync(string sessionToken)
     {
-        const string sql = "DELETE FROM public.session WHERE session_token = @session_token";
+        const string sql = "DELETE FROM public.sessions WHERE session_token = @session_token";
         await _db.ExecuteAsync(sql, new { session_token = sessionToken });
     }
 
     public async Task DeleteExpiredSessionsAsync()
     {
-        const string sql = "DELETE FROM public.session WHERE expires_utc < @expires_utc";
+        const string sql = "DELETE FROM public.sessions WHERE expires_utc < @expires_utc";
         await _db.ExecuteAsync(sql, new { expires_utc = DateTime.UtcNow });
     }
 
     public async Task DeleteUserSessionsAsync(long userId)
     {
-        const string sql = "DELETE FROM public.session WHERE user_id = @user_id";
+        const string sql = "DELETE FROM public.sessions WHERE user_id = @user_id";
         await _db.ExecuteAsync(sql, new { user_id =  userId });
     }
 
@@ -153,7 +153,7 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     }
     public async Task UpdateUserPasswordAsync(long userId, string newPasswordHash)
     {
-        const string sql = "UPDATE public.user SET password_hash = @password_hash WHERE id = @id";
+        const string sql = "UPDATE public.users SET password_hash = @password_hash WHERE id = @id";
         await _db.ExecuteAsync(sql, new { id = userId, password_hash = newPasswordHash });
     }
 }

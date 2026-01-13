@@ -71,7 +71,7 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
 
     public async Task<ImageMetadata?> GetImageMetadataAsync(AlbumImage albumImage)
     {
-        var sql = "SELECT * FROM image_exif WHERE album_image_id = @album_image_id";
+        var sql = "SELECT * FROM image_metadata WHERE album_image_id = @album_image_id";
         var sqlParams = new { album_image_id = albumImage.Id };
         var imageExifs = await _db.QueryAsync(sql, reader => ImageMetadata.CreateFromDataReader(reader), sqlParams);
         return imageExifs.FirstOrDefault();                 
@@ -89,10 +89,10 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
     {
         var sql = @"INSERT INTO public.video_metadata(album_image_id, file_name, file_path, file_size_bytes, date_taken, date_modified, duration, 
                                                     video_width, video_height, video_codec, audio_codec, pixel_format, frame_rate, video_bit_rate, 
-                                                    audio_sample_rate, audio_channels, audio_bit_rate, format_name, software, camera, last_updated_utc)
+                                                    audio_sample_rate, audio_channels, audio_bit_rate, format_name, software, camera, rotation, last_updated_utc)
                                     VALUES (@album_image_id, @file_name, @file_path, @file_size_bytes, @date_taken, @date_modified, @duration, 
                                                     @video_width, @video_height, @video_codec, @audio_codec, @pixel_format, @frame_rate, @video_bit_rate, 
-                                                    @audio_sample_rate, @audio_channels, @audio_bit_rate, @format_name, @software, @camera, @last_updated_utc)                                     
+                                                    @audio_sample_rate, @audio_channels, @audio_bit_rate, @format_name, @software, @camera, @rotation, @last_updated_utc)                                     
                     ON CONFLICT (album_image_id) DO UPDATE
                         SET
                             last_updated_utc = EXCLUDED.last_updated_utc                        
@@ -102,16 +102,16 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
     }
     public async Task<ImageMetadata> AddNewImageMetadataAsync(ImageMetadata exif)
     {
-        var sql = @"INSERT INTO public.image_exif(album_image_id, camera, lens, focal_length, aperture, exposure_time, iso, date_taken, 
+        var sql = @"INSERT INTO public.image_metadata(album_image_id, camera, lens, focal_length, aperture, exposure_time, iso, date_taken, 
                                                 rating, date_modified, flash, metering_mode, exposure_program, exposure_bias, exposure_mode, 
                                                 white_balance, color_space, scene_capture_type, circle_of_confusion, field_of_view, depth_of_field,
                                                 hyperfocal_distance, normalized_light_value, software, serial_number, lens_serial_number, file_name, 
-                                                file_path, file_size_bytes, image_width, image_height, last_updated_utc)
+                                                file_path, file_size_bytes, image_width, image_height, orientation, last_updated_utc)
 	                                VALUES (@album_image_id, @camera, @lens, @focal_length, @aperture, @exposure_time, @iso, @date_taken, 
                                                 @rating, @date_modified, @flash, @metering_mode, @exposure_program, @exposure_bias, @exposure_mode, 
                                                 @white_balance, @color_space, @scene_capture_type, @circle_of_confusion, @field_of_view, @depth_of_field,
                                                 @hyperfocal_distance, @normalized_light_value, @software, @serial_number, @lens_serial_number, @file_name, 
-                                                @file_path, @file_size_bytes, @image_width, @image_height, @last_updated_utc)                                     
+                                                @file_path, @file_size_bytes, @image_width, @image_height, @orientation, @last_updated_utc)                                     
                     ON CONFLICT (album_image_id) DO UPDATE
                         SET
                             last_updated_utc = EXCLUDED.last_updated_utc                        

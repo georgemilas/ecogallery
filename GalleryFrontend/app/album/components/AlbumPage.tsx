@@ -66,7 +66,8 @@ export function AlbumPage(): JSX.Element {
     try {
       const url = `/api/v1/albums/search`;
       console.log('Searching albums:', { expression, url });
-      var searchInfo = album != null && album.search_info ? { ...album.search_info, expression: expression, offset: offset } : { expression: expression, limit: 1500, offset: offset, count: 0, group_by_p_hash: true };
+      const DefaultLimit = 500;
+      var searchInfo = album != null && album.search_info ? { ...album.search_info, expression: expression, offset: offset } : { expression: expression, limit: DefaultLimit, offset: offset, count: 0, group_by_p_hash: true };
       console.log('Using search info:', searchInfo);
       const res = await apiFetch(url, {
         method: 'POST',
@@ -241,6 +242,12 @@ const getApiUrl = async (apiUrl: string) => {
               path="/album"
               useOriginalImage={true}
             />
+          )}
+          {viewMode === 'image' && !selectedImage && (
+            <div>
+              <p>Image not found in current album.</p>
+              <button onClick={handleCloseImage}>Back to Gallery</button>
+            </div>
           )}
         </>
       ) : (

@@ -1,0 +1,43 @@
+# Production Environment
+# Usage: terraform apply -var-file="terraform.prod.tfvars"
+
+aws_region = "us-east-1"
+environment = "production"
+
+# Replace with your VPC ID
+vpc_id = "vpc-xxxxxxxx"
+
+# Replace with your subnet IDs (must be in different AZs for multi-AZ)
+db_subnet_ids = [
+  "subnet-xxxxxxxx",
+  "subnet-yyyyyyyy",
+  "subnet-zzzzzzzz"
+]
+
+# Replace with your application security group IDs
+app_security_group_ids = [
+  "sg-xxxxxxxx",
+  "sg-yyyyyyyy"
+]
+
+# Production should NOT be publicly accessible
+allowed_admin_ips = [
+  "VPN_IP/32",     # Example: corporate VPN
+  "BASTION_IP/32"  # Example: bastion host
+]
+
+# Database configuration
+postgres_version        = "15"
+db_instance_class       = "db.t3.small"
+db_allocated_storage    = 100
+db_iops                 = 3000
+db_max_connections      = 200
+
+# Backup - longer retention for production
+backup_retention_days = 30
+log_retention_days    = 30
+
+# High availability
+enable_multi_az           = true
+enable_deletion_protection = true
+publicly_accessible       = false

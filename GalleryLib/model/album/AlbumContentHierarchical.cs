@@ -19,7 +19,7 @@ public record AlbumContentHierarchical
     public string ImageSha256 { get; set; } = string.Empty;  //SHA-256 hash of 400px thumbnail for duplicate detection
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset ItemTimestampUtc { get; set; }
-    public ImageMetadata? ImageExif { get; set; }  
+    public ImageMetadata? ImageMetadata { get; set; }  
     public VideoMetadata? VideoMetadata { get; set; }
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
@@ -40,9 +40,9 @@ public record AlbumContentHierarchical
             ImageSha256 = reader.IsDBNull(reader.GetOrdinal("image_sha256")) ? string.Empty : reader.GetString(reader.GetOrdinal("image_sha256")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
             ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc")),
-            ImageExif = reader.IsDBNull(reader.GetOrdinal("image_exif")) 
+            ImageMetadata = reader.IsDBNull(reader.GetOrdinal("image_metadata")) 
                                         ? null 
-                                        : JsonSerializer.Deserialize<ImageMetadata>(reader.GetString(reader.GetOrdinal("image_exif")), options),
+                                        : JsonSerializer.Deserialize<ImageMetadata>(reader.GetString(reader.GetOrdinal("image_metadata")), options),
             VideoMetadata = reader.IsDBNull(reader.GetOrdinal("video_metadata")) 
                                         ? null 
                                         : JsonSerializer.Deserialize<VideoMetadata>(reader.GetString(reader.GetOrdinal("video_metadata")), options)

@@ -1,5 +1,5 @@
 ---- PostgreSQL database schema for gmpictures --------------------------------
-
+--Create Database ecogallery; 
 
 -- Enable once per database the pg_trgm extension for trigram indexing and searching
 -- basically enables col ILIKE ANY(ARRAY[...]) to be fast by working against an index on col rather than table scan
@@ -31,7 +31,6 @@ ADD
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_album_album_name
 ON public.album (album_name);
-
 
 ------------------------------------------------------------------------------
 ----------------- public.virtual_album -----------------------------------------------
@@ -134,13 +133,13 @@ CREATE INDEX IF NOT EXISTS idx_album_image_image_sha256 ON public.album_image (i
 
 
 ------------------------------------------------------------------------------
------------------ public.image_exif ------------------------------------------  
+----------------- public.image_metadata ------------------------------------------  
 ------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS public.image_exif;
+DROP TABLE IF EXISTS public.image_metadata;
 
 CREATE TABLE
-  public.image_exif (
+  public.image_metadata (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
     album_image_id bigint NOT NULL,
     camera character varying(100) NULL,
@@ -173,21 +172,22 @@ CREATE TABLE
     file_size_bytes bigint NULL,
     image_width integer NULL,
     image_height integer NULL,
+    orientation integer NULL,
     last_updated_utc timestamp with time zone NOT NULL      --when the record was last updated
   );
 
 ALTER TABLE
-  public.image_exif
+  public.image_metadata
 ADD
-  CONSTRAINT image_exif_pkey PRIMARY KEY (id);
+  CONSTRAINT image_metadata_pkey PRIMARY KEY (id);
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_image_exif_album_image_id
-ON public.image_exif (album_image_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_image_metadata_album_image_id
+ON public.image_metadata (album_image_id);
 
 ALTER TABLE
-  public.image_exif
+  public.image_metadata
 ADD
-  CONSTRAINT fk_image_exif_album_image
+  CONSTRAINT fk_image_metadata_album_image
   FOREIGN KEY (album_image_id)
   REFERENCES public.album_image (id)
   ON DELETE CASCADE;
@@ -222,6 +222,7 @@ CREATE TABLE
     format_name character varying(150) NULL,     -- e.g., "mov,mp4,m4a,3gp,3g2,mj2"
     software character varying(255) NULL,        -- Format long name or encoder
     camera character varying(150) NULL,          -- Camera make and model
+    rotation integer NULL,                       -- Rotation in degrees (0, 90, 180, 270)  
     last_updated_utc timestamp with time zone NOT NULL  -- when the record was last updated
   );
 
@@ -245,13 +246,13 @@ ADD
 
 
 ------------------------------------------------------------------------------
------------------ public.user ------------------------------------------------  
+----------------- public.users------------------------------------------------  
 ------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS public.user;
+DROP TABLE IF EXISTS public.users;
 
 CREATE TABLE
-  public.user (
+  public.users (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
     username character varying(100) NOT NULL,
     email character varying(255) NOT NULL,
@@ -264,25 +265,24 @@ CREATE TABLE
   );
 
 ALTER TABLE
-  public.user
+  public.users
 ADD
-  CONSTRAINT user_pkey PRIMARY KEY (id);
+  CONSTRAINT users_pkey PRIMARY KEY (id);
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_user_username
-ON public.user (username);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_username
+ON public.users (username);
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_user_email
-ON public.user (email);
-
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email
+ON public.users (email);
 
 ------------------------------------------------------------------------------
------------------ public.session ---------------------------------------------  
+----------------- public.sessions ---------------------------------------------  
 ------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS public.session;
+DROP TABLE IF EXISTS public.sessions;
 
 CREATE TABLE
-  public.session (
+  public.sessions (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
     session_token character varying(255) NOT NULL,
     user_id bigint NOT NULL,
@@ -294,42 +294,41 @@ CREATE TABLE
   );
 
 ALTER TABLE
-  public.session
+  public.sessions
 ADD
-  CONSTRAINT session_pkey PRIMARY KEY (id);
+  CONSTRAINT sessions_pkey PRIMARY KEY (id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_session_session_token
-ON public.session (session_token);
+ON public.sessions (session_token);
 
 CREATE INDEX IF NOT EXISTS idx_session_user_id
-ON public.session (user_id);
+ON public.sessions (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_session_expires_utc
-ON public.session (expires_utc);
+ON public.sessions (expires_utc);
 
 ALTER TABLE
-  public.session
+  public.sessions 
 ADD
   CONSTRAINT fk_session_user
   FOREIGN KEY (user_id)
-  REFERENCES public.user (id)
+  REFERENCES public.users (id)
   ON DELETE CASCADE;
 
 
 
 ------------------------------------------------------------------------------
------------------ public.user_token --------------------------------  
+----------------- public.user_tokens -----------------------------------------
 ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS public.user_token;
+DROP TABLE IF EXISTS public.user_tokens;
 
-CREATE TABLE public.user_token (
+CREATE TABLE public.user_tokens (
     id SERIAL PRIMARY KEY,
-    user_id BIGINT NULL REFERENCES public.user(id),
+    user_id BIGINT NULL REFERENCES public.users(id),
     token_type VARCHAR(50) NOT NULL DEFAULT 'password_reset',  -- e.g., 'password_reset', 'user_registration'
     token VARCHAR(128) NOT NULL UNIQUE,
     created_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW(),
     expires_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW() + INTERVAL '1 hour',
     used BOOLEAN NOT NULL DEFAULT FALSE
 );
-CREATE INDEX idx_user_token_token ON public.user_token(token);
-
+CREATE INDEX idx_user_tokens_token ON public.user_tokens(token);

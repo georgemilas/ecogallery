@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AlbumItemHierarchy } from './AlbumHierarchyProps';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
 
 
 interface DraggableBannerProps {
@@ -86,7 +87,7 @@ export function DraggableBanner({ album, isEditMode, onEditModeChange, onPositio
       onMouseDown={isEditMode ? handleMouseDown : undefined}
       style={{ cursor: isEditMode ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
     >
-      <img
+      <AuthenticatedImage
         ref={imgRef}
         src={album.image_hd_path}
         alt={album.album_name()}

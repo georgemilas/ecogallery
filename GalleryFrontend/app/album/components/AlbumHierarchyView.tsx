@@ -6,6 +6,7 @@ import { AlbumHierarchyProps, ImageItemContent } from './AlbumHierarchyProps';
 import { DraggableBanner } from './DraggableBanner';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { apiFetch } from '@/app/utils/apiFetch';
+import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
 
 
 export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
@@ -259,7 +260,7 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
         {(props.album.albums).map(r => (
           <li className='albums-item' key={r.id}>
             <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.id);}}>
-              <img src={r.thumbnail_path} alt={props.album.get_name(r.name)} />
+              <AuthenticatedImage src={r.thumbnail_path} alt={props.album.get_name(r.name)} />
               <span className="albums-item-label">{props.album.get_name(r.name)}</span>
               <svg className="albums-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M3 6C3 4.9 3.9 4 5 4H9L11 6H19C20.1 6 21 6.9 21 8V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V6Z"  fill="black" stroke='white'/>                
@@ -294,10 +295,13 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
           </div>
         )}
         <ul className="gallery">
-        {(props.album.images).map(r => (
-        <li className="gallery-item" key={r.id} data-image-id={r.id} data-image-name={r.name}> 
+        {(props.album.images).map(r => {
+          const width = r.is_movie ? r.video_metadata?.video_width ?? null : r.image_metadata?.image_width ?? null;
+          const height = r.is_movie ? r.video_metadata?.video_height ?? null : r.image_metadata?.image_height ?? null;
+          return (
+        <li className="gallery-item" key={r.id} data-image-id={r.id} data-image-name={r.name} data-image-width={width ?? 0} data-image-height={height ?? 0}> 
             <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); props.onImageClick(r as ImageItemContent);}}>
-                <img src={r.thumbnail_path} alt={r.name} />
+                <AuthenticatedImage src={r.thumbnail_path} alt={r.name} />
                 {r.is_movie && (
                   <svg className="gallery-item-video-icon" viewBox="0 0 24 24" fill="none">
                     <path d="M8 5v14l11-7L8 5z" fill="currentColor"/>
@@ -307,7 +311,8 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
                 {r.description && <span className="gallery-item-label">{r.description}</span>}
             </a>
         </li>
-        ))}
+          );
+        })}
       </ul>
       </div>
     </>

@@ -16,7 +16,7 @@ RETURNS TABLE (
     image_sha256 VARCHAR,
     last_updated_utc TIMESTAMP WITH TIME ZONE,
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
-    image_exif JSON,
+    image_metadata JSON,
     video_metadata JSON
 ) AS $$
 SELECT DISTINCT ON (COALESCE(exif.date_taken, vm.date_taken, ai.image_timestamp_utc), COALESCE(ai.image_sha256, ai.image_path))
@@ -33,10 +33,10 @@ SELECT DISTINCT ON (COALESCE(exif.date_taken, vm.date_taken, ai.image_timestamp_
     ai.image_sha256 AS image_sha256,
     ai.last_updated_utc,
     ai.image_timestamp_utc AS item_timestamp_utc,
-    row_to_json(exif) AS image_exif,
+    row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata
 FROM album_image ai
-LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
+LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
 ORDER BY COALESCE(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) desc, COALESCE(ai.image_sha256, ai.image_path) asc  
 LIMIT p_count

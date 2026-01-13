@@ -1,0 +1,40 @@
+# Development Environment
+# Usage: terraform apply -var-file="terraform.dev.tfvars"
+
+aws_region = "us-east-1"
+environment = "dev"
+
+# Replace with your VPC ID
+vpc_id = "vpc-xxxxxxxx"
+
+# Replace with your subnet IDs (at least 2 in different AZs)
+db_subnet_ids = [
+  "subnet-xxxxxxxx",
+  "subnet-yyyyyyyy"
+]
+
+# Replace with your application security group IDs
+app_security_group_ids = [
+  "sg-xxxxxxxx"
+]
+
+# Allow admin access from your IP (CIDR notation)
+allowed_admin_ips = [
+  "YOUR_IP/32"  # Example: "203.0.113.0/32"
+]
+
+# Database configuration
+postgres_version        = "15"
+db_instance_class       = "db.t3.micro"
+db_allocated_storage    = 20
+db_iops                 = 3000
+db_max_connections      = 100
+
+# Backup
+backup_retention_days = 7
+log_retention_days    = 7
+
+# High availability
+enable_multi_az           = false
+enable_deletion_protection = false
+publicly_accessible       = true

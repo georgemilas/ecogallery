@@ -31,7 +31,12 @@ public class SessionAuthMiddleware
         }
 
         // Skip user authentication for auth endpoints but still require valid application bearer token
-        if (context.Request.Path.StartsWithSegments("/api/v1/auth"))
+        var pathsToSkip = new[]
+        {
+            "/api/v1/auth",                 //login, logout, register, validate-picture etc.
+            "/api/v1/pictures/_thumbnails"  //thumbnails are accessible without user authentication
+        };
+        if (pathsToSkip.Any(path => context.Request.Path.StartsWithSegments(path)))
         {
             await _next(context);
             return;

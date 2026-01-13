@@ -62,7 +62,7 @@ export function ImageZoomAndTouchNavigation(
       window.matchMedia && window.matchMedia('(pointer: coarse)').matches
     );
   }
-  const isTouchDevice = false; //supportsNativeTouchZoom();
+  const isTouchDevice = useMemo(() => supportsNativeTouchZoom(), []);
 
   // Reset zoom when image changes
   React.useEffect(() => {

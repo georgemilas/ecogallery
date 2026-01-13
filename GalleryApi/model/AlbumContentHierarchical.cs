@@ -38,7 +38,7 @@ public record ImageItemContent: ItemContent
     public string ImageUHDPath { get; set; } = string.Empty;     
     public string ImageOriginalPath { get; set; } = string.Empty;     
     public bool IsMovie { get; set; }
-    public ImageMetadata? ImageExif { get; set; }    
+    public ImageMetadata? ImageMetadata { get; set; }    
     public VideoMetadata? VideoMetadata { get; set; }
 }
 

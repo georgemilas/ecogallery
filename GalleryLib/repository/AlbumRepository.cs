@@ -202,10 +202,10 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
                     ai.image_sha256 AS image_sha256,
                     ai.last_updated_utc,
                     ai.image_timestamp_utc AS item_timestamp_utc,
-                    row_to_json(exif) AS image_exif,
+                    row_to_json(exif) AS image_metadata,
                     row_to_json(vm) AS video_metadata
                 FROM album_image ai
-                LEFT JOIN image_exif exif ON ai.id = exif.album_image_id
+                LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
                 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
                 WHERE {where}
                 {orderby}
@@ -250,7 +250,7 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
                         COALESCE(ai.image_sha256, cai.image_sha256, '') AS image_sha256,
                         a.last_updated_utc,
                         a.album_timestamp_utc AS item_timestamp_utc,
-                        NULL::json AS image_exif,
+                        NULL::json AS image_metadata,
                         NULL::json AS video_metadata  
                     FROM album AS a
                     LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album

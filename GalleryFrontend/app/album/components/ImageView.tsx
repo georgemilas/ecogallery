@@ -1,7 +1,9 @@
 import React from 'react';
 import { AlbumItemHierarchy, ImageItemContent } from './AlbumHierarchyProps';
-import { ExifPanel } from './Exif';
+import { MetadataPanel } from './Exif';
 import { ImageZoomAndTouchNavigation } from './ImageZoomAndTouchNavigation';
+import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
+import { AuthenticatedVideo } from '@/app/utils/AuthenticatedVideo';
 
 // function supportsNativeTouchZoom() {
 //   // if (typeof navigator === 'undefined') return false;
@@ -206,9 +208,9 @@ export function ImageView(props: ImageViewProps): JSX.Element {
           </div>
         )}
 
-        {showExif && (props.image.image_exif || props.image.video_metadata) && (
-          <ExifPanel 
-            exif={props.image.image_exif} 
+        {showExif && (props.image.image_metadata || props.image.video_metadata) && (
+          <MetadataPanel 
+            exif={props.image.image_metadata} 
             videoMetadata={props.image.video_metadata}
             album={props.album} 
             image={props.image} 
@@ -234,11 +236,11 @@ export function ImageView(props: ImageViewProps): JSX.Element {
                 })}
               </nav>
             {props.image.is_movie 
-                ? (<video ref={videoRef} src={props.image.image_original_path}
+                ? (<AuthenticatedVideo ref={videoRef} src={props.image.image_original_path}
                    poster={props.image.image_uhd_path || props.image.thumbnail_path}  
                    controls onContextMenu={(e) => e.preventDefault()} />) 
                 : (
-                  <img ref={imageRef} src={props.useOriginalImage ? props.image.image_original_path : props.image.image_uhd_path} alt={props.image.name} onContextMenu={(e) => e.preventDefault()}
+                  <AuthenticatedImage ref={imageRef} src={props.useOriginalImage ? props.image.image_original_path : props.image.image_uhd_path} alt={props.image.name} onContextMenu={(e) => e.preventDefault()}
                     style={{
                       transform: `translate(${zoom.state.position.x}px, ${zoom.state.position.y}px) scale(${zoom.state.zoom})`,
                       transformOrigin: '0 0',

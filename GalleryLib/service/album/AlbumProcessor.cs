@@ -229,16 +229,13 @@ public class AlbumProcessor: EmptyProcessor
 
     public override async Task OnScanStart()
     {
-        //only keep repositories open during the scan
-        await imageRepository.DisposeAsync(); 
-        await albumRepository.DisposeAsync(); 
-        imageRepository = new AlbumImageRepository(_configuration, _dbConfig);
-        albumRepository = new AlbumRepository(_configuration, _dbConfig);        
+        // Don't dispose repositories - they may be in use by file watchers
+        // Just reinitialize if needed
     }
+    
     public override async Task OnScanEnd()
     {
-        await imageRepository.DisposeAsync(); 
-        await albumRepository.DisposeAsync();
+        // Repository connections use pooling, no disposing is needed
     }         
     
 }

@@ -91,6 +91,14 @@ public class AuthController : ControllerBase
         return Ok(new { success = true, user});
     }
 
+    [HttpGet("validate-picture")]
+    public IActionResult ValidatePictureAccess()
+    {
+        // Middleware has authenticated the API-Key and skipped user auth for this request
+        // If we reach here, the user is authorized
+        return Ok();
+    }
+
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {

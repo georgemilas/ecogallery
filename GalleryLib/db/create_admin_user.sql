@@ -2,11 +2,11 @@
 -- Password: admin123 (SHA-256 hash)
 -- You should change this password after first login!
 
-INSERT INTO public.user (username, email, password_hash, full_name, is_admin, created_utc)
+INSERT INTO public.users (username, email, password_hash, full_name, is_admin, created_utc)
 VALUES (
   'admin',
   'gmilas@gmail.com',
-  'JAvlGPq9JyTdtvBO6x2llnRI1+gxwIyPqCKAn3THIKk=',   -- This is base64 of SHA256('admin123')
+  'JAvlGPq9JyTdtvBO6x2llnRI1+gxwIyPqCKAn3THIKk=',   -- This is base64 of SHA256('admin123')  
   'Administrator',  
   true,
   NOW()

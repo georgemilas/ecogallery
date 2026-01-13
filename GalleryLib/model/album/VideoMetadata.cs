@@ -28,6 +28,7 @@ public class VideoMetadata
     public string? FormatName { get; set; }
     public string? Software { get; set; }
     public string? Camera { get; set; }
+    public int? Rotation { get; set; }
     public DateTimeOffset LastUpdatedUtc { get; set; }     //record last update time UTC
 
 
@@ -56,6 +57,7 @@ public class VideoMetadata
             FormatName = reader.IsDBNull(reader.GetOrdinal("format_name")) ? null :  reader.GetString(reader.GetOrdinal("format_name")),
             Software =  reader.IsDBNull(  reader.GetOrdinal("software")) ? null : reader.GetString(reader.GetOrdinal("software")),
             Camera = reader.IsDBNull(reader.GetOrdinal("camera")) ? null : reader.GetString(reader.GetOrdinal("camera")),
+            Rotation = reader.IsDBNull(reader.GetOrdinal("rotation")) ? null : reader.GetInt32(reader.GetOrdinal("rotation")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc"))    
         };  
     }    

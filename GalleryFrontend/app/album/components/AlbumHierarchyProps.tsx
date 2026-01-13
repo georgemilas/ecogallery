@@ -1,6 +1,6 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-export interface ImageExif {
+export interface ImageMetadata {
   id: number;
   album_image_id: number;
   camera: string | null;
@@ -33,6 +33,7 @@ export interface ImageExif {
   file_size_bytes: number | null;
   image_width: number | null;
   image_height: number | null;
+  orientation: number | null;
   last_updated_utc: string;
 }
 
@@ -58,6 +59,7 @@ export interface VideoMetadata {
   format_name: string | null;
   software: string | null;
   camera: string | null;
+  rotation: number | null;
   last_updated_utc: string;
 }
 
@@ -83,7 +85,7 @@ export interface ImageItemContent extends ItemContent {
   image_hd_path: string;
   image_uhd_path: string;
   image_original_path: string;
-  image_exif: ImageExif | null;
+  image_metadata: ImageMetadata | null;
   video_metadata: VideoMetadata | null;
 }
 

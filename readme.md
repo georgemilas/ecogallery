@@ -68,6 +68,7 @@ The solution folder consists of several projects:
     * Syncronize pictures folder with the database 
         ```powershell
         cd ecogallery
+        #$env:DOTNET_ENVIRONMENT = "Development"   #for DEV instead of Production
         dotnet run --project GalleryService -- db -f E:\TotulAici\TutuLaptop\pictures    
         ```
     * Syncronize pictures folder with the thumbnails folder  

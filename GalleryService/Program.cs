@@ -11,10 +11,16 @@ using GalleryLib.model.configuration;
 using GalleryLib.service.thumbnail;
 using GalleryLib.service.album;
 
+var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+var basePath = AppContext.BaseDirectory;
 
 var configuration = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)   //must run from solution folder 
+    //.SetBasePath(Directory.GetCurrentDirectory())  // use current directory when running in development
+    .SetBasePath(basePath)   // use assembly base path when running as published app
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+    .AddUserSecrets<Program>(optional: true)
+    .AddEnvironmentVariables()
     .Build();
 
 // Setup Dependency injection to enable future testability  
@@ -25,10 +31,16 @@ var serviceProvider = new ServiceCollection()
 
 var picturesConfig = serviceProvider.GetRequiredService<IOptions<PicturesDataConfiguration>>().Value;
 var dbConfig = serviceProvider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
-if (string.IsNullOrWhiteSpace(picturesConfig.Folder))
-{
-    throw new InvalidOperationException("PicturesData:Folder is required in appsettings.json");
-}
+// Console.WriteLine($"Base path: {basePath}");
+// Console.WriteLine($"Environment: {environment}");
+// Console.WriteLine($"appsettings.json exists: {File.Exists(Path.Combine(basePath, "appsettings.json"))}");
+// Console.WriteLine($"appsettings.{environment}.json exists: {File.Exists(Path.Combine(basePath, $"appsettings.{environment}.json"))}");
+// Console.WriteLine($"Database:Username from config: '{configuration["Database:Username"]}'");
+// Console.WriteLine($"Database:Password from config: '{configuration["Database:Password"]}'");
+// Console.WriteLine($"Database:Database from config: '{configuration["Database:Database"]}'");
+
+// Console.WriteLine("Press Enter to continue...");
+// Console.ReadLine(); // Press Enter to continue...
 
 var rootCommand = new RootCommand("Pictures background services console application");
 var folderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
