@@ -41,6 +41,16 @@ public class SessionAuthMiddleware
             await _next(context);
             return;
         }
+        //for videos selected for public mode (aka valbum) since we don't have HD thumbnails, we allow access to original 
+        if (context.Request.Headers["Referer"].ToString().Contains("/valbum?")  
+            && context.Request.Path.StartsWithSegments("/api/v1/pictures")
+            && !context.Request.Path.StartsWithSegments("/api/v1/pictures/_thumbnails")            
+           )
+        {
+            Console.WriteLine($"Video passing through: {context.Request.Path}, Referer: {context.Request.Headers["Referer"]}"); 
+            await _next(context);
+            return;
+        }
 
         var dbConfig = _configuration.GetSection(DatabaseConfiguration.SectionName).Get<DatabaseConfiguration>()
                     ?? throw new InvalidOperationException("Database configuration not found");

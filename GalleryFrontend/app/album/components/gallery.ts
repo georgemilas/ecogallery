@@ -30,17 +30,9 @@ export function justifyGallery(gallerySelector: string, targetHeight: number, on
   // Check if we have metadata dimensions for all images
   const hasAllMetadata = imageData.every(data => data.width > 0 && data.height > 0);
 
-  if (hasAllMetadata) {
-    // Fast path: use metadata dimensions immediately
-    console.log('Using metadata dimensions for gallery layout');
-    layoutGalleryWithMetadata(gallery, imageData, targetHeight);
-    onComplete?.();
-  } else {
-    // Fallback: wait for images to load and use their natural dimensions
-    console.log('Waiting for images to load for gallery layout');
+  function allImagesLoaded(callback: (images: HTMLImageElement[]) => void) {
     const images = imageData.map(d => d.img).filter((img): img is HTMLImageElement => img !== null);
-    
-    Promise.all(
+    Promise.all(      
       images.map((img) => {
         // For images that are already complete and have natural dimensions, resolve immediately
         if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
@@ -53,9 +45,28 @@ export function justifyGallery(gallerySelector: string, targetHeight: number, on
         });
       })
     ).then(() => {
-      layoutGalleryWithLoadedImages(gallery, images, targetHeight);
+      callback(images);
+    });
+  };
+
+
+  if (hasAllMetadata) {
+    // Fast path: use metadata dimensions immediately
+    console.log('Using metadata dimensions for gallery layout');
+    layoutGalleryWithMetadata(gallery, imageData, targetHeight);
+    allImagesLoaded((images: HTMLImageElement[]) => {
+      console.log('Metadata - images loaded, done');
       onComplete?.();
     });
+
+  } else {
+    // Fallback: wait for images to load and use their natural dimensions
+    console.log('Waiting for images to load for gallery layout');
+    allImagesLoaded((images: HTMLImageElement[]) => {
+      console.log('Images loaded - finalizing layout');
+      layoutGalleryWithLoadedImages(gallery, images, targetHeight);      
+      onComplete?.();
+    });    
   }
 }
 
@@ -67,49 +78,64 @@ interface ImageData {
 }
 
 function layoutGalleryWithMetadata(gallery: HTMLElement, imageData: ImageData[], targetHeight: number): void {
-  // Get computed styles to account for padding and gap
+  const validData = imageData.filter(d => d.width > 0 && d.height > 0 && d.img);
+  layoutGallery(
+    gallery,
+    validData.map(d => d.img!),
+    validData.map(d => d.width / d.height),
+    targetHeight
+  );
+}
+
+// Fallback function that uses loaded image dimensions
+function layoutGalleryWithLoadedImages(gallery: HTMLElement, images: HTMLImageElement[], targetHeight: number): void {
+  layoutGallery(
+    gallery,
+    images,
+    images.map(img => img.naturalWidth / img.naturalHeight),
+    targetHeight
+  );
+}
+
+// Shared gallery layout logic
+function layoutGallery(gallery: HTMLElement, images: HTMLImageElement[], ratios: number[], targetHeight: number): void {
   const styles = getComputedStyle(gallery);
   const paddingLeft = parseFloat(styles.paddingLeft) || 0;
   const paddingRight = parseFloat(styles.paddingRight) || 0;
   const gap = parseFloat(styles.gap) || 0;
-
-  // Actual usable width
   const containerWidth = gallery.clientWidth - paddingLeft - paddingRight;
   
-  let row: ImageData[] = [];
+  let rowImages: HTMLImageElement[] = [];
+  let rowRatios: number[] = [];
   let rowWidth = 0;
 
-  imageData.forEach((data, index) => {
-    // Skip if we don't have valid dimensions
-    if (!data.width || !data.height || !data.img) {
-      return;
-    }
-
-    const ratio = data.width / data.height;
+  images.forEach((img, index) => {
+    const ratio = ratios[index];
     const imgWidth = targetHeight * ratio;
 
-    // Gaps would be (row.length) gaps if we add this image
-    const gapsWidth = row.length * gap;
+    const gapsWidth = rowImages.length * gap;
     const potentialRowWidth = rowWidth + imgWidth + gapsWidth;
 
-    if (potentialRowWidth > containerWidth && row.length > 0) {
-      justifyRowWithMetadata(row, containerWidth, gap, false, targetHeight);
-      row = [data];
+    if (potentialRowWidth > containerWidth && rowImages.length > 0) {
+      justifyRow(rowImages, rowRatios, containerWidth, gap, false, targetHeight);
+      rowImages = [img];
+      rowRatios = [ratio];
       rowWidth = imgWidth;
     } else {
-      row.push(data);
+      rowImages.push(img);
+      rowRatios.push(ratio);
       rowWidth += imgWidth;
     }
 
-    if (index === imageData.length - 1 && row.length > 0) {
-      justifyRowWithMetadata(row, containerWidth, gap, true, targetHeight);
+    if (index === images.length - 1 && rowImages.length > 0) {
+      justifyRow(rowImages, rowRatios, containerWidth, gap, true, targetHeight);
     }
   });
 }
 
-function justifyRowWithMetadata(imageDataList: ImageData[], containerWidth: number, gap: number, isLastRow: boolean, targetHeight: number): void {
-  const ratios = imageDataList.map((data) => data.width / data.height);
-  const totalGaps = (imageDataList.length - 1) * gap;
+// Shared row justification logic
+function justifyRow(images: HTMLImageElement[], ratios: number[], containerWidth: number, gap: number, isLastRow: boolean, targetHeight: number): void {
+  const totalGaps = (images.length - 1) * gap;
   const availableWidth = containerWidth - totalGaps;
 
   const totalRatio = ratios.reduce((sum, r) => sum + r, 0);
@@ -129,71 +155,9 @@ function justifyRowWithMetadata(imageDataList: ImageData[], containerWidth: numb
   const totalCalculatedWidth = flooredWidths.reduce((sum, w) => sum + w, 0);
   const remainder = isJustified ? Math.round(availableWidth - totalCalculatedWidth) : 0;
 
-  imageDataList.forEach((data, i) => {
-    if (!data.img) return;
-    
-    const isLast = i === imageDataList.length - 1;
-    const width = isLast ? flooredWidths[i] + remainder - 1 : flooredWidths[i]; //-1 to make sure it fits, just in case
-
-    data.img.style.height = `${Math.floor(adjustedHeight)}px`;
-    data.img.style.width = `${width}px`;
-  });
-}
-
-// Fallback function that uses loaded image dimensions
-function layoutGalleryWithLoadedImages(gallery: HTMLElement, images: HTMLImageElement[], targetHeight: number): void {
-  const styles = getComputedStyle(gallery);
-  const paddingLeft = parseFloat(styles.paddingLeft) || 0;
-  const paddingRight = parseFloat(styles.paddingRight) || 0;
-  const gap = parseFloat(styles.gap) || 0;
-  const containerWidth = gallery.clientWidth - paddingLeft - paddingRight;
-  
-  let row: HTMLImageElement[] = [];
-  let rowWidth = 0;
-
-  images.forEach((img, index) => {
-    const ratio = img.naturalWidth / img.naturalHeight;
-    const imgWidth = targetHeight * ratio;
-
-    const gapsWidth = row.length * gap;
-    const potentialRowWidth = rowWidth + imgWidth + gapsWidth;
-
-    if (potentialRowWidth > containerWidth && row.length > 0) {
-      justifyRowWithLoadedImages(row, containerWidth, gap, false, targetHeight);
-      row = [img];
-      rowWidth = imgWidth;
-    } else {
-      row.push(img);
-      rowWidth += imgWidth;
-    }
-
-    if (index === images.length - 1 && row.length > 0) {
-      justifyRowWithLoadedImages(row, containerWidth, gap, true, targetHeight);
-    }
-  });
-}
-
-function justifyRowWithLoadedImages(images: HTMLImageElement[], containerWidth: number, gap: number, isLastRow: boolean, targetHeight: number): void {
-  const ratios = images.map((img) => img.naturalWidth / img.naturalHeight);
-  const totalGaps = (images.length - 1) * gap;
-  const availableWidth = containerWidth - totalGaps;
-
-  const totalRatio = ratios.reduce((sum, r) => sum + r, 0);
-  let adjustedHeight = availableWidth / totalRatio;
-
-  const isJustified = !(isLastRow && adjustedHeight > targetHeight);
-  if (!isJustified) {
-    adjustedHeight = targetHeight;
-  }
-
-  const widths = ratios.map((r) => adjustedHeight * r);
-  const flooredWidths = widths.map((w) => Math.floor(w));
-  const totalCalculatedWidth = flooredWidths.reduce((sum, w) => sum + w, 0);
-  const remainder = isJustified ? Math.round(availableWidth - totalCalculatedWidth) : 0;
-
   images.forEach((img, i) => {
     const isLast = i === images.length - 1;
-    const width = isLast ? flooredWidths[i] + remainder - 1 : flooredWidths[i];
+    const width = isLast ? flooredWidths[i] + remainder - 1 : flooredWidths[i]; //-1 to make sure it fits, just in case
 
     img.style.height = `${Math.floor(adjustedHeight)}px`;
     img.style.width = `${width}px`;
