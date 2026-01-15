@@ -22,10 +22,6 @@ public class AlbumProcessor: EmptyProcessor
     protected AlbumImageRepository imageRepository;
     protected AlbumRepository albumRepository;
 
-    public override DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
-    protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
-
-
     public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)
     {
         IFileProcessor processor = new AlbumProcessor(configuration, dbConfig);
@@ -114,19 +110,6 @@ public class AlbumProcessor: EmptyProcessor
         }
         return deletedCount;    
     }
-
-    public override bool ShouldSkipFile(string filePath)
-    {
-        string folder = Path.GetDirectoryName(filePath) ?? string.Empty;
-        string fileName = Path.GetFileName(filePath);
-        return filePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase) ||
-                _configuration.SkipSuffix.Any(suffix => fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ||
-                                                        folder.Contains(suffix, StringComparison.OrdinalIgnoreCase)) ||
-                _configuration.SkipPrefix.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
-                                                        folder.Contains(prefix, StringComparison.OrdinalIgnoreCase)) ||
-                _configuration.SkipContains.Any(skipPart => filePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
-    }
-
     
     public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
     {

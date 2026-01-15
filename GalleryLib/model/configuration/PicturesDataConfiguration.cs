@@ -31,8 +31,15 @@ public class PicturesDataConfiguration
             return _extensions;
         }
     }
+
+    /// <summary>
+    /// Process files from the pictures folder (picturesPath) and create thumbnails in picturesPath/_thumbnails/{height} folder
+    /// </summary>    
     public DirectoryInfo RootFolder => new DirectoryInfo(Folder);
 
+    /// <summary>
+    /// Create thumbnails in picturesPath/_thumbnails/{height} folder
+    /// </summary>    
     public string ThumbnailsBase { get { return Path.Combine(RootFolder.FullName, "_thumbnails"); } }
     public  string ThumbDir(int thumbHeight) {  return Path.Combine(ThumbnailsBase, thumbHeight.ToString());  }
 

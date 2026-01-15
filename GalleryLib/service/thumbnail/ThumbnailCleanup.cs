@@ -24,7 +24,6 @@ public class ThumbnailCleanup: EmptyProcessor
     /// Process files from the actual thumbnails directory in the picturesPath/_thumbnails/{height} folder
     /// </summary>
     public override DirectoryInfo RootFolder { get { return new DirectoryInfo(thumbDir); } }
-    protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
     protected virtual string thumbDir { get { return _configuration.ThumbDir(_height); } }    
     
     public static FilePeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, int height = 400, int degreeOfParallelism = -1)

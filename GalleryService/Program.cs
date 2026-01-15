@@ -10,9 +10,13 @@ using System.Threading;
 using GalleryLib.model.configuration;
 using GalleryLib.service.thumbnail;
 using GalleryLib.service.album;
+using GalleryLib.service.fileProcessor;
+using GalleryLib.service.database;
 
 var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
 var basePath = AppContext.BaseDirectory;
+
+Console.WriteLine($"Running |{environment}| workload from {basePath} ");
 
 var configuration = new ConfigurationBuilder()
     //.SetBasePath(Directory.GetCurrentDirectory())  // use current directory when running in development
@@ -31,8 +35,6 @@ var serviceProvider = new ServiceCollection()
 
 var picturesConfig = serviceProvider.GetRequiredService<IOptions<PicturesDataConfiguration>>().Value;
 var dbConfig = serviceProvider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
-// Console.WriteLine($"Base path: {basePath}");
-// Console.WriteLine($"Environment: {environment}");
 // Console.WriteLine($"appsettings.json exists: {File.Exists(Path.Combine(basePath, "appsettings.json"))}");
 // Console.WriteLine($"appsettings.{environment}.json exists: {File.Exists(Path.Combine(basePath, $"appsettings.{environment}.json"))}");
 // Console.WriteLine($"Database:Username from config: '{configuration["Database:Username"]}'");
@@ -49,6 +51,7 @@ var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 40
 {
     AllowMultipleArgumentsPerToken = true
 };
+var databaseNameOption = new Option<string>(new[] {"--database", "-d"}, () => dbConfig.Database, "Database name to create");
 var heightOption = new Option<int>(new[] {"--height", "-h"}, () => 400, "Thumbnail height in pixels");
 var nonParallelOption = new Option<bool>(new[] {"--nonparallel", "-np"}, "Run thumbnail processing in non-parallel mode");
 var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Environment.ProcessorCount, "Degree of parallelism for thumbnail processing");
@@ -78,13 +81,11 @@ thumbCommand.SetHandler(async (string folder, int[] heights, bool nonParallel, i
         {
             if (nonParallel)
             {
-                if (heights.Length == 1) { services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessorNotParallel(picturesConfig, heights[0])); }  
-                else {services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessorNotParallel(picturesConfig, heights));}
+                services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessorNotParallel(picturesConfig, heights));
             }
             else
             {
-                if (heights.Length == 1) { services.AddSingleton<IHostedService>(sp => ThumbnailProcessor.CreateProcessor(picturesConfig, heights[0], parallelDegree)); }  
-                else {services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessor(picturesConfig, heights, parallelDegree));}                
+                services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessor(picturesConfig, heights, parallelDegree));
             }
         })
         .Build();
@@ -131,50 +132,19 @@ rootCommand.AddCommand(cleanupCommand);
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Command to run the album building background service and keep the app running
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-var albumCommand = new Command("album", "Run the album building processor as a background service");
-albumCommand.AddOption(folderOption);
-albumCommand.AddOption(nonParallelOption);
-albumCommand.AddOption(parallelDegreeOption);
-albumCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree) =>
-{
-    picturesConfig.Folder = folder;
-    using var cts = new CancellationTokenSource();
-    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
-
-    var host = Host.CreateDefaultBuilder()
-        .ConfigureServices(services =>
-        {
-            if (nonParallel)
-            {
-                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessorNotParallel(picturesConfig, dbConfig));
-            }
-            else
-            {
-                services.AddSingleton<IHostedService>(sp => AlbumProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree));
-            }            
-        })
-        .Build();
-
-    Console.WriteLine($"Starting album buiding processor on '{picturesConfig.Folder}'. Press Ctrl+C to stop.");
-    await host.RunAsync(cts.Token);
-}, folderOption, nonParallelOption, parallelDegreeOption);
-rootCommand.AddCommand(albumCommand);
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the album building background service along with image exif extraction functionality 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var imageExifCommand = new Command("db", "Run the db sync processor as a background service");
 imageExifCommand.AddOption(folderOption);
 imageExifCommand.AddOption(nonParallelOption);
 imageExifCommand.AddOption(parallelDegreeOption);
-imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree) =>
+imageExifCommand.AddOption(databaseNameOption);
+imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree, string databaseName) =>
 {
     picturesConfig.Folder = folder;
+    dbConfig.Database = databaseName;
     using var cts = new CancellationTokenSource();
-    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
+    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };        
 
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
@@ -190,9 +160,9 @@ imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallel
         })
         .Build();
 
-    Console.WriteLine($"Starting db sync processor on '{picturesConfig.Folder}'. Press Ctrl+C to stop.");
+    Console.WriteLine($"Starting db sync processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, nonParallelOption, parallelDegreeOption);
+}, folderOption, nonParallelOption, parallelDegreeOption, databaseNameOption);
 rootCommand.AddCommand(imageExifCommand);
 
 
@@ -203,7 +173,8 @@ rootCommand.AddCommand(imageExifCommand);
 var valbumCommand = new Command("valbum", "Load virtual albums from a YAML file");
 valbumCommand.AddOption(folderOption);
 valbumCommand.AddOption(yamlFileOption);
-valbumCommand.SetHandler(async (string folder, string? yamlFilePath) =>
+valbumCommand.AddOption(databaseNameOption);
+valbumCommand.SetHandler(async (string folder, string? yamlFilePath, string databaseName) =>
 {
     if (string.IsNullOrWhiteSpace(yamlFilePath) || !File.Exists(yamlFilePath))
     {
@@ -211,6 +182,7 @@ valbumCommand.SetHandler(async (string folder, string? yamlFilePath) =>
         return;
     }
     picturesConfig.Folder = folder;
+    dbConfig.Database = databaseName;
     using var cts = new CancellationTokenSource();
     Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
 
@@ -226,10 +198,78 @@ valbumCommand.SetHandler(async (string folder, string? yamlFilePath) =>
         })
         .Build();
 
-    Console.WriteLine($"Starting virtual album loader on '{yamlFilePath}'. Press Ctrl+C to stop.");
+    Console.WriteLine($"Starting virtual album loader on {dbConfig.Database}/'{yamlFilePath}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, yamlFileOption);
+}, folderOption, yamlFileOption, databaseNameOption);
 rootCommand.AddCommand(valbumCommand);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Command to run the db album building + metadata extraction + thumbnail building  
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var syncCommand = new Command("sync", "Run the sync processor (thumbnails and db)  as a background service");
+syncCommand.AddOption(folderOption);
+syncCommand.AddOption(nonParallelOption);
+syncCommand.AddOption(parallelDegreeOption);
+syncCommand.AddOption(databaseNameOption);
+syncCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree, string databaseName) =>
+{
+    picturesConfig.Folder = folder;
+    dbConfig.Database = databaseName;
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
+
+    var host = Host.CreateDefaultBuilder()
+        .ConfigureServices(services =>
+        {
+            //could add these as 2 separate services.AddSingleton() but because of the possible of console feadback overlap
+            //we are combining them into a single processor
+            var processors = new List<IFileProcessor> { 
+                new DbSyncProcessor(picturesConfig, dbConfig), 
+                new MultipleThumbnailsProcessor(picturesConfig, new[] { 400, 1440 })  //{ 400, 1080, 1440 }
+            };
+
+            if (nonParallel)
+            {
+                services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessorNotParallel(processors, picturesConfig));
+            }
+            else
+            {
+                services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(processors, picturesConfig, parallelDegree));
+            }            
+        })
+        .Build();
+
+    Console.WriteLine($"Starting sync processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
+    await host.RunAsync(cts.Token);
+}, folderOption, nonParallelOption, parallelDegreeOption, databaseNameOption);
+rootCommand.AddCommand(syncCommand);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Command to create database schema from SQL files
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var createDbCommand = new Command("create-db", "Create database schema from SQL files in GalleryLib/db folder");
+createDbCommand.AddOption(databaseNameOption);
+createDbCommand.SetHandler(async (string databaseName) =>
+{
+    dbConfig.Database = databaseName;
+    Console.WriteLine($"Starting database creation for '{dbConfig.Database}'. Press Ctrl+C to stop.");
+    var createDatabaseService = new CreateDatabaseService(dbConfig);
+    var success = await createDatabaseService.CreateDatabaseAsync(dbConfig.Database);
+    
+    if (success)
+    {
+        Console.WriteLine("Database creation completed successfully!");
+        Environment.Exit(0);
+    }
+    else
+    {
+        Console.WriteLine("Database creation failed!");
+        Environment.Exit(1);
+    }
+}, databaseNameOption);
+rootCommand.AddCommand(createDbCommand);
 
 
 

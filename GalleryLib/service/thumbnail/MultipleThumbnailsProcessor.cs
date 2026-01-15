@@ -20,11 +20,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
 
     private readonly int[] _heights;
     protected readonly object _setLock = new();
-    /// <summary>
-    /// Process files from the pictures folder (picturesPath) and create thumbnails in picturesPath/_thumbnails/{height} folder
-    /// </summary>
-    public override DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
-    protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
+    
     protected virtual string GetThumbnailPath(string sourceFilePath, int height)
     {
         return _configuration.GetThumbnailPath(sourceFilePath, height);
@@ -42,23 +38,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         IFileProcessor processor = new MultipleThumbnailsProcessor(configuration, heights);
         return new FileObserverServiceNotParallel(processor, intervalMinutes: 2);
     }
-
     
-    /// <summary>
-    /// skip files already in thumbnails directory and as dictated by configuration 
-    /// for example a folder named "skip_folderName" or "folderName_skip" or a file named "imageName_skip.jpg" or "skip_imageName.jpg"
-    /// </summary>    
-    public override bool ShouldSkipFile(string filePath)
-    {
-        string folder = Path.GetDirectoryName(filePath) ?? string.Empty;
-        string fileName = Path.GetFileName(filePath);
-        return filePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase) ||
-                _configuration.SkipSuffix.Any(suffix => fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ||
-                                                        folder.Contains(suffix, StringComparison.OrdinalIgnoreCase)) ||
-                _configuration.SkipPrefix.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
-                                                        folder.Contains(prefix, StringComparison.OrdinalIgnoreCase)) ||
-                _configuration.SkipContains.Any(skipPart => filePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
-    }
     public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
     {
         bool created = false;

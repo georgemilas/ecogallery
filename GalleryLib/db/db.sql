@@ -1,5 +1,4 @@
----- PostgreSQL database schema for gmpictures --------------------------------
---Create Database ecogallery; 
+---- PostgreSQL database schema for ecogallery --------------------------------
 
 -- Enable once per database the pg_trgm extension for trigram indexing and searching
 -- basically enables col ILIKE ANY(ARRAY[...]) to be fast by working against an index on col rather than table scan

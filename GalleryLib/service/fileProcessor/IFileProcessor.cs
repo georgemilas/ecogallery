@@ -1,5 +1,7 @@
 namespace GalleryLib.service.fileProcessor;
 
+
+
 public interface IFileProcessor
 {
     DirectoryInfo RootFolder { get; }

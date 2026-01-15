@@ -20,12 +20,25 @@ public class EmptyProcessor: IFileProcessor
 
     protected readonly PicturesDataConfiguration _configuration;
     private HashSet<string> _extensions;
-    public virtual DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
-    public virtual HashSet<string> Extensions { get { return _extensions; } }    
 
+    public virtual DirectoryInfo RootFolder { get { return _configuration.RootFolder; } }
+    public virtual HashSet<string> Extensions { get { return _extensions; } }        
+    protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
+
+    /// <summary>
+    /// skip files already in thumbnails directory and as dictated by configuration 
+    /// for example a folder named "skip_folderName" or "folderName_skip" or a file named "imageName_skip.jpg" or "skip_imageName.jpg"
+    /// </summary>    
     public virtual bool ShouldSkipFile(string filePath)
     {
-        return false;
+        string folder = Path.GetDirectoryName(filePath) ?? string.Empty;
+        string fileName = Path.GetFileName(filePath);
+        return filePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase) ||
+                _configuration.SkipSuffix.Any(suffix => fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ||
+                                                        folder.Contains(suffix, StringComparison.OrdinalIgnoreCase)) ||
+                _configuration.SkipPrefix.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
+                                                        folder.Contains(prefix, StringComparison.OrdinalIgnoreCase)) ||
+                _configuration.SkipContains.Any(skipPart => filePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
     }
 
     public virtual async Task<int> OnFileCreated(string thumbnailPath, bool logIfCreated = false)
