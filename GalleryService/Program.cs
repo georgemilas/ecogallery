@@ -52,7 +52,6 @@ var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 40
     AllowMultipleArgumentsPerToken = true
 };
 var databaseNameOption = new Option<string>(new[] {"--database", "-d"}, () => dbConfig.Database, "Database name to create");
-var nonParallelOption = new Option<bool>(new[] {"--nonparallel", "-np"}, "Run thumbnail processing in non-parallel mode");
 var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Environment.ProcessorCount, "Degree of parallelism for thumbnail processing");
 var isPlanOption = new Option<string>(new[] {"--plan", "-pl"}, () => "yes", "Run the process in plan mode only");
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,9 +66,8 @@ var isPlanOption = new Option<string>(new[] {"--plan", "-pl"}, () => "yes", "Run
 var thumbCommand = new Command("thumbnails", "Run the thumbnail building processor as a background service");
 thumbCommand.AddOption(folderOption);
 thumbCommand.AddOption(heightsOption);
-thumbCommand.AddOption(nonParallelOption);
 thumbCommand.AddOption(parallelDegreeOption);
-thumbCommand.SetHandler(async (string folder, int[] heights, bool nonParallel, int parallelDegree) =>
+thumbCommand.SetHandler(async (string folder, int[] heights, int parallelDegree) =>
 {
     picturesConfig.Folder = folder;
     using var cts = new CancellationTokenSource();
@@ -78,20 +76,13 @@ thumbCommand.SetHandler(async (string folder, int[] heights, bool nonParallel, i
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
-            if (nonParallel)
-            {
-                services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessorNotParallel(picturesConfig, heights));
-            }
-            else
-            {
-                services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessor(picturesConfig, heights, parallelDegree));
-            }
+            services.AddSingleton<IHostedService>(sp => MultipleThumbnailsProcessor.CreateProcessor(picturesConfig, heights, parallelDegree));            
         })
         .Build();
 
     Console.WriteLine($"Starting thumbnail processor on '{picturesConfig.Folder}' with heights=[{string.Join(", ", heights)}]. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, heightsOption, nonParallelOption, parallelDegreeOption);
+}, folderOption, heightsOption, parallelDegreeOption);
 rootCommand.AddCommand(thumbCommand);
 
 
@@ -101,12 +92,11 @@ rootCommand.AddCommand(thumbCommand);
 var cleanupCommand = new Command("cleanup", "Run the cleanup processor (thumbnails and db) as a background service");
 cleanupCommand.AddOption(folderOption);
 cleanupCommand.AddOption(heightsOption);
-cleanupCommand.AddOption(nonParallelOption);
 cleanupCommand.AddOption(parallelDegreeOption);
 cleanupCommand.AddOption(databaseNameOption);
 cleanupCommand.AddOption(isPlanOption);
 
-cleanupCommand.SetHandler(async (string folder, int[] heights, bool nonParallel, int parallelDegree, string databaseName, string isPlan) =>
+cleanupCommand.SetHandler(async (string folder, int[] heights, int parallelDegree, string databaseName, string isPlan) =>
 {
     picturesConfig.Folder = folder;
     dbConfig.Database = databaseName;
@@ -121,24 +111,13 @@ cleanupCommand.SetHandler(async (string folder, int[] heights, bool nonParallel,
                 heights = new[] { 400, 1440 };
             }
             
-            bool planMode = isPlan.Equals("yes", StringComparison.OrdinalIgnoreCase);
-            if (nonParallel)
+            bool planMode = isPlan.Equals("yes", StringComparison.OrdinalIgnoreCase);            
+            foreach(var h in heights)
             {
-                foreach(var h in heights)
-                {
-                    services.AddSingleton<IHostedService>(sp => ThumbnailCleanupProcessor.CreateProcessorNotParallel(picturesConfig, h, planMode, false));
-                }
-                services.AddSingleton<IHostedService>(sp => DbCleanupProcessor.CreateProcessorNotParallel(picturesConfig, dbConfig, planMode, false));
+                services.AddSingleton<IHostedService>(sp => ThumbnailCleanupProcessor.CreateProcessor(picturesConfig, h, parallelDegree, planMode, false));
             }
-            else
-            {
-                foreach(var h in heights)
-                {
-                    services.AddSingleton<IHostedService>(sp => ThumbnailCleanupProcessor.CreateProcessor(picturesConfig, h, parallelDegree, planMode, false));
-                }
-                services.AddSingleton<IHostedService>(sp => DbCleanupProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, planMode, false));
-                //services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(processors, picturesConfig, parallelDegree));
-            }
+            services.AddSingleton<IHostedService>(sp => DbCleanupProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, planMode, false));
+            
             Console.WriteLine("Configured services.");
 
         })
@@ -148,7 +127,7 @@ cleanupCommand.SetHandler(async (string folder, int[] heights, bool nonParallel,
     // Console.WriteLine("Press Enter to continue...");
     // Console.ReadLine();    
     await host.RunAsync(cts.Token);
-}, folderOption, heightsOption, nonParallelOption, parallelDegreeOption, databaseNameOption, isPlanOption);
+}, folderOption, heightsOption, parallelDegreeOption, databaseNameOption, isPlanOption);
 rootCommand.AddCommand(cleanupCommand);
 
 
@@ -157,10 +136,9 @@ rootCommand.AddCommand(cleanupCommand);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var imageExifCommand = new Command("db", "Run the db sync processor as a background service");
 imageExifCommand.AddOption(folderOption);
-imageExifCommand.AddOption(nonParallelOption);
 imageExifCommand.AddOption(parallelDegreeOption);
 imageExifCommand.AddOption(databaseNameOption);
-imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree, string databaseName) =>
+imageExifCommand.SetHandler(async (string folder, int parallelDegree, string databaseName) =>
 {
     picturesConfig.Folder = folder;
     dbConfig.Database = databaseName;
@@ -170,20 +148,13 @@ imageExifCommand.SetHandler(async (string folder, bool nonParallel, int parallel
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
-            if (nonParallel)
-            {
-                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessorNotParallel(picturesConfig, dbConfig));
-            }
-            else
-            {
-                services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree));
-            }            
+            services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree));                        
         })
         .Build();
 
     Console.WriteLine($"Starting db sync processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, nonParallelOption, parallelDegreeOption, databaseNameOption);
+}, folderOption, parallelDegreeOption, databaseNameOption);
 rootCommand.AddCommand(imageExifCommand);
 
 
@@ -230,10 +201,9 @@ rootCommand.AddCommand(valbumCommand);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var syncCommand = new Command("sync", "Run the sync processor (thumbnails and db)  as a background service");
 syncCommand.AddOption(folderOption);
-syncCommand.AddOption(nonParallelOption);
 syncCommand.AddOption(parallelDegreeOption);
 syncCommand.AddOption(databaseNameOption);
-syncCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegree, string databaseName) =>
+syncCommand.SetHandler(async (string folder, int parallelDegree, string databaseName) =>
 {
     picturesConfig.Folder = folder;
     dbConfig.Database = databaseName;
@@ -250,20 +220,13 @@ syncCommand.SetHandler(async (string folder, bool nonParallel, int parallelDegre
                 new MultipleThumbnailsProcessor(picturesConfig, new[] { 400, 1440 })  //{ 400, 1080, 1440 }
             };
 
-            if (nonParallel)
-            {
-                services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessorNotParallel(processors, picturesConfig));
-            }
-            else
-            {
-                services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(processors, picturesConfig, parallelDegree));
-            }            
+            services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(processors, picturesConfig, parallelDegree));                        
         })
         .Build();
 
     Console.WriteLine($"Starting sync processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, nonParallelOption, parallelDegreeOption, databaseNameOption);
+}, folderOption, parallelDegreeOption, databaseNameOption);
 rootCommand.AddCommand(syncCommand);
 
 

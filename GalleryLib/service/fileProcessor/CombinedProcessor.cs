@@ -17,11 +17,6 @@ public class CombinedProcessor : EmptyProcessor
         IFileProcessor processor = new CombinedProcessor(processors, configuration);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static FileObserverServiceNotParallel CreateProcessorNotParallel(List<IFileProcessor> processors, PicturesDataConfiguration configuration)
-    {
-        IFileProcessor processor = new CombinedProcessor(processors, configuration);
-        return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
-    }
         
     public override async Task<int> OnFileCreated(FileData filePath, bool logIfCreated = false)
     {

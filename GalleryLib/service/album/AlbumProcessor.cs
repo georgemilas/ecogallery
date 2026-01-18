@@ -27,11 +27,7 @@ public class AlbumProcessor: EmptyProcessor
         IFileProcessor processor = new AlbumProcessor(configuration, dbConfig);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
-    {
-        IFileProcessor processor = new AlbumProcessor(configuration, dbConfig);
-        return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
-    }
+
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _albumLocks = new();
     // Helper to get per-key aka per-album semaphore 
     private SemaphoreSlim GetAlbumLock(string albumName)

@@ -25,12 +25,6 @@ public class ImageMetadataProcessor: AlbumProcessor
         IFileProcessor processor = new ImageMetadataProcessor(configuration, dbConfig);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static new FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
-    {
-        IFileProcessor processor = new ImageMetadataProcessor(configuration, dbConfig);
-        return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
-    }
-
 
     /// <summary>
     /// create image record and ensure album record exists, extract EXIF and compute thumbnail perceptual hash

@@ -22,9 +22,5 @@ public class DbSyncProcessor:  ImageMetadataProcessor
         IFileProcessor processor = new DbSyncProcessor(configuration, dbConfig);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static new FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
-    {
-        IFileProcessor processor = new DbSyncProcessor(configuration, dbConfig);
-        return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
-    }
+
 }

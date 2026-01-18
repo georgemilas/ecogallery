@@ -42,31 +42,3 @@ public class DbPeriodicScanService : PeriodicScanService
     }
 }
 
-
-public class DbPeriodicScanServiceNonParallel : PeriodicScanServiceNotParallel 
-{
-    public DbPeriodicScanServiceNonParallel(IFileProcessor processor, PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int intervalMinutes = 2, bool logIfProcessed = false): base(processor, intervalMinutes, logIfProcessed)        
-     {
-        _dbConfig = dbConfig;
-        imageRepository = new AlbumImageRepository(configuration, dbConfig);
-        albumRepository = new AlbumRepository(configuration, dbConfig);
-    }
-    private readonly DatabaseConfiguration _dbConfig;
-    protected AlbumImageRepository imageRepository;
-    protected AlbumRepository albumRepository;  
-
-    protected override async Task<IEnumerable<FileData>> GetFilesToProcess()
-    {
-        var allImages = (await imageRepository.GetAllAlbumImagesAsync()).Select(f => new FileData(f.ImagePath, f));
-        return allImages.Where(f => _processor.ShouldProcessFile(f));
-    }
-
-    /// <summary>
-    /// for files or folders that are to be skipped (ex renamed from blog to skip_blog) we need to clean the original   
-    /// </summary>
-    protected override async Task<IEnumerable<FileData>> GetFilesToClean()
-    {
-        var allImages = (await imageRepository.GetAllAlbumImagesAsync()).Select(f => new FileData(f.ImagePath, f));
-        return allImages.Where(f => _processor.ShouldCleanFile(f));
-    }
-}

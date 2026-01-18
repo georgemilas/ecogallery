@@ -32,12 +32,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         IFileProcessor processor = new MultipleThumbnailsProcessor(configuration, heights);
         return new FileObserverService(processor, intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
-    public static FileObserverServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int[] heights)
-    {
-        Console.WriteLine($"Running MultipleThumbnailsProcessor with heights=[{string.Join(", ", heights)}]");
-        IFileProcessor processor = new MultipleThumbnailsProcessor(configuration, heights);
-        return new FileObserverServiceNotParallel(processor, intervalMinutes: 2);
-    }
+
     
     public override async Task<int> OnFileCreated(FileData filePath, bool logIfCreated = false)
     {

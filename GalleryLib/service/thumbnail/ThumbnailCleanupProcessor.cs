@@ -33,11 +33,6 @@ public class ThumbnailCleanupProcessor : EmptyProcessor
         IFileProcessor processor = new ThumbnailCleanupProcessor(configuration, height, isPlan);
         return new FilePeriodicScanService(processor, intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism, logIfProcessed);        
     }
-    public static FilePeriodicScanServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, int height = 400, bool isPlan = false, bool logIfProcessed = false)
-    {
-        IFileProcessor processor = new ThumbnailCleanupProcessor(configuration, height, isPlan);
-        return new FilePeriodicScanServiceNotParallel(processor,intervalMinutes: 2, logIfProcessed);
-    }
 
 
     /// <summary>

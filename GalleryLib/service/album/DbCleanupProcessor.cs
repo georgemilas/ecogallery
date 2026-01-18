@@ -31,11 +31,6 @@ public class DbCleanupProcessor: EmptyProcessor
         IFileProcessor processor = new DbCleanupProcessor(configuration, dbConfig, isPlan);
         return new DbPeriodicScanService(processor, configuration, dbConfig, intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism, logIfProcessed);        
     }
-    public static PeriodicScanServiceNotParallel CreateProcessorNotParallel(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, bool isPlan = false, bool logIfProcessed = false)
-    {
-        IFileProcessor processor = new DbCleanupProcessor(configuration, dbConfig, isPlan);
-        return new DbPeriodicScanServiceNonParallel(processor, configuration, dbConfig, 2, logIfProcessed);
-    }
 
     /// <summary>
     /// process invalid files as dictated by configuration

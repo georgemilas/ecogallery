@@ -56,14 +56,12 @@ public abstract class PeriodicScanService : BackgroundService
             //////////////////////////////////////////////////////////////////////////////////////////////////////
             /// new files processing - OnFileCreated
             /////////////////////////////////////////////////////////////////////////////////////////////////////// 
-            Console.Write($"{_processor.GetType().Name} Enumerating files to process ...");
             var currentFiles = (await GetFilesToProcess()).ToHashSet();
             var elapsed = sw.Elapsed;
                         
             var newFiles = currentFiles.Except(previousFiles).ToList();
-            Console.Write($"{_processor.GetType().Name} Enumerating files to process ... {currentFiles.Count} files in {elapsed:hh\\:mm\\:ss}.");
-            Console.WriteLine();
-
+            Console.WriteLine($"{_processor.GetType().Name} Enumerated files to process ... {newFiles.Count} files in {elapsed:hh\\:mm\\:ss}.");
+            
             long actualNew = 0;
             await Parallel.ForEachAsync(newFiles, options, async (file, ct) =>
             {
@@ -139,7 +137,7 @@ public abstract class PeriodicScanService : BackgroundService
 
             var currentFilesToClenup = (await GetFilesToClean()).ToHashSet();
             var newFilesCleanup = currentFilesToClenup.Except(previousFilesCleanup).ToList();
-            Console.WriteLine($"{_processor.GetType().Name} Enumerating possible candidate files to clean ... {newFilesCleanup.Count()} files");
+            Console.WriteLine($"{_processor.GetType().Name} Enumerated possible candidate files to clean ... {newFilesCleanup.Count()} files");
             
             long actualCleanup = 0;
             await Parallel.ForEachAsync(newFilesCleanup, options, async (file, ct) =>
