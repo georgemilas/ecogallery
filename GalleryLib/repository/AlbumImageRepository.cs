@@ -120,6 +120,13 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         return exif;                        
     }
 
+    public async Task<List<AlbumImage>> GetAllAlbumImagesAsync()
+    {
+        var sql = "SELECT * FROM album_image";
+        var albumImages = await _db.QueryAsync(sql, reader => AlbumImage.CreateFromDataReader(reader));
+        return albumImages;
+    }
+
 }
 
 

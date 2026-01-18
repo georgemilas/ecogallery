@@ -56,10 +56,11 @@ export function SortControl(props: SortControlProps): JSX.Element {
 
   React.useEffect(() => {
     if (items && items.length > 0) {
+      console.log(`SortControl(${props.type}) useEffect triggered:`, { sortField, sortOrder, itemsLength: items.length });
       sortItems(items, sortField, sortOrder);
       props.onSortChange();
     }
-  }, [sortField, sortOrder, props.onSortChange]);
+  }, [sortField, sortOrder, items.length]); // Removed props.onSortChange to prevent recreation loops
 
   const handleSortChange = (field: SortField, order: SortOrder) => {
     setSortField(field);

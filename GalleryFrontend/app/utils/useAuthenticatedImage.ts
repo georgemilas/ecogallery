@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from './apiFetch';
 
 /**
- * Hook to load an image with authentication headers
+ * Hook to load an image with authentication headers and request cancellation
  * Returns an object URL that can be used in img src
  */
 export function useAuthenticatedImage(url: string | null | undefined): string | null {
@@ -16,27 +16,36 @@ export function useAuthenticatedImage(url: string | null | undefined): string | 
       return;
     }
 
-    let cancelled = false;
+    const abortController = new AbortController();
     let currentObjectUrl: string | null = null;
 
-    apiFetch(url)
+    apiFetch(url, {
+      signal: abortController.signal,
+      headers: {
+        'Accept': 'image/*'
+      }
+    })
       .then(res => {
         if (!res.ok) throw new Error(`Failed to load image: ${res.status}`);
         return res.blob();
       })
       .then(blob => {
-        if (cancelled) return;
+        if (abortController.signal.aborted) return;
         currentObjectUrl = URL.createObjectURL(blob);
         setObjectUrl(currentObjectUrl);
       })
       .catch(err => {
+        if (err.name === 'AbortError') {
+          // Request was cancelled, this is expected
+          return;
+        }
         console.error('Error loading authenticated image:', err);
         setObjectUrl(null);
       });
 
-    // Cleanup: revoke object URL when component unmounts or URL changes
+    // Cleanup: cancel request and revoke object URL when component unmounts or URL changes
     return () => {
-      cancelled = true;
+      abortController.abort();
       if (currentObjectUrl) {
         URL.revokeObjectURL(currentObjectUrl);
       }

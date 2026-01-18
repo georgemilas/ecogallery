@@ -53,7 +53,7 @@ public class ImageMetadataProcessor: AlbumProcessor
                 {
                     Console.WriteLine($"Extracted and stored video metadata in video_metadata table: {filePath}");
                 }
-                return Tuple.Create(albumImage, count + 1);
+                return Tuple.Create(albumImage, count > 0 ? count : 1);
             }
             return Tuple.Create(albumImage, count); 
             //TODO: movie hash?
@@ -73,7 +73,7 @@ public class ImageMetadataProcessor: AlbumProcessor
                 {
                     Console.WriteLine($"Extracted and stored EXIF data in image_metadata table: {filePath}");
                 }
-                return Tuple.Create(albumImage, count + 1);
+                return Tuple.Create(albumImage, count > 0 ? count : 1);
             }
         }
         return Tuple.Create(albumImage, count);

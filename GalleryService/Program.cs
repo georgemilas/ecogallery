@@ -47,15 +47,14 @@ var dbConfig = serviceProvider.GetRequiredService<IOptions<DatabaseConfiguration
 var rootCommand = new RootCommand("Pictures background services console application");
 var folderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
 var yamlFileOption = new Option<string?>(new[] {"--yaml", "-y"}, () => null, "YAML file path");
-var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 400, 1080, 1440 }, "Thumbnail heights in pixels (can specify multiple)")
+var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 400, 1440 }, "Thumbnail heights in pixels (can specify multiple)")  //{ 400, 1080, 1440 }
 {
     AllowMultipleArgumentsPerToken = true
 };
 var databaseNameOption = new Option<string>(new[] {"--database", "-d"}, () => dbConfig.Database, "Database name to create");
-var heightOption = new Option<int>(new[] {"--height", "-h"}, () => 400, "Thumbnail height in pixels");
 var nonParallelOption = new Option<bool>(new[] {"--nonparallel", "-np"}, "Run thumbnail processing in non-parallel mode");
 var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Environment.ProcessorCount, "Degree of parallelism for thumbnail processing");
-
+var isPlanOption = new Option<string>(new[] {"--plan", "-pl"}, () => "yes", "Run the process in plan mode only");
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail background service and keep the app running
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,35 +98,57 @@ rootCommand.AddCommand(thumbCommand);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail cleanup background service and keep the app running
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-var cleanupCommand = new Command("cleanup", "Run the thumbnail cleanup processor as a background service");
+var cleanupCommand = new Command("cleanup", "Run the cleanup processor (thumbnails and db) as a background service");
 cleanupCommand.AddOption(folderOption);
-cleanupCommand.AddOption(heightOption);
+cleanupCommand.AddOption(heightsOption);
 cleanupCommand.AddOption(nonParallelOption);
 cleanupCommand.AddOption(parallelDegreeOption);
-cleanupCommand.SetHandler(async (string folder, int height, bool nonParallel, int parallelDegree) =>
+cleanupCommand.AddOption(databaseNameOption);
+cleanupCommand.AddOption(isPlanOption);
+
+cleanupCommand.SetHandler(async (string folder, int[] heights, bool nonParallel, int parallelDegree, string databaseName, string isPlan) =>
 {
     picturesConfig.Folder = folder;
+    dbConfig.Database = databaseName;
     using var cts = new CancellationTokenSource();
     Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
 
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
+            if (heights.Length == 0)
+            {
+                heights = new[] { 400, 1440 };
+            }
+            
+            bool planMode = isPlan.Equals("yes", StringComparison.OrdinalIgnoreCase);
             if (nonParallel)
             {
-                services.AddSingleton<IHostedService>(sp => ThumbnailCleanup.CreateProcessorNotParallel(picturesConfig, height));
+                foreach(var h in heights)
+                {
+                    services.AddSingleton<IHostedService>(sp => ThumbnailCleanupProcessor.CreateProcessorNotParallel(picturesConfig, h, planMode, false));
+                }
+                services.AddSingleton<IHostedService>(sp => DbCleanupProcessor.CreateProcessorNotParallel(picturesConfig, dbConfig, planMode, false));
             }
             else
             {
-                services.AddSingleton<IHostedService>(sp => ThumbnailCleanup.CreateProcessor(picturesConfig, height, parallelDegree));
+                foreach(var h in heights)
+                {
+                    services.AddSingleton<IHostedService>(sp => ThumbnailCleanupProcessor.CreateProcessor(picturesConfig, h, parallelDegree, planMode, false));
+                }
+                services.AddSingleton<IHostedService>(sp => DbCleanupProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, planMode, false));
+                //services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(processors, picturesConfig, parallelDegree));
             }
-            
+            Console.WriteLine("Configured services.");
+
         })
         .Build();
 
-    Console.WriteLine($"Starting thumbnail cleanup processor for pictures on '{picturesConfig.Folder}' with height={height}. Press Ctrl+C to stop.");
+    Console.WriteLine($"Starting cleanup processor on {dbConfig.Database}/'{picturesConfig.Folder}' with heights=[{string.Join(", ", heights)}]. Press Ctrl+C to stop.");
+    // Console.WriteLine("Press Enter to continue...");
+    // Console.ReadLine();    
     await host.RunAsync(cts.Token);
-}, folderOption, heightOption, nonParallelOption, parallelDegreeOption);
+}, folderOption, heightsOption, nonParallelOption, parallelDegreeOption, databaseNameOption, isPlanOption);
 rootCommand.AddCommand(cleanupCommand);
 
 

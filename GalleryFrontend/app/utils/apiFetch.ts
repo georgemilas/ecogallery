@@ -26,7 +26,10 @@ export async function apiFetch(
   }
 
   const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-  const apiUrl = apiBase ? `${apiBase}${url}` : url;
+  
+  // Only prepend apiBase if the URL is not already a complete URL
+  const isCompleteUrl = url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//');
+  const apiUrl = (apiBase && !isCompleteUrl) ? `${apiBase}${url}` : url;
 
   return fetch(apiUrl, {
     ...options,

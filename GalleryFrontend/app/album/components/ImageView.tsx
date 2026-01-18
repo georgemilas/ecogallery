@@ -196,13 +196,13 @@ export function ImageView(props: ImageViewProps): JSX.Element {
           <div className="slideshow-controls">
             <button onClick={decreaseSpeed} className="speed-button" title="Slower">
               <svg viewBox="0 0 24 24" fill="none">
-                <path d="M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <path d="M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </button>
             <span className="speed-display">{(slideshowSpeed / 1000).toFixed(1)}s</span>
             <button onClick={increaseSpeed} className="speed-button" title="Faster">
               <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
@@ -256,15 +256,15 @@ export function ImageView(props: ImageViewProps): JSX.Element {
             <div className="toolbar">
                 <button onClick={toggleFullscreen} className="fullscreen-button" title="Fullscreen (F)">
                     <svg viewBox="0 0 24 24" fill="none">
-                        <path d={props.isFullscreen ? "M5 13H11V19M4 20L11 13M19 11H13V5M20 4L13 11" : "M10 20H4V14M4 20L11 13M14 4H20V10M20 4L13 11"} stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d={props.isFullscreen ? "M5 13H11V19M4 20L11 13M19 11H13V5M20 4L13 11" : "M10 20H4V14M4 20L11 13M14 4H20V10M20 4L13 11"} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                 </button>
                 <button onClick={toggleSlideshow} className="slideshow-button"  title="Slideshow (Spacebar)">
                     <svg viewBox="0 0 24 24" fill="none">
                         {isSlideshow ? (
-                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" fill="white" stroke="white" stroke-width="2"/>
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" fill="white" stroke="white" strokeWidth="2"/>
                         ) : (
-                            <path d="M8 4 L18 12 L8 20 Z" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8 4 L18 12 L8 20 Z" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         )}
                     </svg>
                 </button>
@@ -299,7 +299,7 @@ export function ImageView(props: ImageViewProps): JSX.Element {
 
             <button onClick={handlePrevImage} className="nav-arrow prev-button">
                 <svg viewBox="0 0 24 24" fill="none">
-                    <polyline points="15,4 7,12 15,20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="15,4 7,12 15,20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
             </button>
         </div>
@@ -316,7 +316,7 @@ export function ImageView(props: ImageViewProps): JSX.Element {
             
             <button onClick={handleNextImage} className="nav-arrow next-button">
                 <svg viewBox="0 0 24 24" fill="none">
-                    <polyline points="9,4 17,12 9,20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="9,4 17,12 9,20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
             </button>
         </div>

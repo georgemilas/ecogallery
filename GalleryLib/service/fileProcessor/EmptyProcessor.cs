@@ -2,16 +2,8 @@ using GalleryLib.model.configuration;
 
 namespace GalleryLib.service.fileProcessor;
 
-/// <summary>
-/// Factory for creating thumbnail cleanup strategies for FilePeriodicScanService
-/// 
-/// The cleanup processor monitors the thumbnail directories and deletes thumbnails that should no longer exist based on the configuration 
-/// for example a folder called "pss_blog" used to be included in the website but now the 
-/// configuration says "pss" is a skip prefix so "pss_blog" should be cleaned up.
-/// </summary>
-public class EmptyProcessor: IFileProcessor
+public class EmptyProcessor : IFileProcessor
 {
-
     public EmptyProcessor(PicturesDataConfiguration configuration)
     {
         _configuration = configuration;
@@ -26,10 +18,10 @@ public class EmptyProcessor: IFileProcessor
     protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
 
     /// <summary>
-    /// skip files already in thumbnails directory and as dictated by configuration 
+    /// skip files already in _thumbnails directory and as dictated by configuration 
     /// for example a folder named "skip_folderName" or "folderName_skip" or a file named "imageName_skip.jpg" or "skip_imageName.jpg"
     /// </summary>    
-    public virtual bool ShouldSkipFile(string filePath)
+    private bool ShouldSkipFile(string filePath)
     {
         string folder = Path.GetDirectoryName(filePath) ?? string.Empty;
         string fileName = Path.GetFileName(filePath);
@@ -41,27 +33,68 @@ public class EmptyProcessor: IFileProcessor
                 _configuration.SkipContains.Any(skipPart => filePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
     }
 
-    public virtual async Task<int> OnFileCreated(string thumbnailPath, bool logIfCreated = false)
+    ///<summary>
+    /// Definition: a file is to be processed if 
+    ///   1. it has an extension which is in the valid Extensions to be processed
+    ///   2. is not prefixed or suffixed with a skip indicator (SkipSuffix & SkipPrefix as defined in configuration)
+    ///   3. does not contain any of the SkipContain indicators as defined in configuration   
+    ///   4. is not a thumbnail ("_thumbnails" folder is created in the same root folder as the pictures themselves, so they need to be excluded)
+    ///   Note: from a definition staindpoint this should also check if a file was not already processed in a previous iteration but 
+    ///         that is a state that will be handeled in the processor main logic so is not part of this function
+    /// </summary> 
+    public virtual bool ShouldProcessFile(FileData filePath)
+    {
+        if (ShouldSkipFile(filePath.FilePath)) return false;        
+        if (Extensions != null && !Extensions.Contains(Path.GetExtension(filePath.FilePath).ToLowerInvariant())) return false;
+        return true;
+    }
+
+    ///<summary>
+    /// Definition: a file to be cleaned-up is a file that matches the following scenario
+    /// Scenario: identify if we have a file or a folder that was renamed to now be skipped from being included in the destination and before was not
+    /// (aka before ShouldProcessFile was true but now is false), 
+    /// therefor we need to clean up the originals that previously were validly included in the destination and now should be excluded  
+    /// </summary> 
+    public virtual bool ShouldCleanFile(FileData filePath)
+    {
+        if (Extensions != null && !Extensions.Contains(Path.GetExtension(filePath.FilePath).ToLowerInvariant())) return false;  //don't attempt to clean non image types files
+        if (_configuration.SkipContains.Any(skipPart => filePath.FilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase))) return false; //don't attempt to clean files thar are in the SkipContains folders
+        if (ShouldSkipFile(filePath.FilePath)) return true;  //ex: for files/folders renamed to now be skipped and before were not we need to clean up the originals
+        return false;
+    }
+
+    public virtual async Task<int> OnFileCreated(FileData filePath, bool logIfCreated = false)
     {
         return 0;       
     }
     
-    public virtual async Task<int> OnFileDeleted(string thumbnailPath)
+    /// <summary>
+    /// Used By periodic scan to process files.
+    /// Basically any new file the processor found that needs to be processed which in the previous iteration was not there.
+    /// In the first iteration all files are new therefor subject to be processed as dictated by the rules in ShouldProcessFile 
+    /// </summary>
+    public virtual async Task<int>  OnEnsureProcessFile(FileData filePath, bool logIfProcessed = false)
+    {
+        //OnEnsureProcessFile is basically an alias for a new file the processor found that needs to be processed 
+        return await OnFileCreated(filePath, logIfProcessed);
+    }
+    
+    public virtual async Task<int> OnFileDeleted(FileData filePath, bool logIfDeleted = false)
     {
         return 0;
     }
 
-    public virtual async Task OnFileChanged(string thumbnailPath)
+    public virtual async Task OnFileChanged(FileData filePath)
     {
         await Task.CompletedTask;;
     }
 
-    public virtual async Task OnFileRenamed(string oldThumbnailPath, string newThumbnailPath,  bool newValid)
+    public virtual async Task OnFileRenamed(FileData oldFilePath, FileData newFilePath,  bool newValid)
     {
         await Task.CompletedTask;
     }
      
-    public virtual async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
+    public virtual async Task<int> OnEnsureCleanupFile(FileData skipFilePath, bool logIfCleaned = false)
     {
         return 0;
     }
@@ -75,7 +108,7 @@ public class EmptyProcessor: IFileProcessor
         await Task.CompletedTask;
     }       
     
-    protected async Task ExecuteWithRetryAttemptsAsync(string filePath, string callingMethod, Func<Task>callback)
+    protected async Task ExecuteWithRetryAttemptsAsync(FileData filePath, string callingMethod, Func<Task>callback)
     {
         
         //FileSystemWatcher may have kicked this off before the file is fully written to disk (ex: a large file being copied), so we may get an Exception

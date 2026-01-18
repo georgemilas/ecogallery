@@ -82,6 +82,10 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public async Task<bool> AlbumHasContentAsync(string filePath)
     {
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
+        return await AlbumHasContentAsync(album);
+    }
+    public async Task<bool> AlbumHasContentAsync(Album album)
+    {
         // Escape backslashes for PostgreSQL LIKE pattern
         var albumEscapedLikePattern = album.AlbumName.Replace(@"\", @"\\") + "%";
         var sql = "SELECT count(*) FROM album_image WHERE album_name LIKE @pattern";
@@ -115,7 +119,10 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public async Task<int> DeleteAlbumAsync(string filePath, bool logIfCleaned = false)
     {
         Album album = Album.CreateFromFilePath(filePath, RootFolder);
-        
+        return await DeleteAlbumAsync(album, logIfCleaned);
+    }
+    public async Task<int> DeleteAlbumAsync(Album album, bool logIfCleaned = false)
+    {    
         var sql = "DELETE FROM album WHERE album_name = @album_name";
         var rowsAffected = await _db.ExecuteAsync(sql, album);
         

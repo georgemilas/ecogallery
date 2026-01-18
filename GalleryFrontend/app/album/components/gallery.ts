@@ -32,8 +32,16 @@ export function justifyGallery(gallerySelector: string, targetHeight: number, on
 
   function allImagesLoaded(callback: (images: HTMLImageElement[]) => void) {
     const images = imageData.map(d => d.img).filter((img): img is HTMLImageElement => img !== null);
+    
+    const allComplete = images.every(img => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
+    if (allComplete) {
+      callback(images);
+      return;
+    }
+    
+    // Wait for remaining images to load
     Promise.all(      
-      images.map((img) => {
+      images.map((img) => {        
         // For images that are already complete and have natural dimensions, resolve immediately
         if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
           return Promise.resolve();
@@ -41,7 +49,7 @@ export function justifyGallery(gallerySelector: string, targetHeight: number, on
         // Otherwise wait for the load event
         return new Promise((resolve) => {
           img.onload = resolve;
-          img.onerror = resolve;
+          img.onerror = resolve; // Resolve even on error to not block
         });
       })
     ).then(() => {
@@ -56,7 +64,11 @@ export function justifyGallery(gallerySelector: string, targetHeight: number, on
     layoutGalleryWithMetadata(gallery, imageData, targetHeight);
     allImagesLoaded((images: HTMLImageElement[]) => {
       console.log('Metadata - images loaded, done');
-      onComplete?.();
+      try {
+        onComplete?.();        
+      } catch (err) {
+        console.error('Error in onComplete callback:', err);
+      }
     });
 
   } else {
@@ -65,7 +77,11 @@ export function justifyGallery(gallerySelector: string, targetHeight: number, on
     allImagesLoaded((images: HTMLImageElement[]) => {
       console.log('Images loaded - finalizing layout');
       layoutGalleryWithLoadedImages(gallery, images, targetHeight);      
-      onComplete?.();
+      try {
+        onComplete?.();
+      } catch (err) {
+        console.error('Error in onComplete callback:', err);
+      }
     });    
   }
 }
@@ -161,5 +177,10 @@ function justifyRow(images: HTMLImageElement[], ratios: number[], containerWidth
 
     img.style.height = `${Math.floor(adjustedHeight)}px`;
     img.style.width = `${width}px`;
+    // Use setProperty to set styles with !important to override CSS
+    //img.style.setProperty('height', `${Math.floor(adjustedHeight)}px`, 'important');
+    //img.style.setProperty('width', `${width}px`, 'important');
+    //img.style.setProperty('object-fit', 'cover', 'important');
+    //img.style.setProperty('display', 'block', 'important');
   });
 }

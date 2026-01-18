@@ -39,25 +39,25 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         return new FileObserverServiceNotParallel(processor, intervalMinutes: 2);
     }
     
-    public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
+    public override async Task<int> OnFileCreated(FileData filePath, bool logIfCreated = false)
     {
         bool created = false;
         
         // Check if any thumbnails need to be created
-        var heightsToCreate = _heights.Where(h => !File.Exists(GetThumbnailPath(filePath, h))).ToArray();
+        var heightsToCreate = _heights.Where(h => !File.Exists(GetThumbnailPath(filePath.FilePath, h))).ToArray();
         if (heightsToCreate.Length == 0) return 0;
 
-        if (_configuration.IsMovieFile(filePath))
+        if (_configuration.IsMovieFile(filePath.FilePath))
         {
             // Video files - process separately unlike images where we can load once and write multiple sizes
             foreach (var height in heightsToCreate)
             {
-                string thumbPath = GetThumbnailPath(filePath, height);
+                string thumbPath = GetThumbnailPath(filePath.FilePath, height);
                 await BuildVideoThumbnailAsync(height, filePath, thumbPath, () =>
                 {
                     if (logIfCreated)
                     {
-                        Console.WriteLine($"Created Thumbnail for video/height {height}: {GetThumbnailPath(filePath, height)}");
+                        Console.WriteLine($"Created Thumbnail for video/height {height}: {GetThumbnailPath(filePath.FilePath, height)}");
                     }
                 });
                 created = true;
@@ -69,7 +69,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
             {
                 if (logIfCreated)
                 {
-                    Console.WriteLine($"Created Thumbnail for image/height {height}: {GetThumbnailPath(filePath, height)}");
+                    Console.WriteLine($"Created Thumbnail for image/height {height}: {GetThumbnailPath(filePath.FilePath, height)}");
                 }
             });
             created = true;
@@ -78,70 +78,70 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         return created ? 1 : 0;
     }
 
-    public override async Task OnFileChanged(string filePath)
+    public override async Task OnFileChanged(FileData filePath)
     {
-        if (_configuration.IsMovieFile(filePath))
+        if (_configuration.IsMovieFile(filePath.FilePath))
         {
             // Video files - process separately
             foreach (var height in _heights)
             {
-                string thumbPath = GetThumbnailPath(filePath, height);
+                string thumbPath = GetThumbnailPath(filePath.FilePath, height);
                 await BuildVideoThumbnailAsync(height, filePath, thumbPath, () => Console.WriteLine($"Updated Thumbnail: {thumbPath}"));                
             }
         }
         else
         {
-            await BuildAllImageThumbnailsAsync(_heights, filePath, (height) => Console.WriteLine($"Updated Thumbnail: {GetThumbnailPath(filePath, height)}"));            
+            await BuildAllImageThumbnailsAsync(_heights, filePath, (height) => Console.WriteLine($"Updated Thumbnail: {GetThumbnailPath(filePath.FilePath, height)}"));            
         }
     }
 
-    public override async Task<int> OnFileDeleted(string filePath)
+    public override async Task<int> OnFileDeleted(FileData filePath, bool logIfDeleted = false)
     {
         bool deleted = false;
         foreach (var height in _heights)
         {
-            string thumbPath = GetThumbnailPath(filePath, height);
+            string thumbPath = GetThumbnailPath(filePath.FilePath, height);
             int result = await CleanupThumbnail(thumbPath, true);
             if (result > 0) deleted = true;
         }   
         return deleted ? 1 : 0;
     }
 
-    public override async Task OnFileRenamed(string oldPath, string newPath, bool newValid)
+    public override async Task OnFileRenamed(FileData oldPath, FileData newPath, bool newValid)
     {
         foreach (var height in _heights)
         {
-            string oldThumbPath = GetThumbnailPath(oldPath, height);
+            string oldThumbPath = GetThumbnailPath(oldPath.FilePath, height);
             await CleanupThumbnail(oldThumbPath, true);            
         }
 
         if (newValid)
         {
-            if (_configuration.IsMovieFile(newPath))
+            if (_configuration.IsMovieFile(newPath.FilePath))
             {
                 // Video files - process separately
                 foreach (var height in _heights)
                 {
-                    string thumbPath = GetThumbnailPath(newPath, height);
+                    string thumbPath = GetThumbnailPath(newPath.FilePath, height);
                     await BuildVideoThumbnailAsync(height, newPath, thumbPath, () => Console.WriteLine($"Created new thumbnail: {thumbPath}"));                
                 }
             }
             else
             {
-                await BuildAllImageThumbnailsAsync(_heights, newPath, (height) => Console.WriteLine($"Created new thumbnail: {GetThumbnailPath(newPath, height)}"));            
+                await BuildAllImageThumbnailsAsync(_heights, newPath, (height) => Console.WriteLine($"Created new thumbnail: {GetThumbnailPath(newPath.FilePath, height)}"));            
             }
             
         }
         
     }
 
-    public override async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
+    public override async Task<int> OnEnsureCleanupFile(FileData skipFilePath, bool logIfCleaned = false)
     {
-        string skipFolder = Path.GetDirectoryName(skipFilePath) ?? string.Empty;
-        string skipFileName = Path.GetFileName(skipFilePath);
+        string skipFolder = Path.GetDirectoryName(skipFilePath.FilePath) ?? string.Empty;
+        string skipFileName = Path.GetFileName(skipFilePath.FilePath);
 
         //avoid recursion into created thumbnails
-        if (skipFilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return 0;
+        if (skipFilePath.FilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return 0;
 
         //identify the type of prefix or suffix we are dealing with 
         var fileNameStartWith = _configuration.SkipPrefix.Where(prefix => skipFileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
@@ -149,8 +149,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         //using contains instead of startwith or endwith to cactch not just the last folder but any parent folder being affected as well
         var folderContainsPrefix = _configuration.SkipPrefix.Where(prefix => skipFolder.Contains(prefix, StringComparison.OrdinalIgnoreCase));
         var folderContainsSuffix = _configuration.SkipSuffix.Where(suffix => skipFolder.Contains(suffix, StringComparison.OrdinalIgnoreCase));
-        var filePathContains = _configuration.SkipContains.Where(skipPart => skipFilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
-
+        var filePathContains = _configuration.SkipContains.Where(skipPart => skipFilePath.FilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
 
         async Task<int> attemptClenup(string f, string n, int[] heights) 
         {
@@ -239,7 +238,7 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         return 0;
     }
     
-    private async Task BuildVideoThumbnailAsync(int height, string filePath, string thumbPath, Action onThumbnailCreated)
+    private async Task BuildVideoThumbnailAsync(int height, FileData filePath, string thumbPath, Action onThumbnailCreated)
     {        
         await ExecuteWithRetryAttemptsAsync(filePath, "BuildVideoThumbnailAsync", async () => 
         {
@@ -249,26 +248,74 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
                 Directory.CreateDirectory(thumbPathFolder);
             }
 
-            await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), TimeSpan.Zero);  
-                        
-            // // Extract frame from middle
-            // var midpoint = mediaInfo.Duration / 2;
-            // await FFMpeg.SnapshotAsync(filePath, thumbPath, new System.Drawing.Size(-1, height), midpoint);      
+            // Get video info to determine actual dimensions considering rotation
+            var videoInfo = await FFProbe.AnalyseAsync(filePath.FilePath);
+            var videoStream = videoInfo.VideoStreams.FirstOrDefault();
+            if (videoStream != null)
+            {
+                // var rotation = videoStream.Rotation; // Keep the sign - direction matters!                
+                // if (Math.Abs(rotation) == 180)  // Ignore 180/-180 rotations (often incorrect metadata) but respect 90/270 degree rotations
+                // {
+                //     rotation = 0; 
+                // }
+                
+                //Use actual video dimensions without rotation adjustments
+                var actualVideoHeight = videoStream.Height; // Use original height
+                // var actualVideoHeight = (Math.Abs(rotation) == 90 || Math.Abs(rotation) == 270) 
+                //     ? videoStream.Width    // Rotated 90/270 degrees - width becomes height
+                //     : videoStream.Height;  // No rotation or 180 degrees - height stays height
+                
+                // Use min to ensure thumbnail is not bigger than the actual video
+                var thumbnailHeight = Math.Min(height, actualVideoHeight);
+                
+                var rotationFilter = "";                
+                // var rotationFilter = rotation switch
+                // {
+                //     90 => "transpose=1",       // Rotate 90° clockwise
+                //     -90 => "transpose=2",      // Rotate 90° counter-clockwise  
+                //     270 => "transpose=2",      // Rotate 270° clockwise = 90° counter-clockwise
+                //     -270 => "transpose=1",     // Rotate 270° counter-clockwise = 90° clockwise
+                //     _ => ""                    // No rotation needed (includes 0, 180, -180)
+                // };
+
+                //rotate first and then scale based on height to preserve intended viewing aspect ratio
+                var filterChain = string.IsNullOrEmpty(rotationFilter) 
+                    ? $"scale=-2:{thumbnailHeight}" 
+                    : $"{rotationFilter},scale=-2:{thumbnailHeight}";
+                
+                await FFMpegArguments.FromFileInput(filePath.FilePath)
+                                    .OutputToFile(thumbPath, true, options => options
+                                        .WithCustomArgument($"-vf \"{filterChain}\"")
+                                        .WithFrameOutputCount(1)
+                                        .Seek(TimeSpan.Zero))
+                                    .ProcessAsynchronously();
+            }
+            else
+            {
+                // Fallback if we can't get video info - use scale filter to maintain aspect ratio
+                await FFMpegArguments.FromFileInput(filePath.FilePath)
+                                    .OutputToFile(thumbPath, true, options => options
+                                        .WithCustomArgument($"-vf \"scale=-2:{height}\"")
+                                        .WithFrameOutputCount(1)
+                                        .Seek(TimeSpan.Zero))
+                                    .ProcessAsynchronously();
+            }
+            
             onThumbnailCreated();
         });        
     }
 
 
-    private async Task BuildAllImageThumbnailsAsync(int[] heights, string filePath, Action<int> onThumbnailCreated)
+    private async Task BuildAllImageThumbnailsAsync(int[] heights, FileData filePath, Action<int> onThumbnailCreated)
     {
         await ExecuteWithRetryAttemptsAsync(filePath, "BuildAllImageThumbnailsAsync", async () => 
         {
             // Load original image once
-            using var originalImage = await Image.LoadAsync(filePath);
+            using var originalImage = await Image.LoadAsync(filePath.FilePath);
             
             foreach (var height in heights)
             {
-                string thumbPath = GetThumbnailPath(filePath, height);
+                string thumbPath = GetThumbnailPath(filePath.FilePath, height);
                 var thumbPathFolder = Path.GetDirectoryName(thumbPath);
                 if (!string.IsNullOrEmpty(thumbPathFolder))
                 {

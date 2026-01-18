@@ -17,7 +17,7 @@ public class FileObserverServiceNotParallel : FilePeriodicScanServiceNotParallel
     }
     
     private FileSystemWatcher? _watcher;
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _changeDebounce = new();
+    private readonly ConcurrentDictionary<FileData, CancellationTokenSource> _changeDebounce = new();
     private const int ChangeDebounceMs = 300;
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -46,53 +46,58 @@ public class FileObserverServiceNotParallel : FilePeriodicScanServiceNotParallel
 
     private async void OnWatcherFileCreated(object sender, FileSystemEventArgs e)
     {
-        if (!ShouldProcessFile(e.FullPath)) return;
-        bool success = await InvokeHandlerSafe(() =>  _processor.OnFileCreated(e.FullPath, true), $"created: {e.FullPath}");
+        var data = new FileData(e.FullPath, e.FullPath);
+        if (!_processor.ShouldProcessFile(data)) return;
+        bool success = await InvokeHandlerSafe(() =>  _processor.OnFileCreated(data, true), $"created: {e.FullPath}");
         if (success)
         {
             lock (_setLock)
             {
-                _currentSourceFiles.Add(e.FullPath);
+                _currentSourceFiles.Add(data);
             }
         }
     }
 
     private async void OnWatcherFileChanged(object sender, FileSystemEventArgs e)
     {
-        if (!ShouldProcessFile(e.FullPath)) return;
+        var data = new FileData(e.FullPath, e.FullPath);
+        if (!_processor.ShouldProcessFile(data)) return;
         Console.WriteLine($"FileSystemWatcher: File changed - {e.FullPath}");
-        ScheduleDebouncedChange(e.FullPath);
+        ScheduleDebouncedChange(data);
     }
 
     private async void OnWatcherFileDeleted(object sender, FileSystemEventArgs e)
     {
-        if (!ShouldProcessFile(e.FullPath)) return;
+        var data = new FileData(e.FullPath, e.FullPath);
+        if (!_processor.ShouldProcessFile(data)) return;
         Console.WriteLine($"FileSystemWatcher: File deleted - {e.FullPath}");
-        CancelDebounceForPath(e.FullPath);
-        bool deleted = await InvokeHandlerSafe(() => _processor.OnFileDeleted(e.FullPath), $"deleted: {e.FullPath}");
+        CancelDebounceForPath(data);
+        bool deleted = await InvokeHandlerSafe(() => _processor.OnFileDeleted(data, _logIfProcessed), $"deleted: {e.FullPath}");
         if (deleted)
         {
             lock (_setLock)
             {
-                _currentSourceFiles.Remove(e.FullPath);
+                _currentSourceFiles.Remove(data);
             }
         }
     }
 
     private async void OnWatcherFileRenamed(object sender, RenamedEventArgs e)
     {
-        bool oldValid = ShouldProcessFile(e.OldFullPath);
-        bool newValid = ShouldProcessFile(e.FullPath);
+        var oldData = new FileData(e.OldFullPath, e.OldFullPath);
+        var newData = new FileData(e.FullPath, e.FullPath);
+        bool oldValid = _processor.ShouldProcessFile(oldData);
+        bool newValid = _processor.ShouldProcessFile(newData);
         Console.WriteLine($"FileSystemWatcher: File renamed from {e.OldFullPath} to {e.FullPath}");
-        CancelDebounceForPath(e.OldFullPath);
-        CancelDebounceForPath(e.FullPath);
-        bool renamed = await InvokeHandlerSafe(() => _processor.OnFileRenamed(e.OldFullPath, e.FullPath, newValid), $"renamed: {e.OldFullPath} -> {e.FullPath}");
+        CancelDebounceForPath(oldData);
+        CancelDebounceForPath(newData);
+        bool renamed = await InvokeHandlerSafe(() => _processor.OnFileRenamed(oldData, newData, newValid), $"renamed: {e.OldFullPath} -> {e.FullPath}");
         if (renamed)
         {
             lock (_setLock)
             {
-                if (oldValid) _currentSourceFiles.Remove(e.OldFullPath);
-                if (newValid) _currentSourceFiles.Add(e.FullPath);
+                if (oldValid) _currentSourceFiles.Remove(oldData);
+                if (newValid) _currentSourceFiles.Add(newData);
             }
         }
     }
@@ -113,7 +118,7 @@ public class FileObserverServiceNotParallel : FilePeriodicScanServiceNotParallel
         base.Dispose();
     }
 
-    private void ScheduleDebouncedChange(string path)
+    private void ScheduleDebouncedChange(FileData path)
     {
         var ctsNew = new CancellationTokenSource();
         var existing = _changeDebounce.AddOrUpdate(path, ctsNew, (k, oldCts) =>
@@ -128,7 +133,7 @@ public class FileObserverServiceNotParallel : FilePeriodicScanServiceNotParallel
         }
     }
 
-    private async Task DebouncedInvokeChange(string path, CancellationToken token)
+    private async Task DebouncedInvokeChange(FileData path, CancellationToken token)
     {
         try
         {
@@ -146,7 +151,7 @@ public class FileObserverServiceNotParallel : FilePeriodicScanServiceNotParallel
         }
     }
 
-    private void CancelDebounceForPath(string path)
+    private void CancelDebounceForPath(FileData path)
     {
         if (_changeDebounce.TryRemove(path, out var cts))
         {

@@ -3,7 +3,7 @@ using YamlDotNet.Core;
 
 namespace GalleryLib.service.fileProcessor;
 
-public class CombinedProcessor: EmptyProcessor
+public class CombinedProcessor : EmptyProcessor
 {
     private readonly List<IFileProcessor> _processors;
 
@@ -23,7 +23,7 @@ public class CombinedProcessor: EmptyProcessor
         return new FileObserverServiceNotParallel(processor,intervalMinutes: 2);
     }
         
-    public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
+    public override async Task<int> OnFileCreated(FileData filePath, bool logIfCreated = false)
     {
         int res = 0;
         foreach (var processor in _processors)
@@ -33,17 +33,17 @@ public class CombinedProcessor: EmptyProcessor
         return res;
     }
     
-    public override async Task<int> OnFileDeleted(string filePath)
+    public override async Task<int> OnFileDeleted(FileData filePath, bool logIfDeleted = false)
     {
         int res = 0;
         foreach (var processor in _processors)
         {
-            res =  Math.Max(res, await processor.OnFileDeleted(filePath));
+            res =  Math.Max(res, await processor.OnFileDeleted(filePath, logIfDeleted));
         }  
         return res;
     }
 
-    public override async Task OnFileChanged(string filePath)
+    public override async Task OnFileChanged(FileData filePath)
     {
         foreach (var processor in _processors)
         {
@@ -51,7 +51,7 @@ public class CombinedProcessor: EmptyProcessor
         }          
     }
 
-    public override async Task OnFileRenamed(string oldFilePath, string newFilePath,  bool newValid)
+    public override async Task OnFileRenamed(FileData oldFilePath, FileData newFilePath,  bool newValid)
     {
         foreach (var processor in _processors)
         {
@@ -59,12 +59,12 @@ public class CombinedProcessor: EmptyProcessor
         }
     }
      
-    public override async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
+    public override async Task<int> OnEnsureCleanupFile(FileData skipFilePath, bool logIfCleaned = false)
     {
         int res = 0;
         foreach (var processor in _processors)
         {
-            res =  Math.Max(res, await processor.OnEnsureCleanup(skipFilePath, logIfCleaned));
+            res =  Math.Max(res, await processor.OnEnsureCleanupFile(skipFilePath, logIfCleaned));
         }  
         return res;
     }

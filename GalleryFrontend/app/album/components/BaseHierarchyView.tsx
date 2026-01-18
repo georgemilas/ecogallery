@@ -4,6 +4,7 @@ import { justifyGallery, debounce } from './gallery';
 import { SortControl } from './Sort';
 import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from './AlbumHierarchyProps';
 import { DraggableBanner } from './DraggableBanner';
+import { CancellableImage } from './CancellableImage';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { apiFetch } from '@/app/utils/apiFetch';
@@ -80,22 +81,34 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   };
     
   const scrollToLastViewedImage = (imageId: number) => {
-    const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
-    if (imageElement) {
-      console.log('Scrolling to last viewed image:', imageId);
-      imageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
-    } else {
-      console.log('Image element not found for id:', imageId);
+    const attemptScroll = () => {
+      const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+      if (imageElement) {
+        console.log('Scrolling to last viewed image:', imageId);
+        imageElement.scrollIntoView({ behavior: 'instant', block: 'center' });
+        return true;
+      } else {
+        console.log('Image element not found for id:', imageId);
+        return false;
+      }
+    };
+
+    if (!attemptScroll()) {
+      setTimeout(() => {
+        if (!attemptScroll()) {
+          setTimeout(() => attemptScroll(), 500);
+        }
+      }, 100);
     }
   };
 
   const handleSortedAlbumsChange = useCallback(() => {
     forceUpdate(); // Force re-render after in-place sort
-    setIsLayouting(true);
+    setIsLayouting(true);    
     setTimeout(() => {
-      justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);
-      });
+        justifyGallery('.gallery', getResponsiveHeight(), () => {
+            setIsLayouting(false);
+        });
     }, 100);
   }, [user, settings]);
 
@@ -104,16 +117,18 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     forceUpdate(); // Force re-render after in-place sort
     setIsLayouting(true);
     setTimeout(() => {
-      justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);
-      });
+        justifyGallery('.gallery', getResponsiveHeight(), () => {
+            setIsLayouting(false);
+        });
     }, 100);
   }, [props.clearLastViewedImage, user, settings]);
 
   // Justify Gallery on mount and when album changes
   useEffect(() => {
     const gallery = document.querySelector('.gallery');
-    if (!gallery) return;
+    if (!gallery || props.album.images.length === 0) {
+      return;
+    }
 
     setIsLayouting(true);
     justifyGallery('.gallery', getResponsiveHeight(), () => {
@@ -127,7 +142,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     const handleResize = debounce(() => {
       setIsLayouting(true);
       justifyGallery('.gallery', getResponsiveHeight(), () => {
-        setIsLayouting(false);        
+        setIsLayouting(false);
       });
     }, 150);    
     window.addEventListener('resize', handleResize);    
@@ -135,7 +150,18 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [props.album]);
+  }, [props.album.id, props.album.images.length]); // Only re-run when album ID or image count changes
+
+  // Separate effect to handle scrolling when lastViewedImage changes
+  useEffect(() => {
+    if (props.lastViewedImage) {
+      console.log('lastViewedImage changed, attempting scroll to:', props.lastViewedImage);
+      // Give a bit more time for the gallery to be ready
+      setTimeout(() => {
+        scrollToLastViewedImage(props.lastViewedImage!);
+      }, 200);
+    }
+  }, [props.lastViewedImage]);
 
   const renderBreadcrumbs = () => (
     <nav className="breadcrumbs">
@@ -218,7 +244,13 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
             {props.album.albums.map(r => (
               <li className='albums-item' key={r.id}>
                 <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.id);}}>
-                  <img src={r.thumbnail_path} alt={config.getImageLabel(props.album, r.name)} />
+                  <CancellableImage 
+                    src={r.thumbnail_path} 
+                    alt={config.getImageLabel(props.album, r.name)} 
+                    loading="lazy" 
+                    enableCancellation={true}
+                    showLoadingPlaceholder={false}
+                  />
                   <span className="albums-item-label">{config.getImageLabel(props.album, r.name)}</span>
                   <svg className="albums-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M3 6C3 4.9 3.9 4 5 4H9L11 6H19C20.1 6 21 6.9 21 8V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V6Z"  fill="black" stroke='white'/>                
@@ -257,7 +289,15 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
             return (
               <li className="gallery-item" key={r.id} data-image-id={r.id} data-image-name={r.name} data-image-width={width ?? 0} data-image-height={height ?? 0}> 
                 <a href={`#${r.id.toString()}`} onClick={(e) => {e.preventDefault(); props.onImageClick(r as ImageItemContent);}}>
-                  <img src={r.thumbnail_path} alt={r.name} />
+                  <CancellableImage 
+                    src={r.thumbnail_path} 
+                    alt={r.name} 
+                    loading="lazy" 
+                    enableCancellation={true}
+                    showLoadingPlaceholder={false}
+                    width={width}
+                    height={height}
+                  />
                   {r.is_movie && (
                     <svg className="gallery-item-video-icon" viewBox="0 0 24 24" fill="none">
                       <path d="M8 5v14l11-7L8 5z" fill="currentColor"/>

@@ -111,42 +111,42 @@ public class AlbumProcessor: EmptyProcessor
         return deletedCount;    
     }
     
-    public override async Task<int> OnFileCreated(string filePath, bool logIfCreated = false)
+    public override async Task<int> OnFileCreated(FileData filePath, bool logIfCreated = false)
     {
         //don't log creation here during the main PeriodicScanService, only for main FileObserverService methods
-        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath, logIfCreated);
+        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath.FilePath, logIfCreated);
         return count;  //number of records created (0 or 1)
     }
 
-    public override async Task OnFileChanged(string filePath)
+    public override async Task OnFileChanged(FileData filePath)
     {
-        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath, true);           
+        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath.FilePath, true);           
     }
 
-    public override async Task<int> OnFileDeleted(string filePath)
+    public override async Task<int> OnFileDeleted(FileData filePath, bool logIfDeleted = false)
     {
-        return await CleanupImageAndAlbumRecords(filePath, true);
+        return await CleanupImageAndAlbumRecords(filePath.FilePath, true);
     }
     
-    public override async Task OnFileRenamed(string oldPath, string newPath,  bool newValid)
-    {
-        await CleanupImageAndAlbumRecords(oldPath);
+    public override async Task OnFileRenamed(FileData oldPath, FileData newPath,  bool newValid)
+    {       
+        await CleanupImageAndAlbumRecords(oldPath.FilePath);
         if (newValid)
         {
-            var (albumImage, count) = await CreateImageAndAlbumRecords(newPath, true);                
+            var (albumImage, count) = await CreateImageAndAlbumRecords(newPath.FilePath, true);                
         }
     }
 
     ///<summary>
     /// need to find the original file path from the skip file path and ensure its records are deleted
     /// </summary> 
-    public override async Task<int> OnEnsureCleanup(string skipFilePath, bool logIfCleaned = false)
+    public override async Task<int> OnEnsureCleanupFile(FileData skipFilePath, bool logIfCleaned = false)
     {
-        string skipFolder = Path.GetDirectoryName(skipFilePath) ?? string.Empty;
-        string skipFileName = Path.GetFileName(skipFilePath);
+        string skipFolder = Path.GetDirectoryName(skipFilePath.FilePath) ?? string.Empty;
+        string skipFileName = Path.GetFileName(skipFilePath.FilePath);
 
         //avoid recursion into created thumbnails
-        if (skipFilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return 0;
+        if (skipFilePath.FilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return 0;
 
         //identify the type of prefix or suffix we are dealing with 
         var fileNameStartWith = _configuration.SkipPrefix.Where(prefix => skipFileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
@@ -154,7 +154,7 @@ public class AlbumProcessor: EmptyProcessor
         //using contains instead of startwith or endwith to cactch not just the last folder but any parent folder being affected as well
         var folderContainsPrefix = _configuration.SkipPrefix.Where(prefix => skipFolder.Contains(prefix, StringComparison.OrdinalIgnoreCase));
         var folderContainsSuffix = _configuration.SkipSuffix.Where(suffix => skipFolder.Contains(suffix, StringComparison.OrdinalIgnoreCase));
-        var filePathContains = _configuration.SkipContains.Where(skipPart => skipFilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
+        var filePathContains = _configuration.SkipContains.Where(skipPart => skipFilePath.FilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase));
 
         int totalDeleted = 0;
         if (fileNameStartWith.Any())
