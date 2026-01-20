@@ -373,3 +373,5 @@ FodyWeavers.xsd
 *.tfstate.backup
 *.tfvars
 
+#claudecode
+tmpclaude*
