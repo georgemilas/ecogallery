@@ -1,17 +1,13 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-export interface ImageMetadata {
-  id: number;
-  album_image_id: number;
+export interface ImageMetadata extends ItemMetadata {
   camera: string | null;
   lens: string | null;
   focal_length: string | null;
   aperture: string | null;
   exposure_time: string | null;
   iso: number | null;
-  date_taken: string | null;
   rating: number | null;
-  date_modified: string | null;
   flash: string | null;
   metering_mode: string | null;
   exposure_program: string | null;
@@ -28,23 +24,12 @@ export interface ImageMetadata {
   software: string | null;
   serial_number: string | null;
   lens_serial_number: string | null;
-  file_name: string;
-  file_path: string;
-  file_size_bytes: number | null;
   image_width: number | null;
   image_height: number | null;
   orientation: number | null;
-  last_updated_utc: string;
 }
 
-export interface VideoMetadata {
-  id: number;
-  album_image_id: number;
-  file_name: string;
-  file_path: string;
-  file_size_bytes: number | null;
-  date_taken: string | null;
-  date_modified: string | null;
+export interface VideoMetadata extends ItemMetadata {
   duration: string | null;              // ISO 8601 duration string (e.g., "PT1M20S" for 1:20)
   video_width: number | null;
   video_height: number | null;
@@ -59,10 +44,19 @@ export interface VideoMetadata {
   format_name: string | null;
   software: string | null;
   camera: string | null;
-  rotation: number | null;
-  last_updated_utc: string;
+  rotation: number | null;  
 }
 
+export interface ItemMetadata {
+  id: number;
+  album_image_id: number;
+  file_name: string;
+  file_path: string;
+  file_size_bytes: number | null;
+  date_taken: string | null;
+  date_modified: string | null;
+  last_updated_utc: string;
+}
 
 
 export interface AlbumPathElement {

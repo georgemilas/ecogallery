@@ -1,6 +1,6 @@
 import React from 'react';
 import './sort.css';
-import { ItemContent, AlbumItemHierarchy } from './AlbumHierarchyProps';
+import { ItemContent, AlbumItemHierarchy, AlbumItemContent, ImageItemContent, ItemMetadata } from './AlbumHierarchyProps';
 
 type SortField = 'name' | 'timestamp';
 type SortOrder = 'asc' | 'desc';
@@ -38,17 +38,28 @@ export function SortControl(props: SortControlProps): JSX.Element {
   const isAlbumType = props.type === 'albums';
   const items = isAlbumType ? props.album.albums : props.album.images;
 
-  const sortItems = (items: ItemContent[], field: SortField, order: SortOrder) => {
+  const sortItems = (items: AlbumItemContent[] | ImageItemContent[], field: SortField, order: SortOrder) => {
     items.sort((a, b) => {
       let comparison = 0;
       if (field === 'name') {
         const nameA = isAlbumType ? props.album.get_name(a.name) : a.name;
         const nameB = isAlbumType ? props.album.get_name(b.name) : b.name;
         comparison = nameA.localeCompare(nameB);
-      } else {
-        const timeA = isAlbumType ? new Date(a.last_updated_utc).getTime() : new Date(a.item_timestamp_utc).getTime();
-        const timeB = isAlbumType ? new Date(b.last_updated_utc).getTime() : new Date(b.item_timestamp_utc).getTime();
-        comparison = timeA - timeB;
+      } else {        
+        if (!isAlbumType) {
+            let aItem = a as ImageItemContent;
+            let bItem = b as ImageItemContent;
+            let aMetadataDate = (aItem.image_metadata || aItem.video_metadata)?.date_taken;
+            let bMetadataDate = (bItem.image_metadata || bItem.video_metadata)?.date_taken;
+            const dateA = new Date(aMetadataDate || a.last_updated_utc || a.item_timestamp_utc).getTime();
+            const dateB = new Date(bMetadataDate || b.last_updated_utc || b.item_timestamp_utc).getTime();
+            comparison = dateA - dateB;            
+        }           
+        else {
+          const timeA = new Date(a.item_timestamp_utc).getTime();
+          const timeB = new Date(b.item_timestamp_utc).getTime();
+          comparison = timeA - timeB;
+        }
       }
       return order === 'asc' ? comparison : -comparison;
     });

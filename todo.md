@@ -1,6 +1,6 @@
 
 ### Todo
-   * convert .mov to .mp4 during thumbnail processor for reliable viewing
+   
    * theme for an album (background, border, roundings)
    * going back to album on large albums (wait for gallery to render before setting to last image - show loading - pagination?)
    * movie hash ?
@@ -17,6 +17,7 @@
    * sorting is now global, make it by album    
    * extract movie metadata
    * random 100, recent 100
+   * not doing: convert .mov to .mp4 during thumbnail processor for reliable viewing (converted as a separate process)
 
 ### ffmpeg
 To convert an .mts (or .api or .mov etc) file to .mp4 using FFmpeg, use:
