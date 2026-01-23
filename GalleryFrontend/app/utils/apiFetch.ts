@@ -4,6 +4,7 @@
  * Wrapper around fetch that automatically includes:
  * 1. App API key (X-API-Key header) - required for all API calls
  * 2. User session token (Authorization Bearer header) - for authenticated requests
+ * 3. Range header to request full content and avoid 206 Partial Content responses
  */
 export async function apiFetch(
   url: string,
@@ -24,6 +25,11 @@ export async function apiFetch(
   if (token && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${token}`;
   }
+  
+  // Remove Range header to prevent Chrome's automatic range optimization
+  // which breaks blob conversion (we need full content, not partial)
+  delete headers['Range'];
+  delete headers['range'];
 
   const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
   

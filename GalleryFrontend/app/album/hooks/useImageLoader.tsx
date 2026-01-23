@@ -1,7 +1,30 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { apiFetch } from '@/app/utils/apiFetch';
 
-interface UseImageLoaderOptions {
+/**
+ * Determines if we're in a private album context that requires session authentication
+ */
+function isPrivateAlbumContext(): boolean {
+  if (typeof window === 'undefined') return true; // Assume private on SSR
+  
+  const pathname = window.location.pathname;
+  return pathname.startsWith('/album'); // Private albums vs /valbum public virtual albums
+}
+
+/**
+ * Determines the media loading strategy based on nginx URL patterns and album context
+ */
+function getMediaLoadingStrategy(url: string): 'progressive' | 'authenticated' | 'secure' {
+  if (url.includes('/_thumbnails/400/')) {
+    return 'progressive'; // No auth needed, direct progressive loading
+  } else if (url.includes('/_thumbnails/')) {
+    return 'authenticated'; // Requires auth, use blob approach
+  } else {
+    return 'secure'; // Full images/videos, use current secure approach
+  }
+}
+
+interface UseMediaLoaderOptions {
   /** Whether to enable request cancellation (default: true) */
   enableCancellation?: boolean;
   /** Delay before starting image load to debounce requests (default: 0) */
@@ -15,13 +38,20 @@ interface ImageLoadState {
 }
 
 /**
- * Custom hook for loading images with request cancellation support.
+ * Custom hook for loading images and videos with request cancellation support and proper authentication.
+ * 
+ * Authentication Strategy:
+ * - Progressive (/_thumbnails/400/): No authentication required for performance
+ * - Authenticated (/_thumbnails/): Requires X-API-Key authentication
+ * - Secure (/pictures/): Requires X-API-Key + session authentication for private albums
+ * 
  * Converts image URLs to blob URLs using fetch() with AbortController.
+ * Videos use direct URLs after authentication to avoid memory issues.
  * All pending requests are automatically cancelled when the component unmounts.
  */
-export function useImageLoader(
+export function useMediaLoader(
   imageUrl: string | null,
-  options: UseImageLoaderOptions = {}
+  options: UseMediaLoaderOptions = {}
 ): ImageLoadState {
   const { enableCancellation = true, loadDelay = 0 } = options;
   const [state, setState] = useState<ImageLoadState>({
@@ -48,9 +78,12 @@ export function useImageLoader(
     }
   }, [state.src]);
 
-  const loadImage = useCallback(async (url: string) => {
+  const loadMedia = useCallback(async (url: string) => {
+    console.log('loadMedia called for URL:', url);
+    
     // Don't reload if it's the same URL and we already have a blob URL
     if (url === currentUrlRef.current && state.src && !state.error) {
+      console.log('Skipping reload for same URL:', url);
       return;
     }
 
@@ -59,34 +92,64 @@ export function useImageLoader(
     
     setState(prev => ({ ...prev, loading: true, error: false }));
 
+    const strategy = getMediaLoadingStrategy(url);
+    console.log('Selected strategy:', strategy, 'for URL:', url);
+
     try {
-      if (!enableCancellation) {
-        // Fallback to standard image loading without cancellation
-        setState({ src: url, loading: false, error: false });
-        return;
-      }
-
-      abortControllerRef.current = new AbortController();
       
-      const response = await apiFetch(url, {
-        signal: abortControllerRef.current.signal,
-        headers: {
-          'Accept': 'image/*'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load image: ${response.status}`);
+      switch (strategy) {
+        case 'progressive':
+          // 400px thumbnails - direct progressive loading (no auth needed)
+          console.log('Using progressive loading for:', url);
+          setState({ src: url, loading: false, error: false });
+          return;
+          
+        case 'authenticated':
+        case 'secure':
+          // Use authenticated blob loading for full images and secured thumbnails
+          // Always require X-API-Key, and session token for private albums
+          console.log('Using authenticated loading for:', url, 'Private context:', isPrivateAlbumContext());
+          
+          if (enableCancellation) {
+            abortControllerRef.current = new AbortController();
+          }
+          
+          // Prepare headers for authentication
+          const authHeaders: Record<string, string> = {
+            'Accept': url.includes('/video/') ? 'video/*' : 'image/*'
+          };
+          
+          // For private albums, ensure we have session token
+          if (isPrivateAlbumContext()) {
+            const token = localStorage.getItem('sessionToken');
+            if (!token) {
+              throw new Error('Session authentication required for private album access');
+            }
+            // apiFetch will automatically add the session token
+          }
+          
+          const response = await apiFetch(url, {
+            signal: enableCancellation ? abortControllerRef.current?.signal : undefined,
+            headers: authHeaders
+          });
+          
+          // Accept both 200 (OK) and 206 (Partial Content) as success
+          if (response.status < 200 || response.status >= 300) {
+            throw new Error(`Failed to load media: ${response.status}`);
+          }
+          
+          const blob = await response.blob();
+          if (enableCancellation && abortControllerRef.current?.signal.aborted) {
+            return;
+          }
+          
+          const blobUrl = URL.createObjectURL(blob);
+          setState({ src: blobUrl, loading: false, error: false });
+          return;
+          
+        default:
+          throw new Error(`Unknown loading strategy: ${strategy}`);
       }
-
-      const blob = await response.blob();
-      
-      if (abortControllerRef.current?.signal.aborted) {
-        return; // Request was cancelled
-      }
-
-      const blobUrl = URL.createObjectURL(blob);
-      setState({ src: blobUrl, loading: false, error: false });
       
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -94,9 +157,8 @@ export function useImageLoader(
         return;
       }
       
-      console.warn('Failed to load image with cancellation, falling back to standard loading:', error);
-      // Fallback to standard image loading on error
-      setState({ src: url, loading: false, error: false });
+      console.warn('Failed to load media with authentication:', error, 'URL:', url, 'Strategy:', strategy, 'Private:', isPrivateAlbumContext());
+      setState({ src: null, loading: false, error: true });
     }
   }, [enableCancellation, state.src, state.error, cleanup]);
 
@@ -110,10 +172,10 @@ export function useImageLoader(
 
     if (loadDelay > 0) {
       timeoutRef.current = setTimeout(() => {
-        loadImage(imageUrl);
+        loadMedia(imageUrl);
       }, loadDelay);
     } else {
-      loadImage(imageUrl);
+      loadMedia(imageUrl);
     }
 
     return () => {
@@ -122,7 +184,7 @@ export function useImageLoader(
         timeoutRef.current = null;
       }
     };
-  }, [imageUrl, loadImage, loadDelay]);
+  }, [imageUrl, loadMedia, loadDelay]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -133,10 +195,11 @@ export function useImageLoader(
 }
 
 /**
- * Hook for managing multiple image downloads with global cancellation.
- * Useful for gallery components that load many images at once.
+ * Hook for managing multiple thumbnail downloads with global cancellation.
+ * Useful for gallery components that load many thumbnails at once.
+ * Thumbnails are always images, even for video content.
  */
-export function useGalleryImageLoader() {
+export function useGalleryThumbnailLoader() {
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
   const blobUrlsRef = useRef<Set<string>>(new Set());
 

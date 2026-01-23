@@ -1,5 +1,5 @@
 import React from 'react';
-import { useImageLoader } from '../hooks/useImageLoader';
+import { useMediaLoader } from '../hooks/useImageLoader';
 
 interface CancellableImageProps {
   src: string | null;
@@ -20,8 +20,9 @@ interface CancellableImageProps {
 }
 
 /**
- * Image component with request cancellation support.
- * Converts standard img loading to use fetch() with AbortController.
+ * Image and video component with request cancellation support.
+ * Converts image URLs to blob URLs using fetch() with AbortController.
+ * Videos use direct URLs after authentication to avoid memory issues.
  * Automatically cancels requests when component unmounts.
  */
 export function CancellableImage({
@@ -38,7 +39,7 @@ export function CancellableImage({
   height,
   ...props
 }: CancellableImageProps) {
-  const imageState = useImageLoader(src, { enableCancellation });
+  const imageState = useMediaLoader(src, { enableCancellation });
 
   const handleLoad = () => {
     onLoad?.();

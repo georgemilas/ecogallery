@@ -31,7 +31,7 @@ public class PicturesController : ControllerBase
         {
             return BadRequest(new { success = false, message = "Invalid request" });
         }
-        
+        Console.WriteLine($"{filePath} is authenticated and returning X-Accel-Redirect");
         //TODO: validate user is supposed to have access to this picture ?
         //user is authenticated but can only see pictures in albums they have access to
 

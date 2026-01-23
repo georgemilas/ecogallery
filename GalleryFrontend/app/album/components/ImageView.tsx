@@ -4,6 +4,8 @@ import { MetadataPanel } from './Exif';
 import { ImageZoomAndTouchNavigation } from './ImageZoomAndTouchNavigation';
 import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
 import { AuthenticatedVideo } from '@/app/utils/AuthenticatedVideo';
+import { useMediaLoader } from '../hooks/useImageLoader';
+import { useAuthenticatedImage } from '@/app/utils/useAuthenticatedImage';
 
 // function supportsNativeTouchZoom() {
 //   // if (typeof navigator === 'undefined') return false;
@@ -37,6 +39,11 @@ export function ImageView(props: ImageViewProps): JSX.Element {
   const [slideshowSpeed, setSlideshowSpeed] = React.useState(3000);
   const slideshowIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const [showExif, setShowExif] = React.useState(false);
+  
+  // Use authenticated loading for video poster thumbnails
+  const authenticatedPoster = useAuthenticatedImage(
+    props.image.is_movie ? (props.image.image_uhd_path || props.image.thumbnail_path) : null
+  );
   
   // Navigation handlers
   const handlePrevImage = React.useCallback(() => {
@@ -237,7 +244,7 @@ export function ImageView(props: ImageViewProps): JSX.Element {
               </nav>
             {props.image.is_movie 
                 ? (<AuthenticatedVideo ref={videoRef} src={props.image.image_original_path}
-                   poster={props.image.image_uhd_path || props.image.thumbnail_path}  
+                   poster={authenticatedPoster || props.image.thumbnail_path}  
                    controls onContextMenu={(e) => e.preventDefault()} />) 
                 : (
                   <AuthenticatedImage ref={imageRef} src={props.useOriginalImage ? props.image.image_original_path : props.image.image_uhd_path} alt={props.image.name} onContextMenu={(e) => e.preventDefault()}

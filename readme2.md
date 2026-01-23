@@ -89,7 +89,7 @@ dotnet run --project GalleryApi
 npm run dev --prefix GalleryFrontend
 ```
 
-Open **http://localhost:3000** in your browser.
+Open **http://localhost** in your browser.
 
 > 🔧 **Configuration:** See [Configuration Guide](architecture.md#configuration-and-setup) for `appsettings.json` and `.env.local` setup.
 
