@@ -1,4 +1,5 @@
 using GalleryLib.model.configuration;
+using GalleryLib.Repository.Auth;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,7 +21,7 @@ public class CreateDatabaseService
         _databaseService = new PostgresDatabaseService(connectionString);
     }
 
-    public async Task<bool> CreateDatabaseAsync(string? databaseName = null)
+    public async Task<bool> CreateDatabaseAsync(string? databaseName = null, string password = "admin123")
     {
         try
         {
@@ -60,7 +61,7 @@ public class CreateDatabaseService
                 .OrderBy(f => f)
                 .ToList();            
             executionOrder.AddRange(middleFiles);            
-            executionOrder.Add("create_admin_user.sql");            
+            executionOrder.Add("create_admin_user.sql");
 
             Console.WriteLine($"Total files to execute: {executionOrder.Count}");
             Console.WriteLine();
@@ -110,6 +111,9 @@ public class CreateDatabaseService
                     if (fileName == "create_admin_user.sql")
                     {
                         Console.WriteLine("Admin user creation completed (LAST)");
+                        var passwordHash = AuthRepository.HashPassword(password);
+                        const string sql = "UPDATE public.users SET password_hash = @password_hash WHERE username = 'admin'";
+                        await dbServiceToUse.ExecuteAsync(sql, new { password_hash = passwordHash });                        
                     }
                     else if (fileName == "create_db.sql")
                     {

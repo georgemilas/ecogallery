@@ -1,0 +1,186 @@
+version: '3.8'
+
+# Production docker-compose that uses pre-built images from Docker Hub
+# Users don't need to clone the repository or build from source
+# Just download this file + .env.example, configure, and run!
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecogallery-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ecogallery}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      # Use POSTGRES_DATA_PATH from .env if set, otherwise use named volume
+      - ${POSTGRES_DATA_PATH:-postgres-data}:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecogallery-network
+
+  # Backend API
+  api:
+    image: ${DOCKER_IMAGE_PREFIX:-yourusername}/ecogallery-api:${IMAGE_TAG:-latest}
+    container_name: ecogallery-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5001
+      Database__Host: postgres
+      Database__Port: 5432
+      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Username: ${POSTGRES_USER:-postgres}
+      Database__Password: ${POSTGRES_PASSWORD}
+      AppAuth__ApiKey: ${API_KEY}
+    volumes:
+      # Mount your pictures directory (REQUIRED - update path)
+      - ${PICTURES_PATH:-./pictures}:/pictures:ro
+    ports:
+      - "5001:5001"
+    networks:
+      - ecogallery-network
+
+  # Frontend
+  frontend:
+    image: ${DOCKER_IMAGE_PREFIX:-yourusername}/ecogallery-frontend:${IMAGE_TAG:-latest}
+    container_name: ecogallery-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:5001}
+      NEXT_PUBLIC_API_KEY: ${API_KEY}
+    ports:
+      - "3000:3000"
+    networks:
+      - ecogallery-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: ${DOCKER_IMAGE_PREFIX:-yourusername}/ecogallery-nginx:${IMAGE_TAG:-latest}
+    container_name: ecogallery-nginx
+    restart: unless-stopped
+    depends_on:
+      - api
+      - frontend
+    volumes:
+      # Mount pictures for direct serving (must match API volume)
+      - ${PICTURES_PATH:-./pictures}:/pictures:ro
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    networks:
+      - ecogallery-network
+
+  # CLI Service (for initialization and sync - run on demand)
+  service:
+    image: ${DOCKER_IMAGE_PREFIX:-yourusername}/ecogallery-service:${IMAGE_TAG:-latest}
+    container_name: ecogallery-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      Database__Host: postgres
+      Database__Port: 5432
+      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Username: ${POSTGRES_USER:-postgres}
+      Database__Password: ${POSTGRES_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      # Mount pictures directory for sync operations
+      - ${PICTURES_PATH:-./pictures}:/pictures
+    networks:
+      - ecogallery-network
+    profiles:
+      - tools  # Only start when explicitly requested
+
+  # Continuous Sync Service (runs in background, syncs every 2 minutes)
+  sync:
+    image: ${DOCKER_IMAGE_PREFIX:-yourusername}/ecogallery-service:${IMAGE_TAG:-latest}
+    container_name: ecogallery-sync
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      Database__Host: postgres
+      Database__Port: 5432
+      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Username: ${POSTGRES_USER:-postgres}
+      Database__Password: ${POSTGRES_PASSWORD}
+    volumes:
+      # Mount pictures directory for sync operations
+      - ${PICTURES_PATH:-./pictures}:/pictures
+    networks:
+      - ecogallery-network
+    command: ["dotnet", "GalleryService.dll", "sync", "/pictures"]
+    profiles:
+      - sync  # Only start when explicitly requested
+
+  # Continuous Cleanup Service (removes orphaned thumbnails and DB entries)
+  cleanup:
+    image: ${DOCKER_IMAGE_PREFIX:-yourusername}/ecogallery-service:${IMAGE_TAG:-latest}
+    container_name: ecogallery-cleanup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      Database__Host: postgres
+      Database__Port: 5432
+      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Username: ${POSTGRES_USER:-postgres}
+      Database__Password: ${POSTGRES_PASSWORD}
+    volumes:
+      # Mount pictures directory for cleanup operations
+      - ${PICTURES_PATH:-./pictures}:/pictures
+    networks:
+      - ecogallery-network
+    command: ["dotnet", "GalleryService.dll", "cleanup", "-f", "/pictures", "-h", "400", "1440", "-pl", "no"]
+    profiles:
+      - cleanup  # Only start when explicitly requested
+
+  # Virtual Albums Loader (run on-demand to load/update virtual albums from YAML)
+  valbum:
+    image: ${DOCKER_IMAGE_PREFIX:-yourusername}/ecogallery-service:${IMAGE_TAG:-latest}
+    container_name: ecogallery-valbum
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      Database__Host: postgres
+      Database__Port: 5432
+      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Username: ${POSTGRES_USER:-postgres}
+      Database__Password: ${POSTGRES_PASSWORD}
+    volumes:
+      # Mount pictures directory
+      - ${PICTURES_PATH:-./pictures}:/pictures
+      # Mount virtual albums YAML file (update path in .env)
+      - ${VALBUM_YAML:-./virtual_albums.yml}:/config/virtual_albums.yml:ro
+    networks:
+      - ecogallery-network
+    profiles:
+      - tools  # Only start when explicitly requested
+
+networks:
+  ecogallery-network:
+    driver: bridge
+
+volumes:
+  # Named volume used when POSTGRES_DATA_PATH is not set in .env
+  # Docker manages this automatically in its default location
+  postgres-data:
+    driver: local

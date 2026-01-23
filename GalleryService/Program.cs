@@ -54,6 +54,7 @@ var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 40
 var databaseNameOption = new Option<string>(new[] {"--database", "-d"}, () => dbConfig.Database, "Database name to create");
 var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Environment.ProcessorCount, "Degree of parallelism for thumbnail processing");
 var isPlanOption = new Option<string>(new[] {"--plan", "-pl"}, () => "yes", "Run the process in plan mode only");
+var passwordOption = new Option<string>(new[] {"--password", "-pw"}, () => "admin123", "Admin user password");
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail background service and keep the app running
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -235,12 +236,13 @@ rootCommand.AddCommand(syncCommand);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var createDbCommand = new Command("create-db", "Create database schema from SQL files in GalleryLib/db folder");
 createDbCommand.AddOption(databaseNameOption);
-createDbCommand.SetHandler(async (string databaseName) =>
+createDbCommand.AddOption(passwordOption);
+createDbCommand.SetHandler(async (string databaseName, string password) =>
 {
     dbConfig.Database = databaseName;
     Console.WriteLine($"Starting database creation for '{dbConfig.Database}'. Press Ctrl+C to stop.");
     var createDatabaseService = new CreateDatabaseService(dbConfig);
-    var success = await createDatabaseService.CreateDatabaseAsync(dbConfig.Database);
+    var success = await createDatabaseService.CreateDatabaseAsync(dbConfig.Database, password);
     
     if (success)
     {
@@ -252,7 +254,7 @@ createDbCommand.SetHandler(async (string databaseName) =>
         Console.WriteLine("Database creation failed!");
         Environment.Exit(1);
     }
-}, databaseNameOption);
+}, databaseNameOption, passwordOption);
 rootCommand.AddCommand(createDbCommand);
 
 

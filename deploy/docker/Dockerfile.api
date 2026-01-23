@@ -1,0 +1,32 @@
+# Backend API Dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy csproj files and restore dependencies
+COPY ["GalleryApi/GalleryApi.csproj", "GalleryApi/"]
+COPY ["GalleryLib/GalleryLib.csproj", "GalleryLib/"]
+COPY ["ExpParser/ExpParser/ExpParser.csproj", "ExpParser/ExpParser/"]
+RUN dotnet restore "GalleryApi/GalleryApi.csproj"
+
+# Copy everything else and build
+COPY . .
+WORKDIR "/src/GalleryApi"
+RUN dotnet build "GalleryApi.csproj" -c Release -o /app/build
+
+# Publish
+FROM build AS publish
+RUN dotnet publish "GalleryApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 5001
+
+# Copy published files
+COPY --from=publish /app/publish .
+
+# Set environment variables (can be overridden in docker-compose)
+ENV ASPNETCORE_URLS=http://+:5001
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+ENTRYPOINT ["dotnet", "GalleryApi.dll"]

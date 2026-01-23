@@ -1,0 +1,8 @@
+FROM nginx:alpine
+
+# Copy nginx configuration from repository root
+COPY nginx.config /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

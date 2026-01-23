@@ -155,5 +155,5 @@ public class AuthRepository : IDisposable, IAsyncDisposable
     {
         const string sql = "UPDATE public.users SET password_hash = @password_hash WHERE id = @id";
         await _db.ExecuteAsync(sql, new { id = userId, password_hash = newPasswordHash });
-    }
+    }  
 }

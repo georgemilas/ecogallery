@@ -1,0 +1,35 @@
+# CLI Service Dockerfile (for database initialization and sync operations)
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy csproj files and restore dependencies
+COPY ["GalleryService/GalleryService.csproj", "GalleryService/"]
+COPY ["GalleryLib/GalleryLib.csproj", "GalleryLib/"]
+COPY ["ExpParser/ExpParser/ExpParser.csproj", "ExpParser/ExpParser/"]
+RUN dotnet restore "GalleryService/GalleryService.csproj"
+
+# Copy everything else and build
+COPY . .
+WORKDIR "/src/GalleryService"
+RUN dotnet build "GalleryService.csproj" -c Release -o /app/build
+
+# Publish
+FROM build AS publish
+RUN dotnet publish "GalleryService.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime image
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
+WORKDIR /app
+
+# Install required tools (imagemagick for thumbnail generation)
+RUN apt-get update && \
+    apt-get install -y imagemagick && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy published files
+COPY --from=publish /app/publish .
+COPY GalleryLib/db/create_admin_user.sql /app/create_admin_user.sql
+
+# This container is meant to run commands, not as a service
+# Use docker-compose run or docker exec to execute commands
+ENTRYPOINT ["dotnet", "GalleryService.dll"]
