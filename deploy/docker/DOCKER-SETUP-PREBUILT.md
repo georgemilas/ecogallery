@@ -79,7 +79,7 @@ Docker will:
 ### 4. Initialize Database
 
 ```bash
-docker-compose -f docker-compose.prod.yml run --rm service dotnet GalleryService.dll create-db
+docker-compose -f docker-compose.prod.yml run --rm service create-db
 ```
 
 The init script will validate that you've set secure passwords in `.env` and refuse to run if you haven't changed the placeholder values.
@@ -87,7 +87,7 @@ The init script will validate that you've set secure passwords in `.env` and ref
 ### 5. Sync Your Pictures
 
 ```bash
-docker-compose -f docker-compose.prod.yml run --rm service dotnet GalleryService.dll sync /pictures
+docker-compose -f docker-compose.prod.yml run --rm service sync /pictures
 ```
 
 ### 6. Access the Application

@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+*.yml
+!docker-compose*.yml
+
+# Development
+.vscode
+.vs
+.idea
+
+# Node
+**/node_modules
+**/.next
+**/.next-dev
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# .NET
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/*.cache
+**/*.log
+
+# Environment files (will be provided via docker-compose)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Data directories
+data/
+terraform/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Other
+**/appsettings.Development.json
+**/appsettings.Production.json

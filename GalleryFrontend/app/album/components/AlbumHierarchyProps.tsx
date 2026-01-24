@@ -125,11 +125,9 @@ export class AlbumItemHierarchy implements AlbumItemContent {
    * @returns The name extracted from the path
    */
   get_name(path: string): string {
-    var name = path.split('\\');
-    if (name.length === 0) {
-      name = path.split('/');
-    }
-    return name.pop() || 'Pictures Gallery';
+    // Split on both '/' and '\' regardless of which is present
+    const parts = path.split(/[/\\]+/);
+    return parts.pop() || 'Pictures Gallery';
   }
 
   /**

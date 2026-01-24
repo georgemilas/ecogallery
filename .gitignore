@@ -375,3 +375,6 @@ FodyWeavers.xsd
 
 #claudecode
 tmpclaude*
+
+deploy/docker/.env
+

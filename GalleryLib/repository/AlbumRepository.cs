@@ -145,13 +145,13 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public async Task<List<AlbumParents>> GetAlbumParentsAsync(long id)
     {
         var sql = @"WITH RECURSIVE ancestors AS (
-                        SELECT id, album_name, parent_album::text, regexp_replace(album_name, '.*\\', '')::text AS path, 0 AS depth
+                        SELECT id, album_name, parent_album::text, regexp_replace(album_name, '.*[\\/]', '')::text AS path, 0 AS depth
                         FROM album
                         WHERE id = @id
                         
                         UNION ALL
                         
-                        SELECT t.id, t.album_name, t.parent_album::text, regexp_replace(t.album_name, '.*\\', '')::text as path, a.depth + 1
+                        SELECT t.id, t.album_name, t.parent_album::text, regexp_replace(t.album_name, '.*[\\/]', '')::text as path, a.depth + 1
                         FROM album t
                         JOIN ancestors a ON t.album_name = a.parent_album
                         WHERE a.depth < 100  -- safety limit

@@ -28,6 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const setSessionTokenCookie = (token: string) => {
+    const isHttps = window.location.protocol === 'https:';
+    document.cookie = `session_token=${token}; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=None;${isHttps ? ' Secure' : ''}`;
+  }
+  
   const validateSession = async (): Promise<boolean> => {
     try {
       const url = `/api/v1/auth/validate`;
@@ -43,6 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok && data.success) {
         setUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
+        // Refresh session_token cookie expiration for sliding expiration
+        const token = localStorage.getItem('sessionToken');
+        if (token) {
+          setSessionTokenCookie(token);
+        }
         return true;
       } else {
         setUser(null);
@@ -79,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const token = data.sessionToken || data.session_token;
         if (token) {
           localStorage.setItem('sessionToken', token);
+          setSessionTokenCookie(token);
         }
 
         return true;

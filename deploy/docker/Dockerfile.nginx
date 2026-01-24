@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
-# Copy nginx configuration from repository root
-COPY nginx.config /etc/nginx/nginx.conf
+# Copy nginx configuration for Docker deployment
+COPY deploy/docker/nginx.config /etc/nginx/nginx.conf
 
 EXPOSE 80
 

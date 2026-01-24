@@ -35,7 +35,7 @@ public class PicturesController : ControllerBase
         //TODO: validate user is supposed to have access to this picture ?
         //user is authenticated but can only see pictures in albums they have access to
 
-        Response.Headers.Append("X-Accel-Redirect", $"/pictures/internal/{filePath}");
+        Response.Headers.Append("X-Accel-Redirect", $"/xaccel/{filePath}");
         Response.ContentLength = 0;
         return Ok();
     } 

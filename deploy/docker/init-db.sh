@@ -40,7 +40,7 @@ sleep 2
 # Create database schema with custom admin password
 echo "Creating database schema..."
 echo "Using admin password from ADMIN_PASSWORD environment variable"
-dotnet GalleryService.dll create-db -pw "${ADMIN_PASSWORD}"
+docker-compose run --rm service create-db -pw "${ADMIN_PASSWORD}"
 
 echo ""
 echo "✅ Database schema created successfully!"
@@ -55,7 +55,7 @@ echo "=================================="
 echo "Next Steps:"
 echo "=================================="
 echo "1. Sync your pictures:"
-echo "   docker-compose run --rm service dotnet GalleryService.dll sync /pictures"
+echo "   docker-compose run --rm service sync /pictures"
 echo ""
 echo "2. Access the application at http://localhost"
 echo "=================================="

@@ -38,10 +38,10 @@ public class AuthController : ControllerBase
             Response.Cookies.Append("session_token", response.SessionToken!, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = isHttps,
-                SameSite = SameSiteMode.Strict,
+                Secure = true, // Always secure for Docker cross-site, required for SameSite=None
+                SameSite = SameSiteMode.None, // Allow cross-site requests (Docker network)
                 Expires = DateTimeOffset.UtcNow.AddDays(7)
-            });            
+            });
             return Ok(new { success = true, message = response.Message, user = response.User, sessionToken = response.SessionToken });
         }        
         return Unauthorized(new { success = false, message = response.Message});

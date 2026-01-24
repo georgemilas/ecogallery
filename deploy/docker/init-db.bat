@@ -5,6 +5,25 @@ echo ==================================
 echo EcoGallery Database Initialization
 echo ==================================
 echo.
+
+REM Load .env file if it exists
+if exist .env (
+    echo Loading environment from .env file...
+    for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
+        set "line=%%a"
+        REM Skip comments and empty lines
+        if not "!line:~0,1!"=="#" if not "!line!"=="" (
+            set "%%a=%%b"
+        )
+    )
+    echo.
+) else (
+    echo ❌ ERROR: .env file not found!
+    echo Please copy .env.example to .env and configure it
+    pause
+    exit /b 1
+)
+
 REM Validate required environment variables
 if "%API_KEY%"=="CHANGE_ME_TO_A_SECURE_RANDOM_STRING" (
     echo ❌ ERROR: API_KEY is not set or still using placeholder value!
@@ -71,7 +90,7 @@ timeout /t 2 /nobreak > nul
 REM Create database schema with custom admin password
 echo Creating database schema...
 echo Using admin password from ADMIN_PASSWORD environment variable
-docker-compose run --rm service dotnet GalleryService.dll create-db -pw "%ADMIN_PASSWORD%"
+docker-compose run --rm service create-db -pw "%ADMIN_PASSWORD%"
 
 if errorlevel 1 (
     echo.

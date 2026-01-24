@@ -49,3 +49,29 @@ for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
  * /R makes the loop recursive.
  * %f is each file found.
  * %~dpnf expands to the full path and filename (without extension), so the .mp4 is created next to the source.
+
+
+
+# commands
+```bash
+docker-compose logs api --tail=30
+docker-compose exec api printenv | Select-String -Pattern "API"
+
+docker-compose down nginx;
+docker-compose build nginx;
+docker-compose up -d --force-recreate --no-deps nginx
+docker-compose up -d nginx;
+docker-compose logs nginx --tail=30
+docker-compose exec nginx cat /etc/nginx/nginx.conf
+docker-compose exec nginx ls -l /pictures/2024/botanical\ garden/_MG_3507.jpg
+docker-compose exec nginx ls -l '/pictures/2024/botanical garden/_MG_3507.jpg'
+docker-compose exec nginx tail -n 30 /var/log/nginx/error.log
+
+docker-compose exec postgres psql -U ecogallery -d ecogallery5 -c "SELECT image_path FROM album_image WHERE image_path LIKE '%2021%' LIMIT 5;"
+docker-compose exec postgres psql -U ecogallery -d ecogallery5 -c "\d virtual_album"
+docker-compose exec postgres psql -U ecogallery -d ecogallery5 -c "SELECT id, album_name, album_expression, album_type FROM virtual_album WHERE id IN (12, 13);"
+
+docker-compose build --no-cache frontend; docker-compose up -d
+docker-compose exec frontend printenv | Select-String -Pattern "API"
+
+```

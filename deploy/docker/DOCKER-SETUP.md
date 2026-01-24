@@ -26,7 +26,7 @@ Quick and easy deployment of EcoGallery using Docker. Perfect for local self-hos
 ### 1. Download the Application
 
 ```bash
-git clone <repository-url>
+git clone --recursive https://github.com/georgemilas/ecogallery.git
 cd ecogallery/deploy/docker
 ```
 
@@ -108,7 +108,7 @@ The init script will validate that you've set secure passwords in `.env` and ref
 
 **Or manually:**
 ```bash
-docker-compose run --rm service dotnet GalleryService.dll create-db -pw YourSecurePassword
+docker-compose run --rm service create-db -pw YourSecurePassword
 ```
 
 ### 5. Login with Admin Account
@@ -121,7 +121,7 @@ The `create-db` command creates an admin user with the password you set in `ADMI
 
 **One-time sync (for initial setup):**
 ```bash
-docker-compose run --rm service dotnet GalleryService.dll sync /pictures
+docker-compose run --rm service sync /pictures
 ```
 
 **Note:** `/pictures` is the path INSIDE the container. It automatically maps to your `PICTURES_PATH` from `.env`.
@@ -203,7 +203,7 @@ docker-compose logs -f nginx
 
 **Option 1: Manual one-time sync**
 ```bash
-docker-compose run --rm service dotnet GalleryService.dll sync /pictures
+docker-compose run --rm service sync /pictures
 ```
 Note: This runs continuously (scans every 2 minutes) until you press Ctrl+C.
 
@@ -304,7 +304,7 @@ docker-compose stop cleanup
 
 **Or run cleanup manually:**
 ```bash
-docker-compose run --rm service dotnet GalleryService.dll cleanup -f /pictures -h 400 1440 -pl no
+docker-compose run --rm service cleanup -f /pictures -h 400 1440 -pl no
 ```
 
 ### Virtual Albums (Dynamic Albums from YAML)
@@ -325,8 +325,8 @@ Example `virtual_albums.yml`:
 ```yaml
 Pictures Gallery:
   description: Welcome to my gallery
-  folder: \public
-  feature: \public\IMG_8337.jpg
+  folder: /public
+  feature: /public/IMG_8337.jpg
 
 Barcelona:
   parent: Pictures Gallery
@@ -337,13 +337,13 @@ Barcelona:
 2024:
   parent: Pictures Gallery
   description: Selections from 2024 trips
-  expression: 2024\ and not (eclipse _8940 _8881)
+  expression: 2024/ and not (eclipse _8940 _8881)
   feature: \2024\Colorado\_MG_2981-Pano-Edit.jpg
 
 Colorado:
   parent: 2024
   description: Selections from Colorado trip
-  expression: 2024\ and colorado
+  expression: 2024/ and colorado
   feature: \2024\Colorado\_MG_2981-Pano-Edit.jpg
 ```
 
@@ -361,7 +361,7 @@ VALBUM_YAML=./virtual_albums.yml
 
 **3. Load virtual albums:**
 ```bash
-docker-compose run --rm valbum dotnet GalleryService.dll valbum -f /pictures -y /config/virtual_albums.yml
+docker-compose run --rm valbum valbum -f /pictures -y /config/virtual_albums.yml
 ```
 
 ### All Available Commands
@@ -370,25 +370,25 @@ Run any GalleryService command using the `service` container:
 
 ```bash
 # Sync (thumbnails + database)
-docker-compose run --rm service dotnet GalleryService.dll sync /pictures
+docker-compose run --rm service sync /pictures
 
 # Cleanup (remove orphaned files)
-docker-compose run --rm service dotnet GalleryService.dll cleanup -f /pictures -h 400 1440 -pl no
+docker-compose run --rm service cleanup -f /pictures -h 400 1440 -pl no
 
 # Database sync only
-docker-compose run --rm service dotnet GalleryService.dll db -f /pictures
+docker-compose run --rm service db -f /pictures
 
 # Thumbnails only
-docker-compose run --rm service dotnet GalleryService.dll thumbnails -f /pictures -h 400 1440
+docker-compose run --rm service thumbnails -f /pictures -h 400 1440
 
 # Virtual albums from YAML
-docker-compose run --rm service dotnet GalleryService.dll valbum -f /pictures -y /path/to/yaml
+docker-compose run --rm service valbum -f /pictures -y /path/to/yaml
 
 # Create database schema
-docker-compose run --rm service dotnet GalleryService.dll create-db
+docker-compose run --rm service create-db
 
 # Get help
-docker-compose run --rm service dotnet GalleryService.dll --help
+docker-compose run --rm service --help
 ```
 
 ## Troubleshooting
@@ -419,12 +419,12 @@ Then access the app at `http://localhost:8080`
 
 3. **Re-sync pictures:**
    ```bash
-   docker-compose run --rm service dotnet GalleryService.dll sync /pictures
+   docker-compose run --rm service sync /pictures
    ```
 
 4. **Run cleanup if pictures were deleted:**
    ```bash
-   docker-compose run --rm service dotnet GalleryService.dll cleanup -f /pictures -h 400 1440 -pl no
+   docker-compose run --rm service cleanup -f /pictures -h 400 1440 -pl no
    ```
 
 ### Database Connection Errors
@@ -464,8 +464,8 @@ docker-compose down -v
 docker-compose up -d
 
 # Re-initialize database (uses your ADMIN_PASSWORD from .env)
-docker-compose run --rm service dotnet GalleryService.dll create-db
-docker-compose run --rm service dotnet GalleryService.dll sync /pictures
+docker-compose run --rm service create-db
+docker-compose run --rm service sync /pictures
 ```
 
 ## Architecture
@@ -516,7 +516,7 @@ git pull
 docker-compose up -d --build
 
 # Database migrations (if any)
-docker-compose run --rm service dotnet GalleryService.dll migrate
+docker-compose run --rm service migrate
 ```
 
 ## Resource Usage

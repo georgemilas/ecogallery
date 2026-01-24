@@ -10,9 +10,22 @@ RUN npm ci
 FROM node:18-alpine AS builder
 WORKDIR /app
 
+ENV NODE_ENV=production
+
+# Accept build arguments for Next.js public environment variables
+ARG NEXT_PUBLIC_API_KEY
+ARG NEXT_PUBLIC_API_BASE
+
+# Set them as environment variables for the build
+ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY
+ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
+
 # Copy dependencies and source
 COPY --from=deps /app/node_modules ./node_modules
 COPY GalleryFrontend/ ./
+
+# Create public directory if it doesn't exist (Next.js may not have one)
+RUN mkdir -p public
 
 # Build the application
 RUN npm run build

@@ -21,14 +21,16 @@ RUN dotnet publish "GalleryService.csproj" -c Release -o /app/publish /p:UseAppH
 FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
 WORKDIR /app
 
-# Install required tools (imagemagick for thumbnail generation)
+# Install required tools (imagemagick for thumbnail generation, ffmpeg for video metadata)
 RUN apt-get update && \
-    apt-get install -y imagemagick && \
+    apt-get install -y imagemagick ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy published files
 COPY --from=publish /app/publish .
-COPY GalleryLib/db/create_admin_user.sql /app/create_admin_user.sql
+
+# Copy database SQL files (required for create-db command)
+COPY GalleryLib/db /app/GalleryLib/db
 
 # This container is meant to run commands, not as a service
 # Use docker-compose run or docker exec to execute commands
