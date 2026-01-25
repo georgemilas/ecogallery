@@ -56,6 +56,10 @@ export async function GET(
     if (rangeHeader) {
         headers['Range'] = rangeHeader;
     }
+    const referer = request.headers.get('referer');
+    if (referer) {
+        headers['Referer'] = referer;
+    }
   
     try {
         console.log('Media fetch request:', mediaUrl, headers);    

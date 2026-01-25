@@ -24,8 +24,9 @@ public class AppAuthMiddleware
 
         bool isAppAuthenticated = IsAppAuthenticated(context, _configuration);
 
-        if (!isAppAuthenticated)
+        if (!isAppAuthenticated)        
         {
+            Console.WriteLine($"App authentication X-API-Key failed for path: {context.Request.Path}");
             context.Response.StatusCode = 401;
             await context.Response.WriteAsJsonAsync(new
             {

@@ -41,13 +41,18 @@ public class SessionAuthMiddleware
             await _next(context);
             return;
         }
-        //for videos selected for public mode (aka valbum) since we don't have HD thumbnails, we allow access to original 
+        
+        //for example videos selected for public mode (aka valbum) since we don't have HD thumbnails, we allow access to original 
+        Console.WriteLine($"Checking for valbum access: {context.Request.Path}, Referer: {context.Request.Headers["Referer"]}");
         if (context.Request.Headers["Referer"].ToString().Contains("/valbum?")  
             && context.Request.Path.StartsWithSegments("/api/v1/pictures")
             && !context.Request.Path.StartsWithSegments("/api/v1/pictures/_thumbnails")            
            )
         {
-            Console.WriteLine($"Video passing through: {context.Request.Path}, Referer: {context.Request.Headers["Referer"]}"); 
+            // TODO: validate that the video really belongs to a public valbum 
+            // extract valbum id and image id from referer /valbum?...&id=xxxx&image=yyyy and check against db  
+
+            Console.WriteLine($"valbum referer passing through: {context.Request.Path}, Referer: {context.Request.Headers["Referer"]}"); 
             await _next(context);
             return;
         }
@@ -94,6 +99,7 @@ public class SessionAuthMiddleware
         if (string.IsNullOrEmpty(sessionToken))
         {
             context.Response.StatusCode = 401;
+            Console.WriteLine($"User authentication failed for path: {context.Request.Path}, no session token found");
             await context.Response.WriteAsJsonAsync(new
             {
                 success = false,
@@ -106,6 +112,7 @@ public class SessionAuthMiddleware
         var user = await authService.ValidateSessionAsync(sessionToken);
         if (user == null)
         {
+            Console.WriteLine($"User authentication failed for path: {context.Request.Path}, invalid or expired session");
             context.Response.Cookies.Delete("session_token");
             context.Response.StatusCode = 401;
             await context.Response.WriteAsJsonAsync(new

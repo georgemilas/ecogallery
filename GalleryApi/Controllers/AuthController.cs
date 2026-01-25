@@ -37,8 +37,8 @@ public class AuthController : ControllerBase
 
             Response.Cookies.Append("session_token", response.SessionToken!, new CookieOptions
             {
-                HttpOnly = true,
-                Secure = true, // Always secure for Docker cross-site, required for SameSite=None
+                HttpOnly = true,  // true does not allow JavaScript to access this cookie which is how it should be to prevent XSS attacks 
+                Secure = isHttps, // allow HTTP as well as HTTPS for Docker cross-site
                 SameSite = SameSiteMode.None, // Allow cross-site requests (Docker network)
                 Expires = DateTimeOffset.UtcNow.AddDays(7)
             });
