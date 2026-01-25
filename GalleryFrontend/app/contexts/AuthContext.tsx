@@ -30,7 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setSessionTokenCookie = (token: string) => {
     const isHttps = window.location.protocol === 'https:';
-    document.cookie = `session_token=${token}; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=None;${isHttps ? ' Secure' : ''}`;
+    const sameSite = isHttps ? 'None' : 'Lax';
+    const secured = isHttps ? ' Secure' : '';
+    document.cookie = `session_token=${token}; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=${sameSite};${secured}`;
   }
   
   const validateSession = async (): Promise<boolean> => {

@@ -5,6 +5,19 @@ echo "=================================="
 echo "EcoGallery Database Initialization"
 echo "=================================="
 
+# Load .env file if it exists
+if [ -f .env ]; then
+    echo "Loading environment from .env file..."
+    set -a
+    source .env
+    set +a
+    echo ""
+else
+    echo "❌ ERROR: .env file not found!"
+    echo "Please copy .env.example to .env and configure it"
+    exit 1
+fi
+
 # Validate required environment variables
 if [ "${API_KEY}" = "CHANGE_ME_TO_A_SECURE_RANDOM_STRING" ] || [ -z "${API_KEY}" ]; then
     echo "❌ ERROR: API_KEY is not set or still using placeholder value!"
@@ -41,6 +54,11 @@ sleep 2
 echo "Creating database schema..."
 echo "Using admin password from ADMIN_PASSWORD environment variable"
 docker-compose run --rm service create-db -pw "${ADMIN_PASSWORD}"
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Database initialization failed!"
+    exit 1
+fi
 
 echo ""
 echo "✅ Database schema created successfully!"
