@@ -59,7 +59,7 @@ services:
     depends_on:
       - api
     environment:
-      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:5001}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-}
       NEXT_PUBLIC_API_KEY: ${API_KEY}
       INTERNAL_NGINX_URL: http://nginx:80
     networks:

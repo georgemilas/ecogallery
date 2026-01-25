@@ -203,7 +203,7 @@ docker-compose logs -f nginx
 
 **Option 1: Manual one-time sync**
 ```bash
-docker-compose run --rm service sync /pictures
+docker-compose run --rm service sync -f /pictures
 ```
 Note: This runs continuously (scans every 2 minutes) until you press Ctrl+C.
 
