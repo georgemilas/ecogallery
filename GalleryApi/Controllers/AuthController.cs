@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
             {
                 HttpOnly = true,  // true does not allow JavaScript to access this cookie which is how it should be to prevent XSS attacks 
                 Secure = isHttps, // allow HTTP as well as HTTPS for Docker cross-site
-                SameSite = SameSiteMode.None, // Allow cross-site requests (Docker network)
+                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax, // None = Send cookie for cross-site requests since is over HTTPS, Lax = only same-site for HTTP 
                 Expires = DateTimeOffset.UtcNow.AddDays(7)
             });
             return Ok(new { success = true, message = response.Message, user = response.User, sessionToken = response.SessionToken });
