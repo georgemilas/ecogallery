@@ -156,7 +156,7 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
     return expanded;
   }, [overscan, rows.length]);
 
-  // INSTANT SCROLL: When rows are calculated and we have a target, scroll immediately using calculated position
+  // INSTANT SCROLL: When rows are calculated and we have a target, scroll using pure math
   useEffect(() => {
     const targetId = pendingScrollTarget.current;
     if (!targetId || rows.length === 0 || hasScrolledRef.current) {
@@ -169,26 +169,36 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
     }
 
     const { rowIndex, row } = result;
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-
-    // Calculate scroll position: gallery container offset + row's top position + half row height (to center)
-    const containerRect = container.getBoundingClientRect();
-    const containerTop = containerRect.top + window.scrollY;
-    const rowCenterY = containerTop + row.top + row.height / 2;
-    const scrollTarget = rowCenterY - window.innerHeight / 2;
-
-    // Scroll immediately to calculated position
-    window.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'instant' });
-    hasScrolledRef.current = true;
 
     // Mark the target row and neighbors as visible so images load
     setVisibleRows((prev) => {
       const next = new Set(prev);
       next.add(rowIndex);
       return expandWithOverscan(next);
+    });
+
+    // Wait for layout to complete before measuring positions
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const container = containerRef.current;
+        if (!container) {
+          hasScrolledRef.current = true;
+          return;
+        }
+
+        // Get container's absolute position in the document
+        const containerRect = container.getBoundingClientRect();
+        const containerTopInDocument = containerRect.top + window.scrollY;
+
+        // Calculate the target row's center position in the document
+        const rowCenterY = containerTopInDocument + row.top + row.height / 2;
+
+        // Scroll so the row is centered in viewport
+        const scrollTarget = rowCenterY - window.innerHeight / 2;
+
+        window.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'instant' });
+        hasScrolledRef.current = true;
+      });
     });
   }, [rows, findRowForImage, expandWithOverscan, containerRef]);
 

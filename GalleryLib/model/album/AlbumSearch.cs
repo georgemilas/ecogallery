@@ -4,7 +4,7 @@ namespace GalleryLib.model.album;
 
 public record AlbumSearch
 {
-    public const int DefaultLimit = 500;
+    public const int DefaultLimit = 2000;
     public string Expression { get; set; } = string.Empty;    
     public long Limit { get; set; } = DefaultLimit;
     public long Offset { get; set; } = 0;

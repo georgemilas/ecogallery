@@ -94,7 +94,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     try {
       const url = `${config.apiBaseUrl}/search`;
       console.log('Searching albums:', { expression, url });
-      const DefaultLimit = 500;
+      const DefaultLimit = 2000;
       var searchInfo = album != null && album.search_info ? { ...album.search_info, expression: expression, offset: offset } : { expression: expression, limit: DefaultLimit, offset: offset, count: 0, group_by_p_hash: true };
       console.log('Using search info:', searchInfo);
       const res = await apiFetch(url, {
