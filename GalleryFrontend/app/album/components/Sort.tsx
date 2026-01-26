@@ -9,7 +9,7 @@ type SortType = 'albums' | 'images';
 interface SortControlProps {
   type: SortType;
   album: AlbumItemHierarchy;
-  onSortChange: () => void;
+  onSortChange: (sortedItems: AlbumItemContent[] | ImageItemContent[]) => void;
   initialSort?: string;
   onSortUpdate?: (sortValue: string) => void;
 }
@@ -67,9 +67,13 @@ export function SortControl(props: SortControlProps): JSX.Element {
 
   React.useEffect(() => {
     if (items && items.length > 0) {
-      console.log(`SortControl(${props.type}) useEffect triggered:`, { sortField, sortOrder, itemsLength: items.length });
       sortItems(items, sortField, sortOrder);
-      props.onSortChange();
+      const sortedCopy = [...items];
+      if (isAlbumType) {
+        props.onSortChange(sortedCopy as AlbumItemContent[]);
+      } else {
+        props.onSortChange(sortedCopy as ImageItemContent[]);
+      }
     }
   }, [sortField, sortOrder, items.length]); // Removed props.onSortChange to prevent recreation loops
 

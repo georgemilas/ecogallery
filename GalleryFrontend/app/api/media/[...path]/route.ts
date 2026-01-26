@@ -62,11 +62,8 @@ export async function GET(
     }
   
     try {
-        console.log('Media fetch request:', mediaUrl, headers);    
-        const response = await fetch(mediaUrl, {
-        headers,
-        credentials: 'include',
-        });
+        //console.log('Media fetch request:', mediaUrl, headers);    
+        const response = await fetch(mediaUrl, {headers, credentials: 'include', });
         
         if (!response.ok && response.status !== 206) {
         console.log('Media fetch error:', response.status, response.statusText, response.headers);    

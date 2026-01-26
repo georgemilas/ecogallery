@@ -19,9 +19,7 @@ export function VirtualAlbumPage(): JSX.Element {
         lastViewedImage={props.lastViewedImage}
         settings={props.currentSettings}
         router={props.router}
-        onSortChange={(settings) => {
-          props.setCurrentSettings(settings);                
-        }}
+        onSortChange={props.onSortChange}
         onSearchSubmit={() => {}}
         onGetApiUrl={props.onGetApiUrl} 
         clearLastViewedImage={() => props.setLastViewedImage(null)}

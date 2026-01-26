@@ -388,3 +388,16 @@
     border-radius: 50%;
     animation: loader-spin 0.8s linear infinite;
 }
+
+/* Virtualized gallery */
+.virtualized-gallery {
+    flex-direction: column;
+}
+
+.gallery-row {
+    flex-shrink: 0;
+}
+
+.gallery-item-placeholder {
+    background-color: #1a1a1a;
+}

@@ -27,6 +27,7 @@ export interface BaseAlbumPageProps {
   setCurrentSettings: (settings: AlbumSettings) => void;
   setLastViewedImage: (id: number | null) => void;
   onGetApiUrl: (apiUrl: string) => void;
+  onSortChange: (settings: AlbumSettings) => void;
   onSearchSubmit?: (expression: string, offset: number) => void;
   config: BaseAlbumConfig;
 }
@@ -48,6 +49,13 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     if (album?.settings) setCurrentSettings(album.settings);
   }, [album?.settings]);
 
+    // Helper to update sort in URL
+    const updateSortInUrl = (newSettings: AlbumSettings) => {
+      const currentParams = new URLSearchParams(window.location.search);
+      if (newSettings.album_sort) currentParams.set('albumSort', newSettings.album_sort);
+      if (newSettings.image_sort) currentParams.set('imageSort', newSettings.image_sort);
+      router.push(`${config.basePath}?${currentParams.toString()}`);
+    }
   const viewMode = imageIdParam ? 'image' : 'gallery';
   const selectedImage = album?.images.find(item => item.id === imageIdParam) || null;
 
@@ -218,6 +226,10 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     handleCloseImage,
     setCurrentSettings,
     setLastViewedImage,
+    onSortChange: (settings: AlbumSettings) => {
+      setCurrentSettings(settings);
+      updateSortInUrl(settings);
+    },
     onGetApiUrl: getApiUrl,
     onSearchSubmit: config.onSearchSubmit || postSearchAlbum,
     config

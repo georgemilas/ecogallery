@@ -79,11 +79,11 @@ export function useMediaLoader(
   }, [state.src]);
 
   const loadMedia = useCallback(async (url: string) => {
-    console.log('loadMedia called for URL:', url);
+    //console.log('loadMedia called for URL:', url);
     
     // Don't reload if it's the same URL and we already have a blob URL
     if (url === currentUrlRef.current && state.src && !state.error) {
-      console.log('Skipping reload for same URL:', url);
+      //console.log('Skipping reload for same URL:', url);
       return;
     }
 
@@ -93,14 +93,14 @@ export function useMediaLoader(
     setState(prev => ({ ...prev, loading: true, error: false }));
 
     const strategy = getMediaLoadingStrategy(url);
-    console.log('Selected strategy:', strategy, 'for URL:', url);
+    //console.log('Selected strategy:', strategy, 'for URL:', url);
 
     try {
       
       switch (strategy) {
         case 'progressive':
           // 400px thumbnails - direct progressive loading (no auth needed)
-          console.log('Using progressive loading for:', url);
+          //console.log('Using progressive loading for:', url);
           setState({ src: url, loading: false, error: false });
           return;
           

@@ -37,10 +37,7 @@ var picturesConfig = serviceProvider.GetRequiredService<IOptions<PicturesDataCon
 var dbConfig = serviceProvider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
 // Console.WriteLine($"appsettings.json exists: {File.Exists(Path.Combine(basePath, "appsettings.json"))}");
 // Console.WriteLine($"appsettings.{environment}.json exists: {File.Exists(Path.Combine(basePath, $"appsettings.{environment}.json"))}");
-// Console.WriteLine($"Database:Username from config: '{configuration["Database:Username"]}'");
-// Console.WriteLine($"Database:Password from config: '{configuration["Database:Password"]}'");
-// Console.WriteLine($"Database:Database from config: '{configuration["Database:Database"]}'");
-
+// Console.WriteLine($"Connection String: '{dbConfig.ToConnectionString()}'");
 // Console.WriteLine("Press Enter to continue...");
 // Console.ReadLine(); // Press Enter to continue...
 
