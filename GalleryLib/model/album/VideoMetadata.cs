@@ -15,8 +15,8 @@ public class VideoMetadata
     public DateTime? DateTaken { get; set; }
     public DateTime? DateModified { get; set; }
     public TimeSpan? Duration { get; set; }
-    public int? VideoWidth { get; set; }
-    public int? VideoHeight { get; set; }
+    public int VideoWidth { get; set; }
+    public int VideoHeight { get; set; }
     public string? VideoCodec { get; set; }
     public string? AudioCodec { get; set; }
     public string? PixelFormat { get; set; }
@@ -44,8 +44,8 @@ public class VideoMetadata
             DateTaken = reader.IsDBNull(reader.GetOrdinal("date_taken")) ? null : reader.GetDateTime(reader.GetOrdinal("date_taken")),
             DateModified = reader.IsDBNull(reader.GetOrdinal("date_modified")) ? null : reader.GetDateTime(reader.GetOrdinal("date_modified")),
             Duration = reader.IsDBNull(reader.GetOrdinal("duration")) ? null : reader.GetFieldValue<TimeSpan>(reader.GetOrdinal("duration")),
-            VideoWidth = reader.IsDBNull(reader.GetOrdinal("video_width")) ? null : reader.GetInt32(reader.GetOrdinal("video_width")),
-            VideoHeight = reader.IsDBNull(reader.GetOrdinal("video_height")) ? null : reader.GetInt32(reader.GetOrdinal("video_height")),
+            VideoWidth = reader.GetInt32(reader.GetOrdinal("video_width")),
+            VideoHeight = reader.GetInt32(reader.GetOrdinal("video_height")),
             VideoCodec = reader.IsDBNull(reader.GetOrdinal("video_codec")) ? null : reader.GetString(reader.GetOrdinal("video_codec")),
             AudioCodec = reader.IsDBNull(reader.GetOrdinal("audio_codec")) ? null : reader.GetString(reader.GetOrdinal("audio_codec")),
             PixelFormat = reader.IsDBNull(reader.GetOrdinal("pixel_format")) ? null : reader.GetString(reader.GetOrdinal("pixel_format")),

@@ -34,11 +34,13 @@ public record AlbumItemContent: ItemContent
 
 public record ImageItemContent: ItemContent
 {
-    public string ImageHDPath { get; set; } = string.Empty;     
-    public string ImageUHDPath { get; set; } = string.Empty;     
-    public string ImageOriginalPath { get; set; } = string.Empty;     
+    public string ImageHDPath { get; set; } = string.Empty;
+    public string ImageUHDPath { get; set; } = string.Empty;
+    public string ImageOriginalPath { get; set; } = string.Empty;
     public bool IsMovie { get; set; }
-    public ImageMetadata? ImageMetadata { get; set; }    
+    public int ImageWidth { get; set; }
+    public int ImageHeight { get; set; }
+    public ImageMetadata? ImageMetadata { get; set; }
     public VideoMetadata? VideoMetadata { get; set; }
 }
 

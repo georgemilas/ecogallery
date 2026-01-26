@@ -51,16 +51,18 @@ public class CreateDatabaseService
                 return false;
             }
 
-            // Define execution order - create_db.sql first, then others
+            // Define execution order - create_db.sql first, clear_database.sql, db.sql, then others
             var executionOrder = new List<string>();
             executionOrder.Add("create_db.sql");
+            executionOrder.Add("clear_database.sql");
             executionOrder.Add("db.sql");
-            // 3. All other files except the 3 static files
+            // All other files except the static files
+            var staticFiles = new[] { "create_db.sql", "clear_database.sql", "db.sql", "create_admin_user.sql" };
             var middleFiles = allSqlFiles
-                .Where(f => f != "create_db.sql" && f != "db.sql" && f != "create_admin_user.sql")
+                .Where(f => !staticFiles.Contains(f))
                 .OrderBy(f => f)
-                .ToList();            
-            executionOrder.AddRange(middleFiles);            
+                .ToList();
+            executionOrder.AddRange(middleFiles);
             executionOrder.Add("create_admin_user.sql");
 
             Console.WriteLine($"Total files to execute: {executionOrder.Count}");
@@ -118,6 +120,10 @@ public class CreateDatabaseService
                     else if (fileName == "create_db.sql")
                     {
                         Console.WriteLine("Database creation completed (FIRST)");
+                    }
+                    else if (fileName == "clear_database.sql")
+                    {
+                        Console.WriteLine("Database cleared for fresh schema");
                     }
                     else if (fileName == "db.sql")
                     {

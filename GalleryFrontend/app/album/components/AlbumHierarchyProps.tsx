@@ -79,6 +79,8 @@ export interface ImageItemContent extends ItemContent {
   image_hd_path: string;
   image_uhd_path: string;
   image_original_path: string;
+  image_width: number;
+  image_height: number;
   image_metadata: ImageMetadata | null;
   video_metadata: VideoMetadata | null;
 }

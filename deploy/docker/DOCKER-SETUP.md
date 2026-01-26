@@ -121,7 +121,7 @@ The `create-db` command creates an admin user with the password you set in `ADMI
 
 **One-time sync (for initial setup):**
 ```bash
-docker-compose run --rm service sync /pictures
+docker-compose run --rm service sync -f /pictures
 ```
 
 **Note:** `/pictures` is the path INSIDE the container. It automatically maps to your `PICTURES_PATH` from `.env`.

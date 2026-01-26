@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-ecogallery}
+      POSTGRES_DB: ${POSTGRES_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       # Use POSTGRES_DATA_PATH from .env if set, otherwise use named volume
@@ -38,7 +38,7 @@ services:
       ASPNETCORE_URLS: http://+:5001
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Database: ${POSTGRES_DB}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       AppAuth__ApiKey: ${API_KEY}
@@ -102,7 +102,7 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Database: ${POSTGRES_DB}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -127,7 +127,7 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Database: ${POSTGRES_DB}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
     volumes:
@@ -136,8 +136,8 @@ services:
     networks:
       - ecogallery-network
     command: ["sync", "-f", "/pictures"]
-    profiles:
-      - sync  # Only start when explicitly requested
+    #profiles:
+    #  - sync  # Only start when explicitly requested
 
   # Continuous Cleanup Service (removes orphaned thumbnails and DB entries)
   cleanup:
@@ -152,7 +152,7 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Database: ${POSTGRES_DB}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
     volumes:
@@ -161,8 +161,8 @@ services:
     networks:
       - ecogallery-network
     command: ["cleanup", "-f", "/pictures", "-h", "400", "1440", "-pl", "no"]
-    profiles:
-      - cleanup  # Only start when explicitly requested
+    #profiles:
+    #  - cleanup  # Only start when explicitly requested
 
   # Virtual Albums Loader (run on-demand to load/update virtual albums from YAML)
   valbum:
@@ -176,16 +176,17 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB:-ecogallery}
+      Database__Database: ${POSTGRES_DB}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
     volumes:
       # Mount pictures directory
       - ${PICTURES_PATH:-./pictures}:/pictures
       # Mount virtual albums YAML file (update path in .env)
-      - ${VALBUM_YAML:-./virtual_albums.yml}:/config/virtual_albums.yml:ro
+      - ${VALBUM_YAML:-'./virtual albums.yml'}:/config/virtual_albums.yml:ro
     networks:
       - ecogallery-network
+    command: ["valbum", "-f", "/pictures", "-y", "/config/virtual_albums.yml"]
     profiles:
       - tools  # Only start when explicitly requested
 

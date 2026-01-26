@@ -34,8 +34,8 @@ public class ImageMetadata   //EXIF, IPTC etc.
     public string FileName { get; set; } = string.Empty;
     public string FilePath { get; set; } = string.Empty;
     public long? FileSizeBytes { get; set; }
-    public int? ImageWidth { get; set; }
-    public int? ImageHeight { get; set; }
+    public int ImageWidth { get; set; }
+    public int ImageHeight { get; set; }
     public int? Orientation { get; set; }
     public DateTimeOffset LastUpdatedUtc { get; set; }     //record last update time UTC
 
@@ -75,8 +75,8 @@ public class ImageMetadata   //EXIF, IPTC etc.
             FileName = reader.GetString(reader.GetOrdinal("file_name")),
             FilePath = reader.GetString(reader.GetOrdinal("file_path")),
             FileSizeBytes = reader.IsDBNull(reader.GetOrdinal("file_size_bytes")) ? null : reader.GetInt64(reader.GetOrdinal("file_size_bytes")),
-            ImageWidth = reader.IsDBNull(reader.GetOrdinal("image_width")) ? null : reader.GetInt32(reader.GetOrdinal("image_width")),
-            ImageHeight = reader.IsDBNull(reader.GetOrdinal("image_height")) ? null : reader.GetInt32(reader.GetOrdinal("image_height")),
+            ImageWidth = reader.GetInt32(reader.GetOrdinal("image_width")),
+            ImageHeight = reader.GetInt32(reader.GetOrdinal("image_height")),
             Orientation = reader.IsDBNull(reader.GetOrdinal("orientation")) ? null : reader.GetInt32(reader.GetOrdinal("orientation")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc"))    
         };

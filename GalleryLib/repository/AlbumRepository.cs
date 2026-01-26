@@ -196,17 +196,19 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
         var limitOffset2 = albumSearch.Limit > 0 ? $") LIMIT {albumSearch.Limit} OFFSET {albumSearch.Offset}" : "";
         var sql = $@"{limitOffset1}
                     {select}
-                    ai.id, 
-                    ai.image_name AS item_name, 
+                    ai.id,
+                    ai.image_name AS item_name,
                     ai.image_description AS item_description,
-                    ai.image_type AS item_type, 
-                    ai.album_id as parent_album_id, 
+                    ai.image_type AS item_type,
+                    ai.album_id as parent_album_id,
                     ai.album_name AS parent_album_name,
-                    ai.image_type AS feature_item_type, 
-                    ai.image_path AS feature_item_path, 
-                    ai.image_type AS inner_feature_item_type, 
-                    ai.image_path AS inner_feature_item_path,   
+                    ai.image_type AS feature_item_type,
+                    ai.image_path AS feature_item_path,
+                    ai.image_type AS inner_feature_item_type,
+                    ai.image_path AS inner_feature_item_path,
                     ai.image_sha256 AS image_sha256,
+                    ai.image_width,
+                    ai.image_height,
                     ai.last_updated_utc,
                     ai.image_timestamp_utc AS item_timestamp_utc,
                     row_to_json(exif) AS image_metadata,
@@ -243,22 +245,24 @@ public record AlbumRepository: IDisposable, IAsyncDisposable
     public async Task<AlbumContentHierarchical?> GetAlbumHierarchicalByNameAsync(string albumName)
     {
         Album album = Album.CreateFromAlbumPath(albumName, RootFolder);
-        var sql = @"SELECT 
-                        a.id, 
-                        a.album_name AS item_name, 
+        var sql = @"SELECT
+                        a.id,
+                        a.album_name AS item_name,
                         a.album_description AS item_description,
-                        a.album_type AS item_type, 
-                        a.parent_album_id as parent_album_id, 
+                        a.album_type AS item_type,
+                        a.parent_album_id as parent_album_id,
                         a.parent_album AS parent_album_name,
-                        ai.image_type AS feature_item_type, 
-                        a.feature_image_path AS feature_item_path, 
-                        cai.image_type AS inner_feature_item_type, 
-                        ca.feature_image_path AS inner_feature_item_path, 
+                        ai.image_type AS feature_item_type,
+                        a.feature_image_path AS feature_item_path,
+                        cai.image_type AS inner_feature_item_type,
+                        ca.feature_image_path AS inner_feature_item_path,
                         COALESCE(ai.image_sha256, cai.image_sha256, '') AS image_sha256,
+                        COALESCE(ai.image_width, cai.image_width, 0) AS image_width,
+                        COALESCE(ai.image_height, cai.image_height, 0) AS image_height,
                         a.last_updated_utc,
                         a.album_timestamp_utc AS item_timestamp_utc,
                         NULL::json AS image_metadata,
-                        NULL::json AS video_metadata  
+                        NULL::json AS video_metadata
                     FROM album AS a
                     LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
                     LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image

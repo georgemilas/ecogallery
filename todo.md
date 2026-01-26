@@ -54,6 +54,18 @@ for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
 
 # commands
 ```bash
+docker-compose build         #optional step to pre-build all the containers
+./init-db.bat                #create the database and the admin user for the gallery
+docker-compose run sync      #run once to populate and sync gallery database with picures folder (may take a while depending on the size of you pictures folder)
+                             #on subsequent runs it is incremental so only updated/renamed/deleted/moved files etc. are synced
+docker-compose run valbum    #run to create or update virtual albums (public albums based on "search" expression)
+docker-compose up -d         #run the gallery web app (along with continuous sync and clenup) in the background
+
+docker-compose run cleanup   #optional utility to clean orphaned db records (for example you delete pictures and the "sync" service is not running)  
+docker-compose down          #stop gallery and associated processes
+
+
+
 docker-compose logs api --tail=30
 docker-compose exec api printenv | Select-String -Pattern "API"
 

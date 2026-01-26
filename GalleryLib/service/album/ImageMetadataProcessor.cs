@@ -43,26 +43,40 @@ public class ImageMetadataProcessor: AlbumProcessor
                 videoMetadata.FilePath = albumImage.ImagePath;
                 videoMetadata.LastUpdatedUtc = DateTimeOffset.UtcNow;
                 await imageRepository.AddNewVideoMetadataAsync(videoMetadata);
+
+                // Update album_image dimensions for fast aspect ratio access
+                albumImage.ImageWidth = videoMetadata.VideoWidth;
+                albumImage.ImageHeight = videoMetadata.VideoHeight;
+                albumImage.LastUpdatedUtc = DateTimeOffset.UtcNow;
+                await imageRepository.UpdateImageDimensions(albumImage);
+
                 if (logIfCreated)
                 {
                     Console.WriteLine($"Extracted and stored video metadata in video_metadata table: {filePath}");
                 }
                 return Tuple.Create(albumImage, count > 0 ? count : 1);
             }
-            return Tuple.Create(albumImage, count); 
+            return Tuple.Create(albumImage, count);
             //TODO: movie hash?
         }                        
 
         var dbExif = await imageRepository.GetImageMetadataAsync(albumImage);
         if (dbExif == null)
         {
-            ImageMetadata? exif = await ExtractImageMetadata(filePath); 
+            ImageMetadata? exif = await ExtractImageMetadata(filePath);
             if (exif != null)
             {
                 exif.AlbumImageId = albumImage.Id;
                 exif.FilePath = albumImage.ImagePath;
                 exif.LastUpdatedUtc = DateTimeOffset.UtcNow;
-                await imageRepository.AddNewImageMetadataAsync(exif);            
+                await imageRepository.AddNewImageMetadataAsync(exif);
+
+                // Update album_image dimensions for fast aspect ratio access
+                albumImage.ImageWidth = exif.ImageWidth;
+                albumImage.ImageHeight = exif.ImageHeight;
+                albumImage.LastUpdatedUtc = DateTimeOffset.UtcNow;
+                await imageRepository.UpdateImageDimensions(albumImage);
+
                 if (logIfCreated)
                 {
                     Console.WriteLine($"Extracted and stored EXIF data in image_metadata table: {filePath}");
@@ -213,21 +227,36 @@ public class ImageMetadataProcessor: AlbumProcessor
                 exif.Camera = GetTag(ifd0Directory, ExifDirectoryBase.TagModel);
                 exif.Software = GetTag(ifd0Directory, ExifDirectoryBase.TagSoftware);
                 exif.DateTaken = GetDateTimeTag(ifd0Directory, ExifDirectoryBase.TagDateTime);
-                
-                // Image dimensions
+
+                // Image dimensions - try EXIF first, track source for orientation handling
+                bool dimensionsFromExif = false;
+                int? imageWidth = null;
+                int? imageHeight = null;
                 if (ifd0Directory.TryGetInt32(ExifDirectoryBase.TagImageWidth, out int width))
-                    exif.ImageWidth = width;
+                    imageWidth = width;
                 if (ifd0Directory.TryGetInt32(ExifDirectoryBase.TagImageHeight, out int height))
-                    exif.ImageHeight = height;
-                if (exif.ImageWidth == null || exif.ImageHeight == null)
+                    imageHeight = height;
+
+                dimensionsFromExif = imageWidth != null && imageHeight != null && imageWidth.Value > 0 && imageHeight.Value > 0;
+                if (!dimensionsFromExif)
                 {
-                    // Fallback to loading the image if dimensions are not in EXIF                
+                    // Fallback to loading the image if dimensions are not in EXIF                    
                     using var image = await Image.LoadAsync(filePath);
                     exif.ImageWidth = image.Width;
                     exif.ImageHeight = image.Height;
                 }
-                
+                else
+                {
+                    if (imageWidth.HasValue && imageHeight.HasValue)
+                    {
+                        exif.ImageWidth = imageWidth.Value;
+                        exif.ImageHeight = imageHeight.Value;
+                    }
+                }
+
                 // Check orientation and swap dimensions if needed
+                // IMPORTANT: Only swap if dimensions came from EXIF (raw/stored orientation)
+                // ImageSharp dimensions are already in display orientation, no swap needed
                 // Orientation values 5, 6, 7, 8 require width/height swap (90° or 270° rotation)
                 // 1: Normal
                 // 2: Flip horizontal
@@ -240,13 +269,21 @@ public class ImageMetadataProcessor: AlbumProcessor
                 if (ifd0Directory.TryGetInt32(ExifDirectoryBase.TagOrientation, out int orientation))
                 {
                     exif.Orientation = orientation;
-                    if (orientation >= 5 && orientation <= 8)
+                    if (dimensionsFromExif && orientation >= 5 && orientation <= 8)
                     {
-                        // Swap width and height for rotated images
                         (exif.ImageWidth, exif.ImageHeight) = (exif.ImageHeight, exif.ImageWidth);
                     }
                 }
             }
+            else
+            {            
+                // Fallback to loading the image if no EXIF
+                using var image = await Image.LoadAsync(filePath);
+                exif.ImageWidth = image.Width;
+                exif.ImageHeight = image.Height;                                
+            }
+
+
             // Get SubIFD directory (detailed photo info)
             var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
             if (subIfdDirectory != null)

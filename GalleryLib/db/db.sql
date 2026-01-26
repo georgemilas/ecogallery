@@ -106,7 +106,9 @@ CREATE TABLE
     image_timestamp_utc timestamp with time zone NOT NULL,   --when the image file was last modified
     album_name character varying(500) NOT NULL,
     album_id bigint NOT NULL,
-    image_sha256 character varying(64) NULL                  --SHA-256 hash of the 400px thumbnail for duplicate detection
+    image_sha256 character varying(64) NULL,                 --SHA-256 hash of the 400px thumbnail for duplicate detection
+    image_width integer NOT NULL DEFAULT 0,                  --display width in pixels (rotation-corrected)
+    image_height integer NOT NULL DEFAULT 0                  --display height in pixels (rotation-corrected)
   );
 
 ALTER TABLE
@@ -169,8 +171,8 @@ CREATE TABLE
     file_name character varying(255) NOT NULL,
     file_path character varying(500) NOT NULL,
     file_size_bytes bigint NULL,
-    image_width integer NULL,
-    image_height integer NULL,
+    image_width integer NOT NULL DEFAULT 0,
+    image_height integer NOT NULL DEFAULT 0,
     orientation integer NULL,
     last_updated_utc timestamp with time zone NOT NULL      --when the record was last updated
   );
@@ -208,8 +210,8 @@ CREATE TABLE
     date_taken timestamp with time zone NULL,
     date_modified timestamp with time zone NULL,
     duration interval NULL,                      -- Video duration as PostgreSQL interval
-    video_width integer NULL,
-    video_height integer NULL,
+    video_width integer NOT NULL DEFAULT 0,
+    video_height integer NOT NULL DEFAULT 0,
     video_codec character varying(100) NULL,
     audio_codec character varying(100) NULL,
     pixel_format character varying(100) NULL,

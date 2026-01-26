@@ -17,9 +17,11 @@ public record AlbumContentHierarchical
     public string? InnerFeatureItemType { get; set; } = string.Empty;   //not null only if FeatureItemType is null
     public string? InnerFeatureItemPath { get; set; } = string.Empty;   //not null only if FeatureItemType is null
     public string ImageSha256 { get; set; } = string.Empty;  //SHA-256 hash of 400px thumbnail for duplicate detection
-    public DateTimeOffset LastUpdatedUtc { get; set; }    
+    public int ImageWidth { get; set; }   //display width in pixels (rotation-corrected)
+    public int ImageHeight { get; set; }  //display height in pixels (rotation-corrected)
+    public DateTimeOffset LastUpdatedUtc { get; set; }
     public DateTimeOffset ItemTimestampUtc { get; set; }
-    public ImageMetadata? ImageMetadata { get; set; }  
+    public ImageMetadata? ImageMetadata { get; set; }
     public VideoMetadata? VideoMetadata { get; set; }
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
@@ -38,6 +40,8 @@ public record AlbumContentHierarchical
             InnerFeatureItemType = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_type")) ? null :  reader.GetString(reader.GetOrdinal("inner_feature_item_type")),
             InnerFeatureItemPath = reader.IsDBNull(reader.GetOrdinal("inner_feature_item_path")) ? null : reader.GetString(reader.GetOrdinal("inner_feature_item_path")),
             ImageSha256 = reader.IsDBNull(reader.GetOrdinal("image_sha256")) ? string.Empty : reader.GetString(reader.GetOrdinal("image_sha256")),
+            ImageWidth = reader.GetInt32(reader.GetOrdinal("image_width")),
+            ImageHeight = reader.GetInt32(reader.GetOrdinal("image_height")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
             ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc")),
             ImageMetadata = reader.IsDBNull(reader.GetOrdinal("image_metadata")) 

@@ -58,8 +58,17 @@ public class AlbumImageRepository: IDisposable, IAsyncDisposable
         var sql = @"UPDATE album_image SET last_updated_utc = @last_updated_utc, image_sha256 = @image_sha256
                     WHERE id = @id
                     RETURNING id";
-        var id = await _db.ExecuteScalarAsync<long>(sql, image);            
-        return id;                        
+        var id = await _db.ExecuteScalarAsync<long>(sql, image);
+        return id;
+    }
+
+    public async Task<long> UpdateImageDimensions(AlbumImage image)
+    {
+        var sql = @"UPDATE album_image SET last_updated_utc = @last_updated_utc, image_width = @image_width, image_height = @image_height
+                    WHERE id = @id
+                    RETURNING id";
+        var id = await _db.ExecuteScalarAsync<long>(sql, image);
+        return id;
     }
 
     public async Task<int> DeleteAlbumImageAsync(string filePath)

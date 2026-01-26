@@ -54,6 +54,8 @@ public class ServiceBase
         
         image.LastUpdatedUtc = item.LastUpdatedUtc;
         image.ItemTimestampUtc = item.ItemTimestampUtc;
+        image.ImageWidth = item.ImageWidth;
+        image.ImageHeight = item.ImageHeight;
         image.ImageMetadata = item.ImageMetadata;
         image.VideoMetadata = item.VideoMetadata;
         return image;
