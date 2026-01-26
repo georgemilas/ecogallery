@@ -122,16 +122,27 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [visibleRows, setVisibleRows] = useState<Set<number>>(new Set());
-  const [scrollTargetRowIndex, setScrollTargetRowIndex] = useState<number | null>(null);
 
-  // Find which row contains a given image ID
-  const findRowIndexForImage = useCallback((imageId: number): number => {
+  // Track scroll state
+  const pendingScrollTarget = useRef<number | null>(null);
+  const hasScrolledRef = useRef<boolean>(false);
+
+  // Store lastViewedImageId in ref when it changes
+  useEffect(() => {
+    if (lastViewedImageId) {
+      pendingScrollTarget.current = lastViewedImageId;
+      hasScrolledRef.current = false;
+    }
+  }, [lastViewedImageId]);
+
+  // Find which row contains a given image ID and return row info
+  const findRowForImage = useCallback((imageId: number): { rowIndex: number; row: LayoutRow } | null => {
     for (let i = 0; i < rows.length; i++) {
       if (rows[i].images.some(({ image }) => image.id === imageId)) {
-        return i;
+        return { rowIndex: i, row: rows[i] };
       }
     }
-    return -1;
+    return null;
   }, [rows]);
 
   // Expand visible rows with overscan
@@ -145,24 +156,41 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
     return expanded;
   }, [overscan, rows.length]);
 
-  // When lastViewedImageId changes, find its row and mark it visible
+  // INSTANT SCROLL: When rows are calculated and we have a target, scroll immediately using calculated position
   useEffect(() => {
-    if (!lastViewedImageId || rows.length === 0) {
-      setScrollTargetRowIndex(null);
+    const targetId = pendingScrollTarget.current;
+    if (!targetId || rows.length === 0 || hasScrolledRef.current) {
       return;
     }
 
-    const rowIndex = findRowIndexForImage(lastViewedImageId);
-    if (rowIndex >= 0) {
-      setScrollTargetRowIndex(rowIndex);
-      // Immediately add the target row and its neighbors to visible rows
-      setVisibleRows((prev) => {
-        const next = new Set(prev);
-        next.add(rowIndex);
-        return expandWithOverscan(next);
-      });
+    const result = findRowForImage(targetId);
+    if (!result) {
+      return;
     }
-  }, [lastViewedImageId, rows.length, findRowIndexForImage, expandWithOverscan]);
+
+    const { rowIndex, row } = result;
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    // Calculate scroll position: gallery container offset + row's top position + half row height (to center)
+    const containerRect = container.getBoundingClientRect();
+    const containerTop = containerRect.top + window.scrollY;
+    const rowCenterY = containerTop + row.top + row.height / 2;
+    const scrollTarget = rowCenterY - window.innerHeight / 2;
+
+    // Scroll immediately to calculated position
+    window.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'instant' });
+    hasScrolledRef.current = true;
+
+    // Mark the target row and neighbors as visible so images load
+    setVisibleRows((prev) => {
+      const next = new Set(prev);
+      next.add(rowIndex);
+      return expandWithOverscan(next);
+    });
+  }, [rows, findRowForImage, expandWithOverscan, containerRef]);
 
   // Set up IntersectionObserver for row visibility
   useEffect(() => {
@@ -217,36 +245,6 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
     },
     []
   );
-
-  // Scroll to last viewed image after its row becomes visible
-  useEffect(() => {
-    if (scrollTargetRowIndex === null || !lastViewedImageId || rows.length === 0) return;
-    if (!visibleRows.has(scrollTargetRowIndex)) return;
-
-    const scrollToImage = () => {
-      const element = document.querySelector(`[data-image-id="${lastViewedImageId}"]`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'instant', block: 'center' });
-        return true;
-      }
-      return false;
-    };
-
-    // Wait a frame for the image to render, then scroll
-    const timer = setTimeout(() => {
-      if (scrollToImage()) {
-        setScrollTargetRowIndex(null); // Clear target after successful scroll
-      } else {
-        // Retry once more
-        setTimeout(() => {
-          scrollToImage();
-          setScrollTargetRowIndex(null);
-        }, 100);
-      }
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [scrollTargetRowIndex, visibleRows, lastViewedImageId, rows.length]);
 
   if (images.length === 0) {
     return null;

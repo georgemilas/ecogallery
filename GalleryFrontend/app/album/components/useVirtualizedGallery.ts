@@ -9,6 +9,7 @@ export interface LayoutImage {
 export interface LayoutRow {
   images: LayoutImage[];
   height: number; // row height in pixels
+  top: number;    // cumulative top position from start of gallery
 }
 
 export interface VirtualizedGalleryLayout {
@@ -65,6 +66,7 @@ function calculateJustifiedLayout(images: ImageItemContent[], containerWidth: nu
   const rows: LayoutRow[] = [];
   let currentRow: { image: ImageItemContent; ratio: number }[] = [];
   let currentRowWidth = 0;
+  let cumulativeTop = 0;
 
   const justifyRow = (rowImages: { image: ImageItemContent; ratio: number }[], isLastRow: boolean): LayoutRow => {
     const totalGaps = (rowImages.length - 1) * gap;
@@ -97,7 +99,9 @@ function calculateJustifiedLayout(images: ImageItemContent[], containerWidth: nu
     });
 
     const rowHeight = Math.floor(adjustedHeight);
-    return { images: layoutImages, height: rowHeight };
+    const row: LayoutRow = { images: layoutImages, height: rowHeight, top: cumulativeTop };
+    cumulativeTop += rowHeight + gap;
+    return row;
   };
 
   for (let i = 0; i < images.length; i++) {
