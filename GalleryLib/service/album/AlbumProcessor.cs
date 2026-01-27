@@ -1,6 +1,5 @@
 using GalleryLib.model.configuration;
 using GalleryLib.model.album;
-using GalleryLib.service.database;
 using GalleryLib.service.fileProcessor;
 using GalleryLib.repository;
 using System.Collections.Concurrent;
@@ -18,9 +17,21 @@ public class AlbumProcessor: EmptyProcessor
         imageRepository = new AlbumImageRepository(configuration, dbConfig);
         albumRepository = new AlbumRepository(configuration, dbConfig);
     }
+
+    /// <summary>
+    /// Constructor for testing with mock repositories
+    /// </summary>
+    public AlbumProcessor(PicturesDataConfiguration configuration, IAlbumImageRepository imageRepo, IAlbumRepository albumRepo)
+        : base(configuration)
+    {
+        _dbConfig = null!;
+        imageRepository = imageRepo;
+        albumRepository = albumRepo;
+    }
+
     private readonly DatabaseConfiguration _dbConfig;
-    protected AlbumImageRepository imageRepository;
-    protected AlbumRepository albumRepository;
+    protected IAlbumImageRepository imageRepository;
+    protected IAlbumRepository albumRepository;
 
     public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)
     {
@@ -139,7 +150,8 @@ public class AlbumProcessor: EmptyProcessor
     public override async Task<int> OnEnsureCleanupFile(FileData skipFilePath, bool logIfCleaned = false)
     {
         string skipFolder = Path.GetDirectoryName(skipFilePath.FilePath) ?? string.Empty;
-        string skipFileName = Path.GetFileName(skipFilePath.FilePath);
+        string skipFileName = Path.GetFileNameWithoutExtension(skipFilePath.FilePath);
+        string skipFileNameExtension = Path.GetExtension(skipFilePath.FilePath);
 
         //avoid recursion into created thumbnails
         if (skipFilePath.FilePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase)) return 0;
@@ -157,7 +169,7 @@ public class AlbumProcessor: EmptyProcessor
         {
             //it's a prefix to a file 
             var prefix = fileNameStartWith.First();
-            var originalName = skipFileName.Replace(prefix, string.Empty);
+            var originalName = skipFileName.Replace(prefix, string.Empty) + skipFileNameExtension;
             string originalPath = Path.Combine(skipFolder, originalName);
             totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
@@ -166,7 +178,7 @@ public class AlbumProcessor: EmptyProcessor
         {
             //it's a suffix to a file
             var suffix = fileNameEndsWith.First();
-            var originalName = skipFileName.Replace(suffix, string.Empty);
+            var originalName = skipFileName.Replace(suffix, string.Empty) + skipFileNameExtension;
             string originalPath = Path.Combine(skipFolder, originalName);
             totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
@@ -177,7 +189,7 @@ public class AlbumProcessor: EmptyProcessor
             //it's a suffix to a folder 
             var suffix = folderContainsSuffix.First();
             var originalFolderPath = skipFolder.Replace(suffix, string.Empty);
-            string originalPath = Path.Combine(originalFolderPath, skipFileName);
+            string originalPath = Path.Combine(originalFolderPath, skipFileName + skipFileNameExtension);
             totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
 
@@ -186,7 +198,7 @@ public class AlbumProcessor: EmptyProcessor
             //it's a prefix to a folder 
             var prefix = folderContainsPrefix.First();
             var originalFolderPath = skipFolder.Replace(prefix, string.Empty);
-            string originalPath = Path.Combine(originalFolderPath, skipFileName);
+            string originalPath = Path.Combine(originalFolderPath, skipFileName + skipFileNameExtension);
             totalDeleted += await CleanupImageAndAlbumRecords(originalPath, logIfCleaned);
         }
 

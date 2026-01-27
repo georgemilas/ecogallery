@@ -18,15 +18,16 @@ public class EmptyProcessor : IFileProcessor
     protected virtual string thumbnailsBase { get { return _configuration.ThumbnailsBase; } }
 
     /// <summary>
-    /// skip files already in _thumbnails directory and as dictated by configuration 
+    /// skip files already in _thumbnails directory and as dictated by configuration
     /// for example a folder named "skip_folderName" or "folderName_skip" or a file named "imageName_skip.jpg" or "skip_imageName.jpg"
-    /// </summary>    
+    /// </summary>
     private bool ShouldSkipFile(string filePath)
     {
         string folder = Path.GetDirectoryName(filePath) ?? string.Empty;
         string fileName = Path.GetFileName(filePath);
+        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
         return filePath.StartsWith(thumbnailsBase, StringComparison.OrdinalIgnoreCase) ||
-                _configuration.SkipSuffix.Any(suffix => fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ||
+                _configuration.SkipSuffix.Any(suffix => fileNameWithoutExt.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ||
                                                         folder.Contains(suffix, StringComparison.OrdinalIgnoreCase)) ||
                 _configuration.SkipPrefix.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
                                                         folder.Contains(prefix, StringComparison.OrdinalIgnoreCase)) ||

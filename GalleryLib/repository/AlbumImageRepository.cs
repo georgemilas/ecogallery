@@ -6,7 +6,7 @@ using GalleryLib.service.database;
 
 namespace GalleryLib.repository;
 
-public class AlbumImageRepository: IDisposable, IAsyncDisposable
+public class AlbumImageRepository: IAlbumImageRepository, IDisposable, IAsyncDisposable
 {
 
     public AlbumImageRepository(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)

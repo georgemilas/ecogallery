@@ -2,6 +2,7 @@ using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 using GalleryLib.model.album;
 using GalleryLib.model.configuration;
+using GalleryLib.repository;
 using GalleryLib.service.fileProcessor;
 using SixLabors.ImageSharp;
 using FFMpegCore;
@@ -17,7 +18,15 @@ public class ImageMetadataProcessor: AlbumProcessor
 
     public ImageMetadataProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration, dbConfig)
     {
-        
+
+    }
+
+    /// <summary>
+    /// Constructor for testing with mock repositories
+    /// </summary>
+    public ImageMetadataProcessor(PicturesDataConfiguration configuration, IAlbumImageRepository imageRepo, IAlbumRepository albumRepo)
+        : base(configuration, imageRepo, albumRepo)
+    {
     }
 
     public static new FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)

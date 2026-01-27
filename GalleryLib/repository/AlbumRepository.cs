@@ -11,7 +11,7 @@ using YamlDotNet.Core.Tokens;
 
 namespace GalleryLib.repository;
 
-public record AlbumRepository: IDisposable, IAsyncDisposable
+public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
 {
     public AlbumRepository(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig)
     {
