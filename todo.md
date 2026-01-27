@@ -64,6 +64,9 @@ docker-compose up -d         #run the gallery web app (along with continuous syn
 docker-compose run cleanup   #optional utility to clean orphaned db records (for example you delete pictures and the "sync" service is not running)  
 docker-compose down          #stop gallery and associated processes
 
+chmod +x init-db.sh         #on linux make the script executable
+./init-db.sh                #and then execute (or sudo ./init-db.sh to run as root)
+
 
 
 docker-compose logs api --tail=30
