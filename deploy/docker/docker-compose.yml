@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: ${POSTGRES_DB:-ecogallery}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       # Use POSTGRES_DATA_PATH from .env if set, otherwise use named volume
@@ -38,7 +38,7 @@ services:
       ASPNETCORE_URLS: http://+:5001
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB}
+      Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       AppAuth__ApiKey: ${API_KEY}
@@ -109,7 +109,7 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB}
+      Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -141,7 +141,7 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB}
+      Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       SKIP_SUFFIX: ${SKIP_SUFFIX:-}
@@ -173,7 +173,7 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB}
+      Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       SKIP_SUFFIX: ${SKIP_SUFFIX:-}
@@ -204,7 +204,7 @@ services:
     environment:
       Database__Host: postgres
       Database__Port: 5432
-      Database__Database: ${POSTGRES_DB}
+      Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       SKIP_SUFFIX: ${SKIP_SUFFIX:-}

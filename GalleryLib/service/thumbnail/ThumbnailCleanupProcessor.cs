@@ -77,7 +77,7 @@ public class ThumbnailCleanupProcessor : EmptyProcessor
     /// Since this is a cleanup processor, a file to be processed means a file which is invalid as dictated by configuration. 
     /// For example the name of the file or folder matches a "skip" definition but before did not
     /// </summary>
-    public override bool ShouldProcessFile(FileData thumbnailPath)
+    public override bool ShouldProcessFile(FileData thumbnailPath, bool logIfProcess = false)
     {
         return isInvalidFile(thumbnailPath.FilePath);
     }
@@ -96,7 +96,7 @@ public class ThumbnailCleanupProcessor : EmptyProcessor
     /// Since this is a cleanup processor, a file to be cleaned up is a file that exists in the thumbnails folder 
     /// but is not in the originals pictures folder, therefor needs to be cleaned up
     /// </summary>
-    public override bool ShouldCleanFile(FileData thumbnailPath)
+    public override bool ShouldCleanFile(FileData thumbnailPath, bool logIfProcess = false)
     {
         var res =  !isInvalidFile(thumbnailPath.FilePath); //is a good file (not matching skip criteria)
         var originalsFolders = base.RootFolder.FullName;
@@ -104,6 +104,9 @@ public class ThumbnailCleanupProcessor : EmptyProcessor
         var allPossibleFiles = GetAllPossibleFiles(originalFilePath);  //may be a movie file in the original but thumbnail is a jpg
         if (!allPossibleFiles.Any(File.Exists))
         {
+            if (logIfProcess) {
+                Console.WriteLine($"No original was found with any extension: {originalFilePath}, [{string.Join(", ", _configuration.Extensions)}]");
+            }
             //None of the possible original files exist, so this thumbnail should be cleaned up
             //Console.WriteLine($"No original was found {string.Join(", ", allPossibleFiles)}");
             return true;

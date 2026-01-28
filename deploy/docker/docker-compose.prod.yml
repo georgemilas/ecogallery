@@ -144,8 +144,8 @@ services:
     networks:
       - ecogallery-network
     command: ["sync", "-f", "/pictures"]
-    profiles:
-      - sync  # Only start when explicitly requested
+    #profiles:
+    #  - sync  # Only start when explicitly requested
 
   # Continuous Cleanup Service (removes orphaned thumbnails and DB entries)
   cleanup:
@@ -204,6 +204,7 @@ services:
       - ${VALBUM_YAML:-./virtual_albums.yml}:/config/virtual_albums.yml:ro
     networks:
       - ecogallery-network
+    command: ["valbum", "-f", "/pictures", "-y", "/config/virtual_albums.yml"]
     profiles:
       - tools  # Only start when explicitly requested
 

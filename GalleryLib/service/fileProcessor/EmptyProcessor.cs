@@ -43,7 +43,7 @@ public class EmptyProcessor : IFileProcessor
     ///   Note: from a definition staindpoint this should also check if a file was not already processed in a previous iteration but 
     ///         that is a state that will be handeled in the processor main logic so is not part of this function
     /// </summary> 
-    public virtual bool ShouldProcessFile(FileData filePath)
+    public virtual bool ShouldProcessFile(FileData filePath, bool logIfProcess = false)
     {
         if (ShouldSkipFile(filePath.FilePath)) return false;        
         if (Extensions != null && !Extensions.Contains(Path.GetExtension(filePath.FilePath).ToLowerInvariant())) return false;
@@ -56,7 +56,7 @@ public class EmptyProcessor : IFileProcessor
     /// (aka before ShouldProcessFile was true but now is false), 
     /// therefor we need to clean up the originals that previously were validly included in the destination and now should be excluded  
     /// </summary> 
-    public virtual bool ShouldCleanFile(FileData filePath)
+    public virtual bool ShouldCleanFile(FileData filePath, bool logIfProcess = false)
     {
         if (Extensions != null && !Extensions.Contains(Path.GetExtension(filePath.FilePath).ToLowerInvariant())) return false;  //don't attempt to clean non image types files
         if (_configuration.SkipContains.Any(skipPart => filePath.FilePath.Contains(skipPart, StringComparison.OrdinalIgnoreCase))) return false; //don't attempt to clean files thar are in the SkipContains folders

@@ -74,7 +74,7 @@ public class DbCleanupProcessor: EmptyProcessor
     /// Since this is a cleanup processor, a file to be processed means a file which is invalid as dictated by configuration. 
     /// For example the name of the file or folder matches a "skip" definition but before did not
     /// </summary>
-    public override bool ShouldProcessFile(FileData dbPath)
+    public override bool ShouldProcessFile(FileData dbPath, bool logIfProcess = false)
     {
         return isInvalidFile(dbPath.FilePath);
     }
@@ -83,12 +83,15 @@ public class DbCleanupProcessor: EmptyProcessor
     /// Since this is a cleanup processor, a file to be cleaned up is a file that exists in the thumbnails folder 
     /// but is not in the originals pictures folder, therefor needs to be cleaned up
     /// </summary>
-    public override bool ShouldCleanFile(FileData dbPath)
+    public override bool ShouldCleanFile(FileData dbPath, bool logIfProcess = false)
     {
         var res = !isInvalidFile(dbPath.FilePath); //is a good file (not matching skip criteria)
         string originalFilePath = GetOriginalFilePath(dbPath.FilePath);
         if (!File.Exists(originalFilePath))
         {
+            if (logIfProcess) {
+                Console.WriteLine($"No original was found: {originalFilePath}");
+            }
             return true;
         }
         return false;
