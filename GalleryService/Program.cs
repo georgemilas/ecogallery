@@ -34,6 +34,7 @@ var serviceProvider = new ServiceCollection()
     .BuildServiceProvider();
 
 var picturesConfig = serviceProvider.GetRequiredService<IOptions<PicturesDataConfiguration>>().Value;
+picturesConfig.ApplyEnvironmentOverrides();
 var dbConfig = serviceProvider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
 // Console.WriteLine($"appsettings.json exists: {File.Exists(Path.Combine(basePath, "appsettings.json"))}");
 // Console.WriteLine($"appsettings.{environment}.json exists: {File.Exists(Path.Combine(basePath, $"appsettings.{environment}.json"))}");
@@ -52,6 +53,7 @@ var databaseNameOption = new Option<string>(new[] {"--database", "-d"}, () => db
 var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Environment.ProcessorCount, "Degree of parallelism for thumbnail processing");
 var isPlanOption = new Option<string>(new[] {"--plan", "-pl"}, () => "yes", "Run the process in plan mode only");
 var passwordOption = new Option<string>(new[] {"--password", "-pw"}, () => "admin123", "Admin user password");
+var logIfProcessed = new Option<bool>(new[] {"--log", "-l"}, () => false, "Log details to output");
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail background service and keep the app running
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,8 +95,9 @@ cleanupCommand.AddOption(heightsOption);
 cleanupCommand.AddOption(parallelDegreeOption);
 cleanupCommand.AddOption(databaseNameOption);
 cleanupCommand.AddOption(isPlanOption);
+cleanupCommand.AddOption(logIfProcessed);
 
-cleanupCommand.SetHandler(async (string folder, int[] heights, int parallelDegree, string databaseName, string isPlan) =>
+cleanupCommand.SetHandler(async (string folder, int[] heights, int parallelDegree, string databaseName, string isPlan, bool logIfProcessed) =>
 {
     picturesConfig.Folder = folder;
     dbConfig.Database = databaseName;
@@ -112,9 +115,9 @@ cleanupCommand.SetHandler(async (string folder, int[] heights, int parallelDegre
             bool planMode = isPlan.Equals("yes", StringComparison.OrdinalIgnoreCase);            
             foreach(var h in heights)
             {
-                services.AddSingleton<IHostedService>(sp => ThumbnailCleanupProcessor.CreateProcessor(picturesConfig, h, parallelDegree, planMode, false));
+                services.AddSingleton<IHostedService>(sp => ThumbnailCleanupProcessor.CreateProcessor(picturesConfig, h, parallelDegree, planMode, logIfProcessed));
             }
-            services.AddSingleton<IHostedService>(sp => DbCleanupProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, planMode, false));
+            services.AddSingleton<IHostedService>(sp => DbCleanupProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, planMode, logIfProcessed));
             
             Console.WriteLine("Configured services.");
 
@@ -125,7 +128,7 @@ cleanupCommand.SetHandler(async (string folder, int[] heights, int parallelDegre
     // Console.WriteLine("Press Enter to continue...");
     // Console.ReadLine();    
     await host.RunAsync(cts.Token);
-}, folderOption, heightsOption, parallelDegreeOption, databaseNameOption, isPlanOption);
+}, folderOption, heightsOption, parallelDegreeOption, databaseNameOption, isPlanOption, logIfProcessed);
 rootCommand.AddCommand(cleanupCommand);
 
 

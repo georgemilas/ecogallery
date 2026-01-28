@@ -17,6 +17,31 @@ public class PicturesDataConfiguration
     public List<string> MovieExtensions { get; set; } = new List<string> { ".mp4", ".mov", ".avi", ".3gp" };
     // { ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".webm", ".flv", ".3gp", ".mts", ".m2ts" };
 
+    /// <summary>
+    /// Apply overrides from environment variables (comma-separated values).
+    /// Environment variables: IMAGE_EXTENSIONS, MOVIE_EXTENSIONS, SKIP_SUFFIX, SKIP_PREFIX,
+    /// SKIP_CONTAINS, FEATURE_PHOTO_SUFFIX, FEATURE_PHOTO_PREFIX
+    /// </summary>
+    public void ApplyEnvironmentOverrides()
+    {
+        ApplyEnvOverride("SKIP_SUFFIX", v => SkipSuffix = v);
+        ApplyEnvOverride("SKIP_PREFIX", v => SkipPrefix = v);
+        ApplyEnvOverride("SKIP_CONTAINS", v => SkipContains = v);
+        ApplyEnvOverride("FEATURE_PHOTO_SUFFIX", v => FeaturePhotoSuffix = v);
+        ApplyEnvOverride("FEATURE_PHOTO_PREFIX", v => FeaturePhotoPrefix = v);
+        ApplyEnvOverride("IMAGE_EXTENSIONS", v => ImageExtensions = v);
+        ApplyEnvOverride("MOVIE_EXTENSIONS", v => MovieExtensions = v);
+    }
+
+    private static void ApplyEnvOverride(string envVar, Action<List<string>> setter)
+    {
+        var value = Environment.GetEnvironmentVariable(envVar);
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            setter(value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList());
+        }
+    }
+
     private List<string> _extensions = new List<string>();
     public List<string> Extensions 
     { 

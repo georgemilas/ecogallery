@@ -45,6 +45,13 @@ services:
       Database__Password: ${POSTGRES_PASSWORD}
       AppAuth__ApiKey: ${API_KEY}
       PicturesData__Folder: /pictures
+      SKIP_SUFFIX: ${SKIP_SUFFIX:-}
+      SKIP_PREFIX: ${SKIP_PREFIX:-}
+      SKIP_CONTAINS: ${SKIP_CONTAINS:-}
+      FEATURE_PHOTO_SUFFIX: ${FEATURE_PHOTO_SUFFIX:-}
+      FEATURE_PHOTO_PREFIX: ${FEATURE_PHOTO_PREFIX:-}
+      IMAGE_EXTENSIONS: ${IMAGE_EXTENSIONS:-}
+      MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       # Mount your pictures directory (REQUIRED - update path)
       - ${PICTURES_PATH:-./pictures}:/pictures:ro
@@ -95,6 +102,13 @@ services:
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SKIP_SUFFIX: ${SKIP_SUFFIX:-}
+      SKIP_PREFIX: ${SKIP_PREFIX:-}
+      SKIP_CONTAINS: ${SKIP_CONTAINS:-}
+      FEATURE_PHOTO_SUFFIX: ${FEATURE_PHOTO_SUFFIX:-}
+      FEATURE_PHOTO_PREFIX: ${FEATURE_PHOTO_PREFIX:-}
+      IMAGE_EXTENSIONS: ${IMAGE_EXTENSIONS:-}
+      MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       # Mount pictures directory for sync operations
       - ${PICTURES_PATH:-./pictures}:/pictures
@@ -117,6 +131,13 @@ services:
       Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
+      SKIP_SUFFIX: ${SKIP_SUFFIX:-}
+      SKIP_PREFIX: ${SKIP_PREFIX:-}
+      SKIP_CONTAINS: ${SKIP_CONTAINS:-}
+      FEATURE_PHOTO_SUFFIX: ${FEATURE_PHOTO_SUFFIX:-}
+      FEATURE_PHOTO_PREFIX: ${FEATURE_PHOTO_PREFIX:-}
+      IMAGE_EXTENSIONS: ${IMAGE_EXTENSIONS:-}
+      MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       # Mount pictures directory for sync operations
       - ${PICTURES_PATH:-./pictures}:/pictures
@@ -140,6 +161,13 @@ services:
       Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
+      SKIP_SUFFIX: ${SKIP_SUFFIX:-}
+      SKIP_PREFIX: ${SKIP_PREFIX:-}
+      SKIP_CONTAINS: ${SKIP_CONTAINS:-}
+      FEATURE_PHOTO_SUFFIX: ${FEATURE_PHOTO_SUFFIX:-}
+      FEATURE_PHOTO_PREFIX: ${FEATURE_PHOTO_PREFIX:-}
+      IMAGE_EXTENSIONS: ${IMAGE_EXTENSIONS:-}
+      MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       # Mount pictures directory for cleanup operations
       - ${PICTURES_PATH:-./pictures}:/pictures
@@ -162,6 +190,13 @@ services:
       Database__Database: ${POSTGRES_DB:-ecogallery}
       Database__Username: ${POSTGRES_USER:-postgres}
       Database__Password: ${POSTGRES_PASSWORD}
+      SKIP_SUFFIX: ${SKIP_SUFFIX:-}
+      SKIP_PREFIX: ${SKIP_PREFIX:-}
+      SKIP_CONTAINS: ${SKIP_CONTAINS:-}
+      FEATURE_PHOTO_SUFFIX: ${FEATURE_PHOTO_SUFFIX:-}
+      FEATURE_PHOTO_PREFIX: ${FEATURE_PHOTO_PREFIX:-}
+      IMAGE_EXTENSIONS: ${IMAGE_EXTENSIONS:-}
+      MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       # Mount pictures directory
       - ${PICTURES_PATH:-./pictures}:/pictures

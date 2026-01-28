@@ -40,10 +40,11 @@ builder.Services.Configure<PicturesDataConfiguration>(builder.Configuration.GetS
 builder.Services.Configure<DatabaseConfiguration>(builder.Configuration.GetSection(DatabaseConfiguration.SectionName));
 
 // Register PicturesDataConfiguration as a singleton for repositories that need it directly
-builder.Services.AddSingleton(sp => 
+builder.Services.AddSingleton(sp =>
 {
     var config = new PicturesDataConfiguration();
     builder.Configuration.GetSection(PicturesDataConfiguration.SectionName).Bind(config);
+    config.ApplyEnvironmentOverrides();
     return config;
 });
 

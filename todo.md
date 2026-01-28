@@ -61,7 +61,8 @@ docker-compose run sync      #run once to populate and sync gallery database wit
 docker-compose run valbum    #run to create or update virtual albums (public albums based on "search" expression)
 docker-compose up -d         #run the gallery web app (along with continuous sync and clenup) in the background
 
-docker-compose run cleanup   #optional utility to clean orphaned db records (for example you delete pictures and the "sync" service is not running)  
+docker-compose run cleanup   #optional utility to clean orphaned db records and thumbnails (for example you delete pictures and the "sync" service is not running)  
+docker-compose run service cleanup -f /pictures -h 400 1440 -pl yes --log  #run cleanup in plan mode to see what it would do before commiting 
 docker-compose down          #stop gallery and associated processes
 
 chmod +x init-db.sh         #on linux make the script executable
