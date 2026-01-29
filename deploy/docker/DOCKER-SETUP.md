@@ -6,13 +6,7 @@ Quick and easy deployment of EcoGallery using Docker. Perfect for local self-hos
 
 **Option 1: Build from Source** (this guide)
 - Download full source code
-- Build Docker images locally
-- Full control and customization
-
-**Option 2: Pre-Built Images** ([See DOCKER-SETUP-PREBUILT.md](DOCKER-SETUP-PREBUILT.md))
-- No source code needed
-- Just download 2 config files
-- Faster deployment (3 minutes)
+- Build and customize
 
 ## Prerequisites
 
@@ -21,7 +15,7 @@ Quick and easy deployment of EcoGallery using Docker. Perfect for local self-hos
   - Mac: Docker Desktop for Mac
   - Linux: Docker Engine + Docker Compose
 
-## Quick Start (5 minutes) - Build from Source
+## Quick Start - Build from Source
 
 ### 1. Download the Application
 
@@ -46,10 +40,10 @@ nano .env
 
 **Required Changes in `.env`:**
 
-**⚠️ CRITICAL: You MUST change these values before starting!**
+**⚠️ You MUST change these values before starting!**
 
 ```env
-# REQUIRED: Change this to a secure random string (minimum 32 characters)
+# REQUIRED: Generate a secure random string https://www.guidgenerator.com/
 API_KEY=CHANGE_ME_TO_A_SECURE_RANDOM_STRING
 
 #this is a passsword for the database where the gallery will be built
@@ -59,7 +53,7 @@ POSTGRES_PASSWORD=CHANGE_ME_TO_SECURE_DB_PASSWORD
 #login user: admin, password: this value
 ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD
 
-# IMPORTANT: Set the path to your pictures folder
+# Set the path to your pictures folder
 # Windows: Use forward slashes e.g., C:/Users/YourName/Pictures
 # Linux/Mac: Use absolute path e.g., /home/yourname/pictures
 # Use quotes if the path contains spaces "C:/Users/George Milas/Pictures"
@@ -105,105 +99,12 @@ This will:
 - ✅ Organize into albums by folders
 - ✅ Once done it will re-scan automatically every 2 minutes unless you stop it
 
-
-### 7. Access the Application
-
-**Start the gallery app:**
-```bash
-docker-compose up -d
-```
-
-Open your browser and go to:
-**http://localhost**
-
-
-## Management Commands
-### Stop the Application
-
-```bash
-docker-compose down
-```
-
-### Restart the Application
-
-```bash
-docker-compose up -d
-```
-
-### View Logs
-
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f api
-docker-compose logs -f frontend
-docker-compose logs -f nginx
-docker-compose logs -f sync
-
-# Stop continuous sync
-docker-compose stop sync
-```
-
-### Database Backup
-
-**Method 1: SQL Dump (portable backup)**
-```bash
-# Export database
-docker-compose exec postgres pg_dump -U ecogallery ecogallery > backup.sql
-
-# Import database
-docker-compose exec -T postgres psql -U ecogallery ecogallery < backup.sql
-```
-
-**Method 2: File System Backup (if using POSTGRES_DATA_PATH)**
-
-If you set `POSTGRES_DATA_PATH` in `.env`, you can backup the entire database by copying that folder:
-
-```bash
-# Stop the database first
-docker-compose stop postgres
-
-# Copy the folder (Windows PowerShell example)
-Copy-Item -Path "C:\Users\YourName\ecogallery-data\postgres" -Destination "C:\Backups\postgres-backup-2026-01-23" -Recurse
-
-# Restart database
-docker-compose start postgres
-```
-
-This gives you complete control over your database storage location.
-
-### Create Additional Users
-
-Use the web interface to create additional users:
-1. Login as admin
-2. Go to user management
-3. Create new users with appropriate permissions
-
-
-### Cleanup Service 
-
-The cleanup service removes orphaned thumbnails and database entries for deleted pictures. 
-This can happen if you delete pictures while the sync process is no running:
-
-```bash
-# Start continuous cleanup service (runs every 2 minutes)
-docker-compose up cleanup -d
-
-# View cleanup logs
-docker-compose logs -f cleanup
-
-# Stop cleanup service
-docker-compose stop cleanup
-```
-
-
 ### Virtual Albums (Dynamic Albums from YAML)
 
 Create dynamic albums based on expressions or folders defined in a YAML file:
 
-**1. Create your virtual albums YAML file** (e.g., `virtual_albums.yml`):
+
+**1. Create your virtual albums (public albums) YAML file** (e.g., `virtual_albums.yml`):
 
 Virtual albums use album names as keys with the following properties:
 - **expression**: Query expression to match pictures (supports AND, OR, NOT, regex)
@@ -255,6 +156,68 @@ VALBUM_YAML=./virtual_albums.yml
 ```bash
 docker-compose run valbum
 ```
+
+
+### 7. Access the Application
+
+**Start the gallery app:**
+```bash
+docker-compose up -d
+```
+
+Open your browser and go to:
+**http://localhost**
+
+
+## Management Commands
+### Stop the Application
+
+```bash
+docker-compose down
+```
+
+### Restart the Application
+
+```bash
+docker-compose up -d
+```
+
+### View Logs
+
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f api
+docker-compose logs -f frontend
+docker-compose logs -f nginx
+docker-compose logs -f sync
+
+# Stop continuous sync
+docker-compose stop sync
+```
+
+
+
+
+### Cleanup Service 
+
+The cleanup service removes orphaned thumbnails and database entries for deleted pictures. 
+This can happen if you delete pictures while the sync process is no running:
+
+```bash
+# Start continuous cleanup service (runs every 2 minutes)
+docker-compose up cleanup -d
+
+# View cleanup logs
+docker-compose logs -f cleanup
+
+# Stop cleanup service
+docker-compose stop cleanup
+```
+
+
 
 
 ## Troubleshooting
