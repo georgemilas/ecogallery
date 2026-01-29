@@ -39,12 +39,13 @@ public class VirtualAlbumsService: ServiceBase
 
      public async Task<VirtualAlbumContent> GetRandomImages()
     {
+        var searchId = GenerateSearchId("__random__");
         var album = await PickImagesFromAll((all) =>
         {
             var random = new Random();
             var nRandom = all.OrderBy(x => random.Next()).Take(100).ToList();
             return nRandom;
-        });
+        }, searchId);
         album.Name = "Random Images";
         album.Description = album.Images.Any() ? $"{album.Images.Count} random images" : "No images found";
         return album;
@@ -52,17 +53,18 @@ public class VirtualAlbumsService: ServiceBase
 
     public async Task<VirtualAlbumContent> GetRecentImages()
     {
+        var searchId = GenerateSearchId("__recent__");
         var album = await PickImagesFromAll((all) =>
         {
             var nRecent = all.OrderByDescending(x => x.ItemTimestampUtc).Take(100).ToList();
             return nRecent;
-        });
+        }, searchId);
         album.Name = "Recent Images";
         album.Description = album.Images.Any() ? $"{album.Images.Count} recent images" : "No images found";
         return album;
     }
 
-    private async Task<VirtualAlbumContent> PickImagesFromAll(Func<List<GalleryLib.model.album.AlbumContentHierarchical>, List<GalleryLib.model.album.AlbumContentHierarchical>> filter)
+    private async Task<VirtualAlbumContent> PickImagesFromAll(Func<List<GalleryLib.model.album.AlbumContentHierarchical>, List<GalleryLib.model.album.AlbumContentHierarchical>> filter, string searchId)
     {
         var albums = await _albumRepository.GetAllVirtualAlbumsAsync();
         var all = new List<GalleryLib.model.album.AlbumContentHierarchical>();
@@ -89,13 +91,17 @@ public class VirtualAlbumsService: ServiceBase
         valbum.ThumbnailPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb)) : string.Empty;
         valbum.ImageHDPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
 
-        var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, AuthenticatedUser?.Id ?? 1, true);    //get admin settings if no user
+        var userId = AuthenticatedUser?.Id ?? 1;   //get admin settings if no user
+        var settings = searchId != null 
+            ? await _albumRepository.GetAlbumSettingsBySearchIdAsync(searchId, userId) 
+            : await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, userId, true);    
         valbum.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
         {
-            AlbumId = valbum.Id,
-            IsVirtual = true,
-            UserId = AuthenticatedUser?.Id ?? 1
-        };
+            AlbumId = 0,
+            SearchId = searchId,
+            IsVirtual = true,     //the main album is virtual so is recent/random/search 
+            UserId = userId
+        };     
 
         valbum.Albums = new List<AlbumItemContent>();
         valbum.Images = new List<ImageItemContent>();

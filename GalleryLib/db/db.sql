@@ -69,7 +69,8 @@ DROP TABLE IF EXISTS public.album_settings;
 
 CREATE TABLE public.album_settings (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
-    album_id BIGINT NOT NULL,
+    album_id BIGINT NOT NULL DEFAULT 0,
+    search_id character varying(100) NULL,       -- hash of search expression (for search result preferences)
     is_virtual boolean NOT NULL DEFAULT false,
     user_id BIGINT NOT NULL,
     banner_position_y INT NOT NULL DEFAULT 38,
@@ -80,12 +81,13 @@ CREATE TABLE public.album_settings (
 
 
 ALTER TABLE
-  public.album_settings 
+  public.album_settings
 ADD
   CONSTRAINT album_settings_pkey PRIMARY KEY (id);
 
+-- Unique constraint: either album_id (when search_id is null) or search_id (when album_id is 0)
 CREATE UNIQUE INDEX IF NOT EXISTS ux_album_settings_album_id_user_id
-ON public.album_settings (album_id, user_id, is_virtual);
+ON public.album_settings (album_id, user_id, is_virtual, COALESCE(search_id, ''));
 
 
 
@@ -333,3 +335,64 @@ CREATE TABLE public.user_tokens (
     used BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE INDEX idx_user_tokens_token ON public.user_tokens(token);
+
+
+------------------------------------------------------------------------------
+----------------- public.face_person -----------------------------------------
+-- Represents a named person (cluster of faces identified as the same person)
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.face_embedding;
+DROP TABLE IF EXISTS public.face_person;
+
+CREATE TABLE public.face_person (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    name character varying(255) NULL,              -- User-assigned name (NULL if not yet labeled)
+    representative_embedding real[] NULL,          -- Average embedding for this person (for quick comparison)
+    face_count integer NOT NULL DEFAULT 0,         -- Number of faces in this cluster
+    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    last_updated_utc timestamp with time zone NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.face_person
+ADD CONSTRAINT face_person_pkey PRIMARY KEY (id);
+
+CREATE INDEX idx_face_person_name ON public.face_person (name) WHERE name IS NOT NULL;
+
+
+------------------------------------------------------------------------------
+----------------- public.face_embedding --------------------------------------
+-- Stores individual face detections and their embeddings
+------------------------------------------------------------------------------
+
+CREATE TABLE public.face_embedding (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    album_image_id bigint NOT NULL,
+    face_person_id bigint NULL,                    -- NULL until clustered/labeled
+    embedding real[] NOT NULL,                     -- 512-dimensional ArcFace embedding vector
+    bounding_box_x integer NOT NULL,               -- Face bounding box in original image
+    bounding_box_y integer NOT NULL,
+    bounding_box_width integer NOT NULL,
+    bounding_box_height integer NOT NULL,
+    confidence real NOT NULL,                      -- Detection confidence score
+    is_confirmed boolean NOT NULL DEFAULT false,   -- User confirmed this face belongs to person
+    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    last_updated_utc timestamp with time zone NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.face_embedding
+ADD CONSTRAINT face_embedding_pkey PRIMARY KEY (id);
+
+CREATE INDEX idx_face_embedding_album_image_id ON public.face_embedding (album_image_id);
+CREATE INDEX idx_face_embedding_face_person_id ON public.face_embedding (face_person_id) WHERE face_person_id IS NOT NULL;
+
+ALTER TABLE public.face_embedding
+ADD CONSTRAINT fk_face_embedding_album_image
+FOREIGN KEY (album_image_id)
+REFERENCES public.album_image (id)
+ON DELETE CASCADE;
+
+ALTER TABLE public.face_embedding
+ADD CONSTRAINT fk_face_embedding_face_person
+FOREIGN KEY (face_person_id)
+REFERENCES public.face_person (id)
+ON DELETE SET NULL;

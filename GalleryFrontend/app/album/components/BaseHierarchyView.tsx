@@ -113,6 +113,10 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   }, [props.settings, props.onSortChange]);
 
   const [localImages, setLocalImages] = useState<ImageItemContent[]>(props.album.images);
+  // Sync localImages when album or search changes (before sorting kicks in)
+  useEffect(() => {
+    setLocalImages(props.album.images);
+  }, [props.album.settings?.search_id || props.album.id]); // Use search_id for searches, album.id for albums
 
   // Get image label helper for VirtualizedGallery
   const getImageLabelForGallery = useCallback((imageName: string) => {

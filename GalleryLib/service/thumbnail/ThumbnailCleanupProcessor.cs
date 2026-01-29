@@ -84,12 +84,44 @@ public class ThumbnailCleanupProcessor : EmptyProcessor
 
     public IEnumerable<string> GetAllPossibleFiles(string sourceFilePath)
     {
-        var fileExt = Path.GetExtension(sourceFilePath);
         string folder = Path.GetDirectoryName(sourceFilePath) ?? string.Empty;
         string fileName = Path.GetFileNameWithoutExtension(sourceFilePath);
 
         return _configuration.Extensions.Select(ext => Path.Combine(folder, fileName + ext));
-        //return fileExt.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Case-insensitive file existence check for Linux compatibility.
+    /// On Linux, File.Exists is case-sensitive but filesystems (especially USB drives formatted as FAT/exFAT/NTFS)
+    /// may have files with different casing than what we construct from configuration.
+    /// </summary>
+    private static bool FileExistsCaseInsensitive(string filePath, bool logIfError = false)
+    {
+        // Fast path: exact match
+        if (File.Exists(filePath)) return true;
+
+        // On Windows, File.Exists is already case-insensitive, so if we get here, file doesn't exist
+        if (OperatingSystem.IsWindows()) return false;
+
+        // On Linux/Mac: check directory for case-insensitive match
+        string? directory = Path.GetDirectoryName(filePath);
+        string fileName = Path.GetFileName(filePath);
+
+        if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory)) return false;
+
+        try
+        {
+            return Directory.EnumerateFiles(directory)
+                .Any(f => Path.GetFileName(f).Equals(fileName, StringComparison.OrdinalIgnoreCase));
+        }
+        catch(Exception err)
+        {
+            if (logIfError)
+            {
+                Console.WriteLine($"Error checking file existence for {filePath}: {err.Message}");
+            }   
+            return false;
+        }
     }
 
     /// <summary>
@@ -100,9 +132,9 @@ public class ThumbnailCleanupProcessor : EmptyProcessor
     {
         var res =  !isInvalidFile(thumbnailPath.FilePath); //is a good file (not matching skip criteria)
         var originalsFolders = base.RootFolder.FullName;
-        var originalFilePath = thumbnailPath.FilePath.Replace(this.thumbDir, originalsFolders);
+        var originalFilePath = thumbnailPath.FilePath.Replace(this.thumbDir, originalsFolders, StringComparison.OrdinalIgnoreCase);
         var allPossibleFiles = GetAllPossibleFiles(originalFilePath);  //may be a movie file in the original but thumbnail is a jpg
-        if (!allPossibleFiles.Any(File.Exists))
+        if (!allPossibleFiles.Any((f) => FileExistsCaseInsensitive(f, logIfProcess)))
         {
             if (logIfProcess) {
                 Console.WriteLine($"No original was found with any extension: {originalFilePath}, [{string.Join(", ", _configuration.Extensions)}]");

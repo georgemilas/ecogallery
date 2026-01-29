@@ -92,6 +92,7 @@ export interface AlbumItemContent extends ItemContent {
 
 export interface AlbumSettings {
   album_id: number;
+  search_id?: string;          // hash of search expression (for search result preferences)
   user_id: number;
   banner_position_y: number;   // Y position of the banner image (0-100%)
   album_sort: string;          // name or timestamp & asc or desc

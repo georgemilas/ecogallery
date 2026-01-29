@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using GalleryApi.model;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
@@ -94,4 +96,14 @@ public class ServiceBase
         path = path.Replace("\\", "/");        //normalize to forward slashes            
         return path;
     }
+
+    /// <summary>
+    /// Generate a short hash from a string (for search_id)
+    /// </summary>
+    protected static string GenerateSearchId(string input)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexString(hash)[..16].ToLowerInvariant(); // First 16 chars = 64 bits
+    }
+
 }

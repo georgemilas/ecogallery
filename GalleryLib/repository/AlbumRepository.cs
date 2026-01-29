@@ -394,28 +394,59 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// AlbumSettings Methods
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     public async Task<AlbumSettings?> GetAlbumSettingsByAlbumIdAsync(long albumId, long userId, bool isVirtual = false)
     {
-        var sql = "SELECT * FROM album_settings WHERE album_id = @album_id AND user_id = @user_id AND is_virtual = @is_virtual";
+        var sql = "SELECT * FROM album_settings WHERE album_id = @album_id AND user_id = @user_id AND is_virtual = @is_virtual AND search_id IS NULL";
         var parameters = new { album_id = albumId, user_id = userId, is_virtual = isVirtual };
         var albumSettings = await _db.QueryAsync(sql, reader => AlbumSettings.CreateFromDataReader(reader), parameters);
-        return albumSettings.FirstOrDefault();                 
+        return albumSettings.FirstOrDefault();
+    }
+
+    public async Task<AlbumSettings?> GetAlbumSettingsBySearchIdAsync(string searchId, long userId)
+    {
+        var sql = "SELECT * FROM album_settings WHERE search_id = @search_id AND user_id = @user_id";
+        var parameters = new { search_id = searchId, user_id = userId };
+        var albumSettings = await _db.QueryAsync(sql, reader => AlbumSettings.CreateFromDataReader(reader), parameters);
+        return albumSettings.FirstOrDefault();
     }
 
     public async Task<AlbumSettings> AddOrUpdateAlbumSettingsAsync(AlbumSettings settings)
     {
-        var sql = $@"INSERT INTO album_settings (album_id, user_id, is_virtual, banner_position_y, album_sort, image_sort, last_updated_utc)
-                               VALUES (@album_id, @user_id, @is_virtual, @banner_position_y, @album_sort, @image_sort, @last_updated_utc)
-                    ON CONFLICT (album_id, user_id, is_virtual) DO UPDATE
-                    SET
-                        banner_position_y = EXCLUDED.banner_position_y,
-                        album_sort = EXCLUDED.album_sort,
-                        image_sort = EXCLUDED.image_sort,
-                        last_updated_utc = EXCLUDED.last_updated_utc
-                    RETURNING id;";        
-        settings.Id = await _db.ExecuteScalarAsync<long>(sql, settings);    
-        return settings; 
+        // Check if settings exist, then insert or update
+        // Using explicit check because the unique index uses COALESCE expression which can't be used with ON CONFLICT
+        AlbumSettings? existing;
+        if (!string.IsNullOrEmpty(settings.SearchId))
+        {
+            existing = await GetAlbumSettingsBySearchIdAsync(settings.SearchId, settings.UserId);
+        }
+        else
+        {
+            existing = await GetAlbumSettingsByAlbumIdAsync(settings.AlbumId, settings.UserId, settings.IsVirtual);
+        }
+
+        if (existing != null)
+        {
+            // Update existing record
+            var updateSql = @"UPDATE album_settings
+                              SET banner_position_y = @banner_position_y,
+                                  album_sort = @album_sort,
+                                  image_sort = @image_sort,
+                                  last_updated_utc = @last_updated_utc
+                              WHERE id = @id
+                              RETURNING id;";
+            settings.Id = existing.Id;
+            await _db.ExecuteScalarAsync<long>(updateSql, settings);
+        }
+        else
+        {
+            // Insert new record
+            var insertSql = @"INSERT INTO album_settings (album_id, search_id, user_id, is_virtual, banner_position_y, album_sort, image_sort, last_updated_utc)
+                              VALUES (@album_id, @search_id, @user_id, @is_virtual, @banner_position_y, @album_sort, @image_sort, @last_updated_utc)
+                              RETURNING id;";
+            settings.Id = await _db.ExecuteScalarAsync<long>(insertSql, settings);
+        }
+        return settings;
     }
 
 }

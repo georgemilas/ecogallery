@@ -2,21 +2,22 @@ using GalleryApi.model;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
 
-namespace GalleryApi.service;  
+namespace GalleryApi.service;
 public class AlbumsService: ServiceBase
 {
-    
+
     public AlbumsService(AlbumRepository albumRepository, PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
         : base(albumRepository, picturesConfig, httpContextAccessor)
     {
-    
-    }
+
+    }  
 
     public async Task<VirtualAlbumContent> GetRandomImages()
     {
         var content = await _albumRepository.GetRandomImages();
-        
-        var valbum = GetVirtualContent(content);
+        var searchId = GenerateSearchId("__random__");
+
+        var valbum = await GetVirtualContent(content, searchId);
         valbum.Name = "Random Images";
         valbum.Expression = "";
         valbum.Description = content.Any() ? $"{content.Count} random images" : "No images found";
@@ -26,20 +27,21 @@ public class AlbumsService: ServiceBase
     public async Task<VirtualAlbumContent> GetRecentImages()
     {
         var content = await _albumRepository.GetRecentImages();
-        
-        var valbum = GetVirtualContent(content);
+        var searchId = GenerateSearchId("__recent__");
+
+        var valbum = await GetVirtualContent(content, searchId);
         valbum.Name = "Recent Images";
         valbum.Expression = "";
         valbum.Description = content.Any() ? $"{content.Count} recent images" : "No images found";
         return valbum;
     }
-    
+
     public async Task<VirtualAlbumContent> SearchContentByExpression(GalleryLib.model.album.AlbumSearch albumSearch)
     {
-        var expr = albumSearch.Expression;
         var (content, search) = await _albumRepository.GetAlbumContentHierarchicalByExpression(albumSearch);
-        
-        var valbum = GetVirtualContent(content);
+        var searchId = GenerateSearchId(albumSearch.Expression);
+
+        var valbum = await GetVirtualContent(content, searchId);
         valbum.Name = "Search Result";
         valbum.Expression = albumSearch.Expression;
         valbum.SearchInfo = search;
@@ -50,11 +52,11 @@ public class AlbumsService: ServiceBase
         else
         {
             valbum.Description = content.Any() ? $"{content.Count} images matching '{albumSearch.Expression}'" : "No images found";
-        }        
+        }
         return valbum;
     }
 
-    private VirtualAlbumContent GetVirtualContent(List<GalleryLib.model.album.AlbumContentHierarchical> content)
+    private async Task<VirtualAlbumContent> GetVirtualContent(List<GalleryLib.model.album.AlbumContentHierarchical> content, string searchId)
     {
         var valbum = new VirtualAlbumContent();
         valbum.Id = 0;
@@ -62,13 +64,24 @@ public class AlbumsService: ServiceBase
         valbum.LastUpdatedUtc = DateTimeOffset.UtcNow;
         valbum.ItemTimestampUtc = DateTimeOffset.UtcNow;
         var item = content.FirstOrDefault();
-        string path = item?.FeatureItemPath ?? string.Empty;     //get the relative path first                                
+        string path = item?.FeatureItemPath ?? string.Empty;     //get the relative path first
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
-        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
+        path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute
         valbum.ThumbnailPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb)) : string.Empty;
         valbum.ImageHDPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
 
-        //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");            
+        // Load or create settings for this search
+        var userId = AuthenticatedUser?.Id ?? 1;
+        var settings = await _albumRepository.GetAlbumSettingsBySearchIdAsync(searchId, userId);
+        valbum.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
+        {
+            AlbumId = 0,
+            SearchId = searchId,
+            IsVirtual = false,
+            UserId = userId
+        };
+
+        //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");
         valbum.Images = new List<ImageItemContent>();
         foreach (var image in content)
         {
