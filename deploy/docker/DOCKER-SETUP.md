@@ -1,21 +1,11 @@
 # EcoGallery Docker Deployment Guide
 
-Quick and easy deployment of EcoGallery using Docker. Perfect for local self-hosting!
-
-## Deployment Options
-
-**Option 1: Build from Source** (this guide)
-- Download full source code
-- Build and customize
-
 ## Prerequisites
 
 - **Docker Desktop** installed ([Download](https://www.docker.com/products/docker-desktop/))
   - Windows: Docker Desktop for Windows
   - Mac: Docker Desktop for Mac
   - Linux: Docker Engine + Docker Compose
-
-## Quick Start - Build from Source
 
 ### 1. Download the Application
 
@@ -24,7 +14,7 @@ git clone --recursive https://github.com/georgemilas/ecogallery.git
 cd ecogallery/deploy/docker
 ```
 
-### 2. Configure Environment
+### 2. Configuration
 
 Copy the example environment file and edit it:
 
@@ -83,7 +73,7 @@ chmod +x init-db.sh
 ./init-db.sh
 ```
 
-### 6. Sync Your Pictures
+### 6. Sync Pictures and generate gllery
 
 **One-time sync (for initial setup):**
 ```bash
