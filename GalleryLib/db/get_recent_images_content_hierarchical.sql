@@ -19,9 +19,19 @@ RETURNS TABLE (
     last_updated_utc TIMESTAMP WITH TIME ZONE,
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
     image_metadata JSON,
-    video_metadata JSON
+    video_metadata JSON,
+    faces JSON
 ) AS $$
-SELECT DISTINCT ON (COALESCE(exif.date_taken, vm.date_taken, ai.image_timestamp_utc), COALESCE(ai.image_sha256, ai.image_path))
+WITH recent_with_dates AS (
+    -- Pre-select recent images using correct date (EXIF for images, date_taken for videos)
+    SELECT ai.id
+    FROM album_image ai
+    LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
+    LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
+    ORDER BY COALESCE(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) DESC
+    LIMIT p_count
+)
+SELECT 
     ai.id,
     ai.image_name AS item_name,
     ai.image_description AS item_description,
@@ -38,11 +48,13 @@ SELECT DISTINCT ON (COALESCE(exif.date_taken, vm.date_taken, ai.image_timestamp_
     ai.last_updated_utc,
     ai.image_timestamp_utc AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
-    row_to_json(vm) AS video_metadata
-FROM album_image ai
+    row_to_json(vm) AS video_metadata,
+    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
+FROM recent_with_dates rwd
+INNER JOIN album_image ai ON ai.id = rwd.id
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-ORDER BY COALESCE(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) desc, COALESCE(ai.image_sha256, ai.image_path) asc
-LIMIT p_count
+LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
+GROUP BY ai.id, exif.id, vm.id
 
 $$ LANGUAGE SQL;

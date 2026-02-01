@@ -15,6 +15,7 @@ export interface VirtualAlbumHierarchyProps {
   router: AppRouterInstance;
   onSortChange?: (settings: AlbumSettings) => void;
   clearLastViewedImage?: () => void;
+  onFaceSearch?: (personId: number, personName: string | null) => void;
 }
 
 export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {

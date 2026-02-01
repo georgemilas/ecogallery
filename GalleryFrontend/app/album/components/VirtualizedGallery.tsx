@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ImageItemContent } from './AlbumHierarchyProps';
+import { useRouter } from 'next/navigation';
+import { ImageItemContent, FaceBox } from './AlbumHierarchyProps';
 import { useVirtualizedGallery, LayoutRow } from './useVirtualizedGallery';
 import { CancellableImage } from './CancellableImage';
+import { apiFetch } from '@/app/utils/apiFetch';
 
 interface VirtualizedGalleryProps {
   images: ImageItemContent[];
@@ -11,6 +13,8 @@ interface VirtualizedGalleryProps {
   onImageClick: (image: ImageItemContent) => void;
   getImageLabel: (imageName: string) => string;
   lastViewedImageId?: number | null;
+  showFaceBoxes?: boolean;
+  onFaceSearch?: (personId: number, personName: string | null) => void;
 }
 
 interface GalleryRowComponentProps {
@@ -21,9 +25,11 @@ interface GalleryRowComponentProps {
   onImageClick: (image: ImageItemContent) => void;
   getImageLabel: (imageName: string) => string;
   onRef: (element: HTMLDivElement | null) => void;
+  showFaceBoxes?: boolean;
+  onFaceSearch?: (personId: number, personName: string | null) => void;
 }
 
-function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef }: GalleryRowComponentProps) {
+function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch }: GalleryRowComponentProps) {
   return (
     <div
       ref={onRef}
@@ -45,8 +51,144 @@ function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getIm
           isVisible={isVisible}
           onClick={() => onImageClick(image)}
           label={getImageLabel(image.name)}
+          showFaceBoxes={showFaceBoxes}
+          onFaceSearch={onFaceSearch}
         />
       ))}
+    </div>
+  );
+}
+
+interface FaceContextMenuProps {
+  face: FaceBox;
+  position: { x: number; y: number };
+  onClose: () => void;
+  onNameUpdate: (personId: number, newName: string) => void;
+  onFaceSearch: (personId: number, personName: string | null) => void;
+}
+
+function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }: FaceContextMenuProps) {
+  const [name, setName] = useState(face.person_name || '');
+  const [saving, setSaving] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  const handleSave = async () => {
+    if (!face.person_id) return;
+    setSaving(true);
+    try {
+      const response = await apiFetch(`/api/v1/faces/person/${face.person_id}/name`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name || null }),
+      });
+      if (response.ok) {
+        onNameUpdate(face.person_id, name);
+        onClose();
+      }
+    } catch (e) {
+      console.error('Failed to update name:', e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleFindAll = () => {
+    if (face.person_id) {
+      onFaceSearch(face.person_id, face.person_name);
+    }
+    onClose();
+  };
+
+  return (
+    <div
+      ref={menuRef}
+      style={{
+        position: 'fixed',
+        left: position.x,
+        top: position.y,
+        backgroundColor: '#2a2a2a',
+        border: '1px solid #e8f09e',
+        borderRadius: '8px',
+        padding: '12px',
+        zIndex: 3000,
+        minWidth: '200px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ marginBottom: '12px', color: '#e8f09e', fontWeight: 'bold', fontSize: '12px' }}>
+        Face #{face.face_id}
+        {face.person_id && <span style={{ color: '#888', fontWeight: 'normal' }}> (Person #{face.person_id})</span>}
+      </div>
+
+      <div style={{ marginBottom: '8px' }}>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter name..."
+          style={{
+            width: '100%',
+            padding: '6px 8px',
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #555',
+            borderRadius: '4px',
+            color: 'white',
+            fontSize: '12px',
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Escape') onClose();
+          }}
+          autoFocus
+        />
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+        <button
+          onClick={handleSave}
+          disabled={saving || !face.person_id}
+          style={{
+            padding: '6px 12px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: saving || !face.person_id ? 'not-allowed' : 'pointer',
+            opacity: saving || !face.person_id ? 0.5 : 1,
+            fontSize: '12px',
+          }}
+        >
+          {saving ? 'Saving...' : 'Save Name'}
+        </button>
+
+        <button
+          onClick={handleFindAll}
+          disabled={!face.person_id}
+          style={{
+            padding: '6px 12px',
+            backgroundColor: '#e8f09e',
+            color: '#333',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: !face.person_id ? 'not-allowed' : 'pointer',
+            opacity: !face.person_id ? 0.5 : 1,
+            fontSize: '12px',
+          }}
+        >
+          Find All Photos
+        </button>
+      </div>
     </div>
   );
 }
@@ -58,16 +200,98 @@ interface GalleryItemProps {
   isVisible: boolean;
   onClick: () => void;
   label: string;
+  showFaceBoxes?: boolean;
+  onFaceSearch?: (personId: number, personName: string | null) => void;
 }
 
-function GalleryItem({ image, width, height, isVisible, onClick, label }: GalleryItemProps) {
+function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch }: GalleryItemProps) {
+  const [selectedFace, setSelectedFace] = useState<{ face: FaceBox; position: { x: number; y: number } } | null>(null);
+  const [faceNames, setFaceNames] = useState<Record<number, string>>({});
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onClick();
   };
 
+  const handleFaceClick = (e: React.MouseEvent, face: FaceBox) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedFace({
+      face,
+      position: { x: e.clientX, y: e.clientY },
+    });
+  };
+
+  const handleNameUpdate = (personId: number, newName: string) => {
+    setFaceNames(prev => ({ ...prev, [personId]: newName }));
+  };
+
+  const handleFaceSearch = (personId: number, personName: string | null) => {
+    onFaceSearch?.(personId, personName);
+  };
+
+  // Calculate face box position scaled to thumbnail dimensions
+  const renderFaceBoxes = () => {
+    if (!showFaceBoxes || !image.faces || image.faces.length === 0) return null;
+    if (!image.image_width || !image.image_height) return null;
+
+    // Scale factor from original image to thumbnail
+    const scaleX = width / image.image_width;
+    const scaleY = height / image.image_height;
+
+    return image.faces.map((face: FaceBox) => {
+      const displayName = face.person_id ? (faceNames[face.person_id] ?? face.person_name) : face.person_name;
+
+      const boxStyle: React.CSSProperties = {
+        position: 'absolute',
+        left: `${face.bounding_box_x * scaleX}px`,
+        top: `${face.bounding_box_y * scaleY}px`,
+        width: `${face.bounding_box_width * scaleX}px`,
+        height: `${face.bounding_box_height * scaleY}px`,
+        border: '2px solid #e8f09e',
+        borderRadius: '2px',
+        cursor: 'pointer',
+        boxSizing: 'border-box',
+      };
+
+      return (
+        <div
+          key={face.face_id}
+          style={boxStyle}
+          onClick={(e) => handleFaceClick(e, { ...face, person_name: displayName })}
+        >
+          {displayName && (
+            <span style={{
+              position: 'absolute',
+              bottom: '-18px',
+              left: '0',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              color: '#e8f09e',
+              fontSize: '10px',
+              padding: '1px 4px',
+              borderRadius: '2px',
+              whiteSpace: 'nowrap',
+            }}>
+              {displayName}
+            </span>
+          )}
+        </div>
+      );
+    });
+  };
+
   return (
-    <div
+    <>
+      {selectedFace && (
+        <FaceContextMenu
+          face={selectedFace.face}
+          position={selectedFace.position}
+          onClose={() => setSelectedFace(null)}
+          onNameUpdate={handleNameUpdate}
+          onFaceSearch={handleFaceSearch}
+        />
+      )}
+      <div
       className="gallery-item"
       data-image-id={image.id}
       data-image-name={image.name}
@@ -104,6 +328,7 @@ function GalleryItem({ image, width, height, isVisible, onClick, label }: Galler
             }}
           />
         )}
+        {renderFaceBoxes()}
         {image.is_movie && (
           <svg className="gallery-item-video-icon" viewBox="0 0 24 24" fill="none">
             <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
@@ -113,10 +338,11 @@ function GalleryItem({ image, width, height, isVisible, onClick, label }: Galler
         {image.description && <span className="gallery-item-label">{image.description}</span>}
       </a>
     </div>
+    </>
   );
 }
 
-export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, }: VirtualizedGalleryProps) {
+export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, showFaceBoxes = false, onFaceSearch }: VirtualizedGalleryProps) {
   const { rows, totalHeight, containerRef } = useVirtualizedGallery({images, targetHeight, gap, });
 
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -278,6 +504,8 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
           onImageClick={onImageClick}
           getImageLabel={getImageLabel}
           onRef={registerRowRef(rowIndex)}
+          showFaceBoxes={showFaceBoxes}
+          onFaceSearch={onFaceSearch}
         />
       ))}
     </div>

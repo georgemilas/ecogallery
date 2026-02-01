@@ -29,6 +29,7 @@ export interface BaseAlbumPageProps {
   onGetApiUrl: (apiUrl: string) => void;
   onSortChange: (settings: AlbumSettings) => void;
   onSearchSubmit?: (expression: string, offset: number) => void;
+  onFaceSearch?: (personId: number, personName: string | null) => void;
   config: BaseAlbumConfig;
 }
 
@@ -42,6 +43,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const searchParams = useSearchParams();
   const albumIdParam = searchParams.get('id') ? parseInt(searchParams.get('id') || '', 10) : null;
   const imageIdParam = searchParams.get('image') ? parseInt(searchParams.get('image') || '', 10) : null;
+  const faceSearchParam = searchParams.get('faceSearch');
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
 
   // Sync currentSettings with album.settings when album changes
@@ -138,6 +140,40 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     }
   };
 
+  // Internal function to fetch face search results
+  const doFaceSearch = async (searchParam: string) => {
+    setLoading(true);
+    try {
+      // Parse the search param: "person:123" or "name:John"
+      const [type, value] = searchParam.split(':');
+      const endpoint = type === 'name'
+        ? `/api/v1/faces/search/name/${encodeURIComponent(value)}`
+        : `/api/v1/faces/search/person/${value}`;
+      console.log('Searching faces:', { searchParam, endpoint });
+      const res = await apiFetch(endpoint);
+      if (!res.ok) {
+        console.error('Face search failed', res.status);
+        setAlbum(null);
+      } else {
+        const data = await res.json();
+        setAlbum(convertToAlbum(data));
+      }
+    } catch (e) {
+      console.error('Error searching faces', e);
+      setAlbum(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Navigate to face search via URL (for browser back button support)
+  const navigateToFaceSearch = (personId: number, personName: string | null) => {
+    const searchParam = personName
+      ? `name:${personName}`
+      : `person:${personId}`;
+    router.push(`${config.basePath}?faceSearch=${encodeURIComponent(searchParam)}`);
+  };
+
   useEffect(() => {
     // Handle auth requirements
     if (config.requireAuth) {
@@ -147,8 +183,13 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
         return;
       }
     }
-    fetchAlbum(albumIdParam);
-  }, [albumIdParam, authLoading, user, config.requireAuth]);
+    // If faceSearch param is present, do face search instead of album fetch
+    if (faceSearchParam) {
+      doFaceSearch(faceSearchParam);
+    } else {
+      fetchAlbum(albumIdParam);
+    }
+  }, [albumIdParam, faceSearchParam, authLoading, user, config.requireAuth]);
 
   // Fullscreen handling
   useEffect(() => {
@@ -232,6 +273,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     },
     onGetApiUrl: getApiUrl,
     onSearchSubmit: config.onSearchSubmit || postSearchAlbum,
+    onFaceSearch: navigateToFaceSearch,
     config
   };
 

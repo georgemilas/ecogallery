@@ -23,10 +23,21 @@ public record AlbumContentHierarchical
     public DateTimeOffset ItemTimestampUtc { get; set; }
     public ImageMetadata? ImageMetadata { get; set; }
     public VideoMetadata? VideoMetadata { get; set; }
+    public List<FaceEmbedding> Faces { get; set; } = new List<FaceEmbedding>();
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
     {
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+
+        // Parse faces JSON array
+        List<FaceEmbedding> faces = new();
+        var facesOrdinal = reader.GetOrdinal("faces");
+        if (!reader.IsDBNull(facesOrdinal))
+        {
+            var facesJson = reader.GetString(facesOrdinal);
+            faces = JsonSerializer.Deserialize<List<FaceEmbedding>>(facesJson, options) ?? new List<FaceEmbedding>();
+        }
+
         return new AlbumContentHierarchical
         {
             Id = reader.GetInt64(reader.GetOrdinal("id")),
@@ -44,14 +55,13 @@ public record AlbumContentHierarchical
             ImageHeight = reader.GetInt32(reader.GetOrdinal("image_height")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
             ItemTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("item_timestamp_utc")),
-            ImageMetadata = reader.IsDBNull(reader.GetOrdinal("image_metadata")) 
-                                        ? null 
+            ImageMetadata = reader.IsDBNull(reader.GetOrdinal("image_metadata"))
+                                        ? null
                                         : JsonSerializer.Deserialize<ImageMetadata>(reader.GetString(reader.GetOrdinal("image_metadata")), options),
-            VideoMetadata = reader.IsDBNull(reader.GetOrdinal("video_metadata")) 
-                                        ? null 
-                                        : JsonSerializer.Deserialize<VideoMetadata>(reader.GetString(reader.GetOrdinal("video_metadata")), options)
-            
-
+            VideoMetadata = reader.IsDBNull(reader.GetOrdinal("video_metadata"))
+                                        ? null
+                                        : JsonSerializer.Deserialize<VideoMetadata>(reader.GetString(reader.GetOrdinal("video_metadata")), options),
+            Faces = faces
         };
     }
 

@@ -21,8 +21,9 @@ export function VirtualAlbumPage(): JSX.Element {
         router={props.router}
         onSortChange={props.onSortChange}
         onSearchSubmit={() => {}}
-        onGetApiUrl={props.onGetApiUrl} 
+        onGetApiUrl={props.onGetApiUrl}
         clearLastViewedImage={() => props.setLastViewedImage(null)}
+        onFaceSearch={props.onFaceSearch}
       />
     )
   };

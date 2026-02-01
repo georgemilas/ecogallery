@@ -74,6 +74,17 @@ export interface ItemContent {
   item_timestamp_utc: Date;
 }
 
+export interface FaceBox {
+  face_id: number;
+  person_id: number | null;
+  person_name: string | null;
+  bounding_box_x: number;
+  bounding_box_y: number;
+  bounding_box_width: number;
+  bounding_box_height: number;
+  confidence: number;
+}
+
 export interface ImageItemContent extends ItemContent {
   is_movie: boolean;
   image_hd_path: string;
@@ -83,6 +94,7 @@ export interface ImageItemContent extends ItemContent {
   image_height: number;
   image_metadata: ImageMetadata | null;
   video_metadata: VideoMetadata | null;
+  faces?: FaceBox[];
 }
 
 export interface AlbumItemContent extends ItemContent {
@@ -153,6 +165,7 @@ export interface AlbumHierarchyProps {
   router: AppRouterInstance;
   onSortChange?: (settings: AlbumSettings) => void;
   clearLastViewedImage?: () => void;
+  onFaceSearch?: (personId: number, personName: string | null) => void;
 }
 
 

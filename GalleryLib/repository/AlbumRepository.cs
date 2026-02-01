@@ -212,11 +212,14 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                     ai.last_updated_utc,
                     ai.image_timestamp_utc AS item_timestamp_utc,
                     row_to_json(exif) AS image_metadata,
-                    row_to_json(vm) AS video_metadata
+                    row_to_json(vm) AS video_metadata,
+                    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
                 FROM album_image ai
                 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
                 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
+                LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
                 WHERE {where}
+                GROUP BY ai.id, exif.id, vm.id
                 {orderby}
                 {limitOffset2};";
         Console.WriteLine($"Debug: AlbumContentByExpression SQL: {sql}");
@@ -235,8 +238,47 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
             Console.WriteLine($"Debug: AlbumContentByExpression Count SQL: {sql}");
             albumSearch.Count = await _db.ExecuteScalarAsync<long>(sql);
         }
-        return (content, albumSearch);                
-    } 
+        return (content, albumSearch);
+    }
+
+    /// <summary>
+    /// Get album content for a specific list of image IDs (used for face search).
+    /// </summary>
+    public async Task<List<AlbumContentHierarchical>> GetAlbumContentByImageIdsAsync(List<long> imageIds)
+    {
+        if (imageIds.Count == 0) return new List<AlbumContentHierarchical>();
+
+        var sql = $@"
+            SELECT
+                ai.id,
+                ai.image_name AS item_name,
+                ai.image_description AS item_description,
+                ai.image_type AS item_type,
+                ai.album_id as parent_album_id,
+                ai.album_name AS parent_album_name,
+                ai.image_type AS feature_item_type,
+                ai.image_path AS feature_item_path,
+                ai.image_type AS inner_feature_item_type,
+                ai.image_path AS inner_feature_item_path,
+                ai.image_sha256 AS image_sha256,
+                ai.image_width,
+                ai.image_height,
+                ai.last_updated_utc,
+                ai.image_timestamp_utc AS item_timestamp_utc,
+                row_to_json(exif) AS image_metadata,
+                row_to_json(vm) AS video_metadata,
+                coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
+            FROM album_image ai
+            LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
+            LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
+            LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
+            WHERE ai.id = ANY(@image_ids)
+            GROUP BY ai.id, exif.id, vm.id
+            ORDER BY ai.image_timestamp_utc DESC";
+
+        var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), new { image_ids = imageIds.ToArray() });
+        return content;
+    }
 
 
     /// <summary>
@@ -262,7 +304,8 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                         a.last_updated_utc,
                         a.album_timestamp_utc AS item_timestamp_utc,
                         NULL::json AS image_metadata,
-                        NULL::json AS video_metadata
+                        NULL::json AS video_metadata,
+                        NULL::json AS faces
                     FROM album AS a
                     LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
                     LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image

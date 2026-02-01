@@ -19,7 +19,8 @@ RETURNS TABLE (
     last_updated_utc TIMESTAMP WITH TIME ZONE,
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
     image_metadata JSON,
-    video_metadata JSON
+    video_metadata JSON,
+    faces JSON
 ) AS $$
 WITH ra AS (
     SELECT * FROM album
@@ -44,7 +45,8 @@ SELECT
     a.last_updated_utc,
     a.album_timestamp_utc AS item_timestamp_utc,
     NULL::json AS image_metadata,
-    NULL::json AS video_metadata
+    NULL::json AS video_metadata,
+    NULL::json AS faces
 FROM ra
 JOIN album AS a ON a.parent_album = ra.album_name
 LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path            --get the image record of the album feature image
@@ -71,11 +73,13 @@ SELECT
     ai.last_updated_utc,
     ai.image_timestamp_utc AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
-    row_to_json(vm) AS video_metadata
+    row_to_json(vm) AS video_metadata,
+    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
 FROM ra
 JOIN album_image ai ON ai.album_name = ra.album_name
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-
+LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
+GROUP BY ai.id, exif.id, vm.id
 ORDER BY item_type
 $$ LANGUAGE SQL;

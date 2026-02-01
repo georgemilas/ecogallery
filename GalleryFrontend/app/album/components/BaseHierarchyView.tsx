@@ -9,6 +9,7 @@ import { VirtualizedGallery } from './VirtualizedGallery';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { apiFetch } from '@/app/utils/apiFetch';
+import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
 
 export interface BaseHierarchyConfig {
   settingsApiEndpoint: string; // '/api/v1/albums/settings' or '/api/v1/valbums/settings'
@@ -28,6 +29,7 @@ export interface BaseHierarchyProps {
   router: AppRouterInstance;
   onSortChange?: (settings: AlbumSettings) => void;
   clearLastViewedImage?: () => void;
+  onFaceSearch?: (personId: number, personName: string | null) => void;
   config: BaseHierarchyConfig;
 }
 
@@ -35,9 +37,29 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   const [searchText, setSearchText] = React.useState('');
   const [bannerEditMode, setBannerEditMode] = React.useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const { user } = useAuth();
+  const { settings: gallerySettings, setShowFaceBoxes } = useGallerySettings();
   const { settings, onSortChange, config } = props;
-  
+
+  // Keyboard shortcut: 'f' to toggle face boxes (only for authenticated users)
+  useEffect(() => {
+    if (!user) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      if (e.key === 'f' || e.key === 'F') {
+        setShowFaceBoxes(!gallerySettings.showFaceBoxes);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [user, gallerySettings.showFaceBoxes, setShowFaceBoxes]);
+
   const saveSettings = async (settings: any) => {
     if (user) {
       settings.user_id = user.id;
@@ -152,7 +174,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
 
   const renderSearchBar = () => {
     if (!config.showSearch) return (<div></div>);
-    
+
     return (
       <form className="searchbar" onSubmit={handleSearchSubmit}>
         <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
@@ -163,6 +185,120 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           </svg>
         </button>
       </form>
+    );
+  };
+
+  const renderSettingsButton = () => (
+    <button
+      className="settings-button"
+      onClick={() => setShowSettingsModal(true)}
+      title="Gallery Settings"
+      style={{
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '4px 8px',
+        display: 'flex',
+        alignItems: 'center',
+      }}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
+        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+  );
+
+  const renderSettingsModal = () => {
+    if (!showSettingsModal) return null;
+
+    return (
+      <div
+        className="settings-modal-overlay"
+        onClick={() => setShowSettingsModal(false)}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+        }}
+      >
+        <div
+          className="settings-modal"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: '#2a2a2a',
+            borderRadius: '8px',
+            padding: '24px',
+            minWidth: '300px',
+            maxWidth: '400px',
+            border: '1px solid #e8f09e',
+          }}
+        >
+          <h3 style={{ margin: '0 0 20px 0', color: '#e8f09e' }}>Gallery Settings</h3>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <label htmlFor="showFaces" style={{ color: '#ddd' }}>Show Face Boxes</label>
+            <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
+              <input
+                type="checkbox"
+                id="showFaces"
+                checked={gallerySettings.showFaceBoxes}
+                onChange={(e) => setShowFaceBoxes(e.target.checked)}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  cursor: 'pointer',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: gallerySettings.showFaceBoxes ? '#4CAF50' : '#555',
+                  transition: '0.3s',
+                  borderRadius: '26px',
+                }}
+              >
+                <span style={{
+                  position: 'absolute',
+                  content: '""',
+                  height: '20px',
+                  width: '20px',
+                  left: gallerySettings.showFaceBoxes ? '26px' : '3px',
+                  bottom: '3px',
+                  backgroundColor: 'white',
+                  transition: '0.3s',
+                  borderRadius: '50%',
+                }}/>
+              </span>
+            </label>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <button
+              onClick={() => setShowSettingsModal(false)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#e8f09e',
+                color: '#333',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -181,11 +317,15 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           </>
         }
       />
-      <div className="gallery-banner-menubar">          
-        {renderBreadcrumbs()}
+      <div className="gallery-banner-menubar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
+          {user && renderSettingsButton()}
+          {renderBreadcrumbs()}
+        </div>
         {config.renderNavMenu(props)}
         {renderSearchBar()}
       </div>
+      {renderSettingsModal()}
 
       {props.album.albums.length > 0 && (
         <div className='albums'>
@@ -234,6 +374,8 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           onImageClick={props.onImageClick}
           getImageLabel={getImageLabelForGallery}
           lastViewedImageId={props.lastViewedImage}
+          showFaceBoxes={gallerySettings.showFaceBoxes}
+          onFaceSearch={props.onFaceSearch}
         />
       </div>
     </>

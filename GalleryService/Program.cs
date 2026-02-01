@@ -258,5 +258,43 @@ createDbCommand.SetHandler(async (string databaseName, string password) =>
 rootCommand.AddCommand(createDbCommand);
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Command to run the face detection background service and keep the app running
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var faceCommand = new Command("face", "Run the face detection processor as a background service");
+faceCommand.AddOption(folderOption);
+faceCommand.AddOption(parallelDegreeOption);
+faceCommand.AddOption(databaseNameOption);
+faceCommand.AddOption(isPlanOption);
+faceCommand.AddOption(logIfProcessed);
+faceCommand.SetHandler(async (string folder, int parallelDegree, string databaseName, string isPlan, bool logIfProcessed) =>
+{
+    picturesConfig.Folder = folder;
+    dbConfig.Database = databaseName;
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
+
+    var host = Host.CreateDefaultBuilder()
+        .ConfigureServices(services =>
+        {
+            bool planMode = isPlan.Equals("yes", StringComparison.OrdinalIgnoreCase);            
+            services.AddSingleton<IHostedService>(sp => FaceDetectionProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, planMode, logIfProcessed));
+            
+            Console.WriteLine("Configured services.");
+
+        })
+        .Build();
+
+    Console.WriteLine($"Starting face detection processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
+    // Console.WriteLine("Press Enter to continue...");
+    // Console.ReadLine();    
+    await host.RunAsync(cts.Token);
+}, folderOption, parallelDegreeOption, databaseNameOption, isPlanOption, logIfProcessed);
+rootCommand.AddCommand(faceCommand);
+
+
+
+
+
 
 return await rootCommand.InvokeAsync(args);

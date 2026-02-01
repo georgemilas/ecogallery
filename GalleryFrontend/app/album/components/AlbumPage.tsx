@@ -28,8 +28,9 @@ export function AlbumPage(): JSX.Element {
           props.setCurrentSettings(settings);
         }}
         onSearchSubmit={props.onSearchSubmit!}
-        onGetApiUrl={props.onGetApiUrl} 
+        onGetApiUrl={props.onGetApiUrl}
         clearLastViewedImage={() => props.setLastViewedImage(null)}
+        onFaceSearch={props.onFaceSearch}
       />
     )
   };

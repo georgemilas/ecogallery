@@ -72,26 +72,17 @@ public class FaceDetectionProcessor : EmptyProcessor
         _faceRepository = new FaceRepository(dbConfig);
 
         // Try to load ONNX models - they should be in the models/ subdirectory
-        var modelsPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".";
+        //var modelsPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".";
+        var modelsPath = FindDataFolder() ?? ".";
 
-        var detectorPath = Path.Combine(modelsPath, "models", "ultraface-RFB-320.onnx");
-        var embeddingPath = Path.Combine(modelsPath, "models", "arcface-w600k-r50.onnx");
-
-        // Allow alternate model names
-        if (!File.Exists(detectorPath))
-            detectorPath = Path.Combine(modelsPath, "models", "ultraface.onnx");
-        if (!File.Exists(embeddingPath))
-            embeddingPath = Path.Combine(modelsPath, "models", "arcface.onnx");
+        var detectorPath = Path.Combine(modelsPath, "models", "ultraface-version-RFB-320.onnx");
+        var embeddingPath = Path.Combine(modelsPath, "models", "arcface_w600k_r50.onnx");
 
         try
         {
             if (File.Exists(detectorPath) && File.Exists(embeddingPath))
             {
-                var sessionOptions = new SessionOptions();
-                // Use CPU execution provider by default
-                // Uncomment below for GPU acceleration:
-                // sessionOptions.AppendExecutionProvider_CUDA(0); // NVIDIA GPU
-                // sessionOptions.AppendExecutionProvider_DML(0);  // DirectML (Windows)
+                var sessionOptions = CreateSessionOptionsWithGpuIfAvailable();
 
                 _faceDetectorSession = new InferenceSession(detectorPath, sessionOptions);
                 _faceEmbeddingSession = new InferenceSession(embeddingPath, sessionOptions);
@@ -113,20 +104,90 @@ public class FaceDetectionProcessor : EmptyProcessor
         }
     }
 
-    public static PeriodicScanService CreateProcessor(
-        PicturesDataConfiguration configuration,
-        DatabaseConfiguration dbConfig,
-        int degreeOfParallelism = -1,
-        bool logIfProcessed = false)
+    /// <summary>
+    /// Creates SessionOptions with GPU acceleration if available, falling back to CPU.
+    /// Tries DirectML first (works with any GPU on Windows), then CUDA for NVIDIA GPUs.
+    /// </summary>
+    private static SessionOptions CreateSessionOptionsWithGpuIfAvailable()
+    {
+        var sessionOptions = new SessionOptions();
+        // Suppress ONNX Runtime warnings about initializers in graph inputs
+        sessionOptions.LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR;
+
+        // Try DirectML first (Windows, works with any GPU: NVIDIA, AMD, Intel)
+        try
+        {
+            sessionOptions.AppendExecutionProvider_DML(0);
+            Console.WriteLine("Face detection: Using DirectML GPU acceleration");
+            return sessionOptions;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Face detection: DirectML not available ({ex.Message})");
+        }
+
+        // Try CUDA for NVIDIA GPUs
+        try
+        {
+            sessionOptions = new SessionOptions { LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR };
+            sessionOptions.AppendExecutionProvider_CUDA(0);
+            Console.WriteLine("Face detection: Using CUDA GPU acceleration");
+            return sessionOptions;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Face detection: CUDA not available ({ex.Message})");
+        }
+
+        // Fall back to CPU
+        Console.WriteLine("Face detection: Using CPU (no GPU acceleration available)");
+        return new SessionOptions { LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR };
+    }
+
+    /// <summary>
+    /// Find the models folder by searching up the directory tree for the solution root
+    /// </summary>
+    private static string? FindDataFolder()
+    {
+        // Start from the current application directory
+        var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+        
+        // Search up the directory tree for the solution root (containing .sln file)
+        while (currentDir != null)
+        {
+            // Look for .sln file to identify solution root
+            if (currentDir.GetFiles("*.sln").Any())
+            {
+                var modelsPath = Path.Combine(currentDir.FullName, "data");
+                if (Directory.Exists(modelsPath))
+                {
+                    return modelsPath;
+                }
+            }
+            currentDir = currentDir.Parent;
+        }
+        
+        // Fallback: try relative to current working directory
+        var fallbackPath = Path.Combine(Directory.GetCurrentDirectory(), "data");
+        if (Directory.Exists(fallbackPath))
+        {
+            return fallbackPath;
+        }
+        
+        // Final fallback: try relative to project (when running from GalleryService)
+        fallbackPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "data");
+        if (Directory.Exists(fallbackPath))
+        {
+            return Path.GetFullPath(fallbackPath);
+        }
+        
+        return null;
+    }
+
+    public static PeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1, bool planMode = false, bool logIfProcessed = false)
     {
         IFileProcessor processor = new FaceDetectionProcessor(configuration, dbConfig);
-        return new DbPeriodicScanService(
-            processor,
-            configuration,
-            dbConfig,
-            intervalMinutes: 5,
-            degreeOfParallelism: degreeOfParallelism,
-            logIfProcessed);
+        return new DbPeriodicScanService(processor, configuration, dbConfig, intervalMinutes: 5, degreeOfParallelism: degreeOfParallelism, logIfProcessed);
     }
 
     public override bool ShouldCleanFile(FileData dbPath, bool logIfProcess = false)
@@ -213,8 +274,7 @@ public class FaceDetectionProcessor : EmptyProcessor
                 }
 
                 // Step 4: Find matching person or create new one
-                var (matchedPerson, similarity) = await _faceRepository.FindMostSimilarPersonAsync(
-                    embedding, SimilarityThreshold);
+                var (matchedPerson, similarity) = await _faceRepository.FindMostSimilarPersonAsync(embedding, SimilarityThreshold);
 
                 long? personId = null;
                 if (matchedPerson != null)

@@ -124,3 +124,34 @@ public struct PointF
         Y = y;
     }
 }
+
+/// <summary>
+/// Lightweight DTO for displaying face bounding boxes on thumbnails.
+/// Contains only the data needed for UI rendering, without the heavy embedding vector.
+/// </summary>
+public record FaceBoxInfo
+{
+    public long FaceId { get; init; }
+    public long? PersonId { get; init; }
+    public string? PersonName { get; init; }
+    public int BoundingBoxX { get; init; }
+    public int BoundingBoxY { get; init; }
+    public int BoundingBoxWidth { get; init; }
+    public int BoundingBoxHeight { get; init; }
+    public float Confidence { get; init; }
+
+    public static FaceBoxInfo FromFaceEmbedding(FaceEmbedding face, string? personName = null)
+    {
+        return new FaceBoxInfo
+        {
+            FaceId = face.Id,
+            PersonId = face.FacePersonId,
+            PersonName = personName,
+            BoundingBoxX = face.BoundingBoxX,
+            BoundingBoxY = face.BoundingBoxY,
+            BoundingBoxWidth = face.BoundingBoxWidth,
+            BoundingBoxHeight = face.BoundingBoxHeight,
+            Confidence = face.Confidence
+        };
+    }
+}

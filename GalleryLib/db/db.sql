@@ -134,6 +134,10 @@ ON public.album_image USING GIN (image_path gin_trgm_ops);
 -- Create an index on image_sha256 for grouping/filtering
 CREATE INDEX IF NOT EXISTS idx_album_image_image_sha256 ON public.album_image (image_sha256);
 
+-- Index for sorting by image_timestamp_utc (for recent images)
+CREATE INDEX IF NOT EXISTS idx_album_image_timestamp_utc 
+ON public.album_image (image_timestamp_utc DESC);
+
 
 ------------------------------------------------------------------------------
 ----------------- public.image_metadata ------------------------------------------  
@@ -187,6 +191,10 @@ ADD
 CREATE UNIQUE INDEX IF NOT EXISTS ux_image_metadata_album_image_id
 ON public.image_metadata (album_image_id);
 
+-- Index for sorting by date_taken
+CREATE INDEX IF NOT EXISTS idx_image_metadata_date_taken 
+ON public.image_metadata (date_taken DESC) WHERE date_taken IS NOT NULL;
+
 ALTER TABLE
   public.image_metadata
 ADD
@@ -236,6 +244,10 @@ ADD
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_video_metadata_album_image_id
 ON public.video_metadata (album_image_id);
+
+-- Index for sorting by date_taken
+CREATE INDEX IF NOT EXISTS idx_video_metadata_date_taken 
+ON public.video_metadata (date_taken DESC) WHERE date_taken IS NOT NULL;
 
 ALTER TABLE
   public.video_metadata

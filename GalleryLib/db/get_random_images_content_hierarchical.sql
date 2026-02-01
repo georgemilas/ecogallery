@@ -19,9 +19,20 @@ RETURNS TABLE (
     last_updated_utc TIMESTAMP WITH TIME ZONE,
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
     image_metadata JSON,
-    video_metadata JSON
+    video_metadata JSON,
+    faces JSON  
 ) AS $$
-SELECT DISTINCT ON (random(), COALESCE(ai.image_sha256, ai.image_path))
+WITH random_images AS (
+    -- Fast random selection using random ID sampling
+    SELECT ai.id
+    FROM album_image ai
+    WHERE ai.id >= (
+        SELECT floor(random() * (SELECT max(id) FROM album_image))::bigint
+    )
+    ORDER BY ai.id
+    LIMIT p_count * 2  -- Oversample to account for gaps in ID sequence
+)
+SELECT 
     ai.id,
     ai.image_name AS item_name,
     ai.image_description AS item_description,
@@ -38,11 +49,14 @@ SELECT DISTINCT ON (random(), COALESCE(ai.image_sha256, ai.image_path))
     ai.last_updated_utc,
     ai.image_timestamp_utc AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
-    row_to_json(vm) AS video_metadata
-FROM album_image ai
+    row_to_json(vm) AS video_metadata,
+    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
+FROM random_images ri
+INNER JOIN album_image ai ON ai.id = ri.id
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-ORDER BY random(), COALESCE(ai.image_sha256, ai.image_path) asc
+LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
+GROUP BY ai.id, exif.id, vm.id
 LIMIT p_count
 
 $$ LANGUAGE SQL;

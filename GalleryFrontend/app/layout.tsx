@@ -1,4 +1,5 @@
 import { AuthProvider } from './contexts/AuthContext';
+import { GallerySettingsProvider } from './contexts/GallerySettingsContext';
 
 export const metadata = {
   title: 'Milas Gallery',
@@ -13,7 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ backgroundColor: 'rgba(0, 0, 0, 1)', margin: 0, padding: 0, color: 'white' }}>
         <AuthProvider>
-          {children}
+          <GallerySettingsProvider>
+            {children}
+          </GallerySettingsProvider>
         </AuthProvider>
       </body>
     </html>

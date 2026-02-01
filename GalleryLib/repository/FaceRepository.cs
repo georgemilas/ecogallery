@@ -114,6 +114,19 @@ public class FaceRepository(DatabaseConfiguration dbConfig) : IDisposable, IAsyn
         return result;
     }
 
+    public async Task<FaceEmbedding?> GetFaceEmbeddingByIdAsync(long faceId)
+    {
+        var sql = @"
+            SELECT id, album_image_id, face_person_id, embedding, bounding_box_x, bounding_box_y,
+                   bounding_box_width, bounding_box_height, confidence, is_confirmed,
+                   created_utc, last_updated_utc
+            FROM public.face_embedding
+            WHERE id = @id";
+
+        var results = await _db.QueryAsync(sql, FaceEmbedding.CreateFromDataReader, new { id = faceId });
+        return results.FirstOrDefault();
+    }
+
     #endregion
 
     #region FacePerson Operations
@@ -299,6 +312,54 @@ public class FaceRepository(DatabaseConfiguration dbConfig) : IDisposable, IAsyn
         }
 
         return result;
+    }
+
+    #endregion
+
+    #region Search by Person
+
+    /// <summary>
+    /// Get all album image IDs that contain faces of a specific person (by person ID).
+    /// </summary>
+    public async Task<List<long>> GetImageIdsByPersonIdAsync(long personId)
+    {
+        var sql = @"
+            SELECT DISTINCT album_image_id
+            FROM public.face_embedding
+            WHERE face_person_id = @person_id
+            ORDER BY album_image_id";
+
+        return await _db.QueryAsync(sql, reader => reader.GetInt64(0), new { person_id = personId });
+    }
+
+    /// <summary>
+    /// Get all album image IDs that contain faces of persons with the given name.
+    /// This allows finding images across multiple person IDs that share the same name.
+    /// </summary>
+    public async Task<List<long>> GetImageIdsByPersonNameAsync(string personName)
+    {
+        var sql = @"
+            SELECT DISTINCT fe.album_image_id
+            FROM public.face_embedding fe
+            JOIN public.face_person fp ON fe.face_person_id = fp.id
+            WHERE fp.name = @name
+            ORDER BY fe.album_image_id";
+
+        return await _db.QueryAsync(sql, reader => reader.GetInt64(0), new { name = personName });
+    }
+
+    /// <summary>
+    /// Get all persons with the given name (case-sensitive).
+    /// </summary>
+    public async Task<List<FacePerson>> GetPersonsByNameAsync(string name)
+    {
+        var sql = @"
+            SELECT id, name, representative_embedding, face_count, created_utc, last_updated_utc
+            FROM public.face_person
+            WHERE name = @name
+            ORDER BY face_count DESC";
+
+        return await _db.QueryAsync(sql, FacePerson.CreateFromDataReader, new { name });
     }
 
     #endregion
