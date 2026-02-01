@@ -21,6 +21,11 @@ RETURNS TABLE (
     video_metadata JSON,
     faces JSON
 ) AS $$
+WITH faces as (
+  select fe.id as face_id, fe.face_person_id as person_id, fp.name as person_name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
+  from face_person fp 
+  join face_embedding fe on fp.id = fe.face_person_id    
+) 
 SELECT
     a.id,
     a.album_name AS item_name,
@@ -66,12 +71,12 @@ SELECT
     ai.image_timestamp_utc AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata,    
-    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
+    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
 FROM album_image ai
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
 JOIN album AS a ON ai.album_name = a.album_name
-LEFT JOIN face_embedding fe on ai.id = fe.album_image_id
+LEFT JOIN faces fe ON ai.id = fe.album_image_id
 WHERE a.id = p_album_id
 GROUp BY ai.id, exif.id, vm.id
 

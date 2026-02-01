@@ -78,6 +78,7 @@ export interface FaceBox {
   face_id: number;
   person_id: number | null;
   person_name: string | null;
+  album_image_id: number;
   bounding_box_x: number;
   bounding_box_y: number;
   bounding_box_width: number;

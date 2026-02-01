@@ -194,7 +194,12 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         var orderby = albumSearch.GroupByPHash ? "ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC, ai.id DESC" : "ORDER BY ai.image_timestamp_utc DESC, ai.id DESC";
         var limitOffset1 = albumSearch.Limit > 0 ? $"select * from (" : "";
         var limitOffset2 = albumSearch.Limit > 0 ? $") LIMIT {albumSearch.Limit} OFFSET {albumSearch.Offset}" : "";
-        var sql = $@"{limitOffset1}
+        var sql = $@"WITH faces as (
+                        select fe.id, fe.face_person_id, fp.name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
+                        from face_person fp 
+                        join face_embedding fe on fp.id = fe.face_person_id 
+                    ) 
+                    {limitOffset1}
                     {select}
                     ai.id,
                     ai.image_name AS item_name,
@@ -213,11 +218,11 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                     ai.image_timestamp_utc AS item_timestamp_utc,
                     row_to_json(exif) AS image_metadata,
                     row_to_json(vm) AS video_metadata,
-                    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
+                    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
                 FROM album_image ai
                 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
                 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-                LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
+                LEFT JOIN faces fe ON ai.id = fe.album_image_id
                 WHERE {where}
                 GROUP BY ai.id, exif.id, vm.id
                 {orderby}
@@ -249,6 +254,11 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         if (imageIds.Count == 0) return new List<AlbumContentHierarchical>();
 
         var sql = $@"
+            WITH faces as (
+                select fe.id as face_id, fe.face_person_id as person_id, fp.name as person_name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
+                from face_person fp 
+                join face_embedding fe on fp.id = fe.face_person_id    
+            )
             SELECT
                 ai.id,
                 ai.image_name AS item_name,
@@ -267,11 +277,11 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 ai.image_timestamp_utc AS item_timestamp_utc,
                 row_to_json(exif) AS image_metadata,
                 row_to_json(vm) AS video_metadata,
-                coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
+                coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
             FROM album_image ai
             LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
             LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-            LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
+            LEFT JOIN faces fe ON ai.id = fe.album_image_id
             WHERE ai.id = ANY(@image_ids)
             GROUP BY ai.id, exif.id, vm.id
             ORDER BY ai.image_timestamp_utc DESC";

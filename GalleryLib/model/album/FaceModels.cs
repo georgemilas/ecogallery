@@ -134,6 +134,7 @@ public record FaceBoxInfo
     public long FaceId { get; init; }
     public long? PersonId { get; init; }
     public string? PersonName { get; init; }
+    public long AlbumImageId { get; init; }
     public int BoundingBoxX { get; init; }
     public int BoundingBoxY { get; init; }
     public int BoundingBoxWidth { get; init; }
@@ -147,6 +148,7 @@ public record FaceBoxInfo
             FaceId = face.Id,
             PersonId = face.FacePersonId,
             PersonName = personName,
+            AlbumImageId = face.AlbumImageId,
             BoundingBoxX = face.BoundingBoxX,
             BoundingBoxY = face.BoundingBoxY,
             BoundingBoxWidth = face.BoundingBoxWidth,
@@ -154,4 +156,21 @@ public record FaceBoxInfo
             Confidence = face.Confidence
         };
     }
+
+    public static FaceBoxInfo CreateFromDataReader(DbDataReader reader)
+    {
+        return new FaceBoxInfo
+        {
+            FaceId = reader.GetInt64(reader.GetOrdinal("face_id")),
+            PersonId = reader.IsDBNull(reader.GetOrdinal("person_id")) ? null : reader.GetInt64(reader.GetOrdinal("person_id")),
+            PersonName = reader.IsDBNull(reader.GetOrdinal("person_name")) ? null : reader.GetString(reader.GetOrdinal("person_name")),
+            AlbumImageId = reader.GetInt64(reader.GetOrdinal("album_image_id")),
+            BoundingBoxX = reader.GetInt32(reader.GetOrdinal("bounding_box_x")),
+            BoundingBoxY = reader.GetInt32(reader.GetOrdinal("bounding_box_y")),
+            BoundingBoxWidth = reader.GetInt32(reader.GetOrdinal("bounding_box_width")),
+            BoundingBoxHeight = reader.GetInt32(reader.GetOrdinal("bounding_box_height")),
+            Confidence = reader.GetFloat(reader.GetOrdinal("confidence"))            
+        };
+    }    
+
 }

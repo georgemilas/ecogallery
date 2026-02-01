@@ -23,19 +23,19 @@ public record AlbumContentHierarchical
     public DateTimeOffset ItemTimestampUtc { get; set; }
     public ImageMetadata? ImageMetadata { get; set; }
     public VideoMetadata? VideoMetadata { get; set; }
-    public List<FaceEmbedding> Faces { get; set; } = new List<FaceEmbedding>();
+    public List<FaceBoxInfo> Faces { get; set; } = new List<FaceBoxInfo>();
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
     {
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
         // Parse faces JSON array
-        List<FaceEmbedding> faces = new();
+        List<FaceBoxInfo> faces = new();
         var facesOrdinal = reader.GetOrdinal("faces");
         if (!reader.IsDBNull(facesOrdinal))
         {
             var facesJson = reader.GetString(facesOrdinal);
-            faces = JsonSerializer.Deserialize<List<FaceEmbedding>>(facesJson, options) ?? new List<FaceEmbedding>();
+            faces = JsonSerializer.Deserialize<List<FaceBoxInfo>>(facesJson, options) ?? new List<FaceBoxInfo>();
         }
 
         return new AlbumContentHierarchical

@@ -203,7 +203,7 @@ public class FacesController : ControllerBase
             ImageHeight = item.ImageHeight,
             ImageMetadata = item.ImageMetadata,
             VideoMetadata = item.VideoMetadata,
-            Faces = item.Faces.Select(f => FaceBoxInfo.FromFaceEmbedding(f)).ToList(),
+            Faces = item.Faces,  //.Select(f => FaceBoxInfo.FromFaceEmbedding(f)).ToList(),
             LastUpdatedUtc = item.LastUpdatedUtc,
             ItemTimestampUtc = item.ItemTimestampUtc,
             NavigationPathSegments = new List<AlbumPathElement>()

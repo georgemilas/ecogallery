@@ -353,7 +353,6 @@ CREATE INDEX idx_user_tokens_token ON public.user_tokens(token);
 ----------------- public.face_person -----------------------------------------
 -- Represents a named person (cluster of faces identified as the same person)
 ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS public.face_embedding;
 DROP TABLE IF EXISTS public.face_person;
 
 CREATE TABLE public.face_person (
@@ -375,6 +374,7 @@ CREATE INDEX idx_face_person_name ON public.face_person (name) WHERE name IS NOT
 ----------------- public.face_embedding --------------------------------------
 -- Stores individual face detections and their embeddings
 ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.face_embedding;
 
 CREATE TABLE public.face_embedding (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,

@@ -27,6 +27,11 @@ WITH ra AS (
     WHERE parent_album = ''
     ORDER BY album_name
     LIMIT 1
+), 
+faces as (
+  select fe.id as face_id, fe.face_person_id as person_id, fp.name as person_name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
+  from face_person fp 
+  join face_embedding fe on fp.id = fe.face_person_id 
 )
 SELECT
     a.id,
@@ -74,12 +79,12 @@ SELECT
     ai.image_timestamp_utc AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata,
-    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.id is not NULL), null::json) AS faces
+    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
 FROM ra
 JOIN album_image ai ON ai.album_name = ra.album_name
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-LEFT JOIN face_embedding fe ON ai.id = fe.album_image_id
+LEFT JOIN faces fe ON ai.id = fe.album_image_id
 GROUP BY ai.id, exif.id, vm.id
 ORDER BY item_type
 $$ LANGUAGE SQL;
