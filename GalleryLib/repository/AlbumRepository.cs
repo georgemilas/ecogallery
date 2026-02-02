@@ -195,7 +195,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         var limitOffset1 = albumSearch.Limit > 0 ? $"select * from (" : "";
         var limitOffset2 = albumSearch.Limit > 0 ? $") LIMIT {albumSearch.Limit} OFFSET {albumSearch.Offset}" : "";
         var sql = $@"WITH faces as (
-                        select fe.id, fe.face_person_id, fp.name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
+                        select fe.id as face_id, fe.face_person_id as person_id, fp.name as person_name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
                         from face_person fp 
                         join face_embedding fe on fp.id = fe.face_person_id 
                     ) 
@@ -259,7 +259,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 from face_person fp 
                 join face_embedding fe on fp.id = fe.face_person_id    
             )
-            SELECT
+            SELECT DISTINCT ON (COALESCE(ai.image_sha256, ai.image_path))
                 ai.id,
                 ai.image_name AS item_name,
                 ai.image_description AS item_description,
@@ -284,7 +284,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
             LEFT JOIN faces fe ON ai.id = fe.album_image_id
             WHERE ai.id = ANY(@image_ids)
             GROUP BY ai.id, exif.id, vm.id
-            ORDER BY ai.image_timestamp_utc DESC";
+            ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC";
 
         var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), new { image_ids = imageIds.ToArray() });
         return content;
