@@ -38,8 +38,8 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [searchText, setSearchText] = React.useState('');
   const [bannerEditMode, setBannerEditMode] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const { user } = useAuth();
-  const { settings: gallerySettings, setShowFaceBoxes } = useGallerySettings();
+  const { user, logout } = useAuth();
+  const { settings: gallerySettings, setShowFaceBoxes, setSearchPageSize } = useGallerySettings();
   const { settings, onSortChange, config } = props;
 
   // Keyboard shortcut: 'f' to toggle face boxes (only for authenticated users)
@@ -281,7 +281,45 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
             </label>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <label htmlFor="searchPageSize" style={{ color: '#ddd' }}>Search Page Size</label>
+            <input
+              type="number"
+              id="searchPageSize"
+              value={gallerySettings.searchPageSize}
+              onChange={(e) => setSearchPageSize(Math.max(1, parseInt(e.target.value) || 2000))}
+              min="1"
+              max="10000"
+              style={{
+                width: '80px',
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #555',
+                backgroundColor: '#333',
+                color: '#ddd',
+                textAlign: 'right',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+            <button
+              onClick={() => {
+                setShowSettingsModal(false);
+                logout();
+              }}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Logout
+            </button>
             <button
               onClick={() => setShowSettingsModal(false)}
               style={{

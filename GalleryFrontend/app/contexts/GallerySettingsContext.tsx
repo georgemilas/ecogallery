@@ -4,15 +4,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface GallerySettings {
   showFaceBoxes: boolean;
+  searchPageSize: number;
 }
 
 interface GallerySettingsContextType {
   settings: GallerySettings;
   setShowFaceBoxes: (show: boolean) => void;
+  setSearchPageSize: (size: number) => void;
 }
 
 const defaultSettings: GallerySettings = {
   showFaceBoxes: false,
+  searchPageSize: 2000,
 };
 
 const GallerySettingsContext = createContext<GallerySettingsContextType | undefined>(undefined);
@@ -52,8 +55,12 @@ export function GallerySettingsProvider({ children }: { children: React.ReactNod
     setSettings(prev => ({ ...prev, showFaceBoxes: show }));
   };
 
+  const setSearchPageSize = (size: number) => {
+    setSettings(prev => ({ ...prev, searchPageSize: size }));
+  };
+
   return (
-    <GallerySettingsContext.Provider value={{ settings, setShowFaceBoxes }}>
+    <GallerySettingsContext.Provider value={{ settings, setShowFaceBoxes, setSearchPageSize }}>
       {children}
     </GallerySettingsContext.Provider>
   );
