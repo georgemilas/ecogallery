@@ -16,6 +16,10 @@ interface VirtualizedGalleryProps {
   lastViewedImageId?: number | null;
   showFaceBoxes?: boolean;
   onFaceSearch?: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
 }
 
 interface GalleryRowComponentProps {
@@ -28,9 +32,13 @@ interface GalleryRowComponentProps {
   onRef: (element: HTMLDivElement | null) => void;
   showFaceBoxes?: boolean;
   onFaceSearch?: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
 }
 
-function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch }: GalleryRowComponentProps) {
+function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId }: GalleryRowComponentProps) {
   return (
     <div
       ref={onRef}
@@ -54,6 +62,10 @@ function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getIm
           label={getImageLabel(image.name)}
           showFaceBoxes={showFaceBoxes}
           onFaceSearch={onFaceSearch}
+          onFaceDelete={onFaceDelete}
+          onPersonDelete={onPersonDelete}
+          onSearchByName={onSearchByName}
+          onSearchByPersonId={onSearchByPersonId}
         />
       ))}
     </div>
@@ -66,12 +78,18 @@ interface FaceContextMenuProps {
   onClose: () => void;
   onNameUpdate: (personId: number, newName: string) => void;
   onFaceSearch: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
 }
 
-function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }: FaceContextMenuProps) {
+function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId }: FaceContextMenuProps) {
   const { user } = useAuth();
   const [name, setName] = useState(face.person_name || '');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeletePersonConfirm, setShowDeletePersonConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
 
@@ -144,6 +162,57 @@ function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }
     onClose();
   };
 
+  const handleSearchByName = () => {
+    if (name.trim() && onSearchByName) {
+      onSearchByName(name.trim());
+      onClose();
+    }
+  };
+
+  const handleSearchByPersonId = () => {
+    if (face.person_id && onSearchByPersonId) {
+      onSearchByPersonId(face.person_id);
+      onClose();
+    }
+  };
+
+  const handleDeleteFace = async () => {
+    if (!face.face_id || !onFaceDelete) return;
+    setDeleting(true);
+    try {
+      const response = await apiFetch(`/api/v1/faces/${face.face_id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        onFaceDelete(face.face_id);
+        onClose();
+      }
+    } catch (e) {
+      console.error('Failed to delete face:', e);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeletePerson = async () => {
+    if (!face.person_id || !onPersonDelete) return;
+    setDeleting(true);
+    try {
+      const response = await apiFetch(`/api/v1/faces/person/${face.person_id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        onPersonDelete(face.person_id);
+        onClose();
+      }
+    } catch (e) {
+      console.error('Failed to delete person:', e);
+    } finally {
+      setDeleting(false);
+      setShowDeletePersonConfirm(false);
+    }
+  };
+
   return (
     <div
       ref={menuRef}
@@ -164,7 +233,30 @@ function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
         <div style={{ color: '#e8f09e', fontWeight: 'bold', fontSize: '12px' }}>
           Face #{face.face_id}
-          {face.person_id && <span style={{ color: '#888', fontWeight: 'normal' }}> (Person #{face.person_id})</span>}
+          {face.person_id && (
+            <span style={{ color: '#888', fontWeight: 'normal' }}>
+              {' '}(Person #{face.person_id})
+              {user?.is_admin && onSearchByPersonId && (
+                <button
+                  onClick={handleSearchByPersonId}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#888',
+                    cursor: 'pointer',
+                    padding: '0 0 0 4px',
+                    verticalAlign: 'middle',
+                  }}
+                  title="Search by Person ID"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="10" cy="10" r="6" />
+                    <line x1="16" y1="16" x2="21" y2="21" />
+                  </svg>
+                </button>
+              )}
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}
@@ -187,14 +279,14 @@ function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }
 
       {user?.is_admin && (
         <>
-          <div style={{ marginBottom: '8px' }}>
+          <div style={{ marginBottom: '8px', display: 'flex', gap: '4px' }}>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter name..."
               style={{
-                width: '100%',
+                flex: 1,
                 padding: '6px 8px',
                 backgroundColor: '#1a1a1a',
                 border: '1px solid #555',
@@ -208,6 +300,26 @@ function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }
               }}
               autoFocus
             />
+            {onSearchByName && (
+              <button
+                onClick={handleSearchByName}
+                disabled={!name.trim()}
+                style={{
+                  background: 'none',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: name.trim() ? '#e8f09e' : '#555',
+                  cursor: name.trim() ? 'pointer' : 'not-allowed',
+                  padding: '4px 6px',
+                }}
+                title="Search by Name"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="10" cy="10" r="6" />
+                  <line x1="16" y1="16" x2="21" y2="21" />
+                </svg>
+              </button>
+            )}
           </div>
 
           <button
@@ -223,6 +335,7 @@ function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }
               opacity: saving || !face.person_id ? 0.5 : 1,
               fontSize: '12px',
               marginBottom: '8px',
+              width: '100%',
             }}
           >
             {saving ? 'Saving...' : 'Save Name'}
@@ -242,10 +355,97 @@ function FaceContextMenu({ face, position, onClose, onNameUpdate, onFaceSearch }
           cursor: !face.person_id ? 'not-allowed' : 'pointer',
           opacity: !face.person_id ? 0.5 : 1,
           fontSize: '12px',
+          width: '100%',
+          marginBottom: user?.is_admin ? '8px' : '0',
         }}
       >
         Find All Photos
       </button>
+
+      {user?.is_admin && (
+        <>
+          {!showDeletePersonConfirm ? (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', borderTop: '1px solid #444', paddingTop: '8px' }}>
+              <button
+                onClick={handleDeleteFace}
+                disabled={deleting}
+                style={{
+                  flex: 1,
+                  padding: '6px 8px',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  opacity: deleting ? 0.5 : 1,
+                  fontSize: '11px',
+                }}
+                title="Delete this face record"
+              >
+                {deleting ? '...' : 'Delete Face'}
+              </button>
+              <button
+                onClick={() => setShowDeletePersonConfirm(true)}
+                disabled={!face.person_id || deleting}
+                style={{
+                  flex: 1,
+                  padding: '6px 8px',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: !face.person_id || deleting ? 'not-allowed' : 'pointer',
+                  opacity: !face.person_id || deleting ? 0.5 : 1,
+                  fontSize: '11px',
+                }}
+                title="Delete entire person and all associated faces"
+              >
+                Delete Person
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginTop: '8px', borderTop: '1px solid #444', paddingTop: '8px' }}>
+              <div style={{ color: '#ff6b6b', fontSize: '11px', marginBottom: '8px' }}>
+                Delete person #{face.person_id} and ALL associated faces?
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleDeletePerson}
+                  disabled={deleting}
+                  style={{
+                    flex: 1,
+                    padding: '6px 8px',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: deleting ? 'not-allowed' : 'pointer',
+                    opacity: deleting ? 0.5 : 1,
+                    fontSize: '11px',
+                  }}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+                <button
+                  onClick={() => setShowDeletePersonConfirm(false)}
+                  style={{
+                    flex: 1,
+                    padding: '6px 8px',
+                    backgroundColor: '#555',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -259,9 +459,13 @@ interface GalleryItemProps {
   label: string;
   showFaceBoxes?: boolean;
   onFaceSearch?: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
 }
 
-function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch }: GalleryItemProps) {
+function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId }: GalleryItemProps) {
   const [selectedFace, setSelectedFace] = useState<{ face: FaceBox; position: { x: number; y: number } } | null>(null);
   const [faceNames, setFaceNames] = useState<Record<number, string>>({});
 
@@ -346,6 +550,10 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
           onClose={() => setSelectedFace(null)}
           onNameUpdate={handleNameUpdate}
           onFaceSearch={handleFaceSearch}
+          onFaceDelete={onFaceDelete}
+          onPersonDelete={onPersonDelete}
+          onSearchByName={onSearchByName}
+          onSearchByPersonId={onSearchByPersonId}
         />
       )}
       <div
@@ -399,7 +607,7 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
   );
 }
 
-export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, showFaceBoxes = false, onFaceSearch }: VirtualizedGalleryProps) {
+export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, showFaceBoxes = false, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId }: VirtualizedGalleryProps) {
   const { rows, totalHeight, containerRef } = useVirtualizedGallery({images, targetHeight, gap, });
 
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -563,6 +771,10 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
           onRef={registerRowRef(rowIndex)}
           showFaceBoxes={showFaceBoxes}
           onFaceSearch={onFaceSearch}
+          onFaceDelete={onFaceDelete}
+          onPersonDelete={onPersonDelete}
+          onSearchByName={onSearchByName}
+          onSearchByPersonId={onSearchByPersonId}
         />
       ))}
     </div>

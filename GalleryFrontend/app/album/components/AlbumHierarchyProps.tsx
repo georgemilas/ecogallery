@@ -167,6 +167,10 @@ export interface AlbumHierarchyProps {
   onSortChange?: (settings: AlbumSettings) => void;
   clearLastViewedImage?: () => void;
   onFaceSearch?: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
 }
 
 

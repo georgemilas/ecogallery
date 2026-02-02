@@ -13,6 +13,7 @@ export interface BaseAlbumConfig {
   useOriginalImage: boolean;
   renderHierarchyView: (props: BaseAlbumPageProps) => React.ReactNode;
   onSearchSubmit?: (expression: string, offset: number) => void;
+  initialView?: 'random' | 'recent'; // For /album/random and /album/recent routes
 }
 
 export interface BaseAlbumPageProps {
@@ -31,6 +32,10 @@ export interface BaseAlbumPageProps {
   onSortChange: (settings: AlbumSettings) => void;
   onSearchSubmit?: (expression: string, offset: number) => void;
   onFaceSearch?: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
   config: BaseAlbumConfig;
 }
 
@@ -46,6 +51,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const albumIdParam = searchParams.get('id') ? parseInt(searchParams.get('id') || '', 10) : null;
   const imageIdParam = searchParams.get('image') ? parseInt(searchParams.get('image') || '', 10) : null;
   const faceSearchParam = searchParams.get('faceSearch');
+  const viewParam = searchParams.get('view'); // 'random' or 'recent'
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
 
   // Sync currentSettings with album.settings when album changes
@@ -175,6 +181,38 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     router.push(`${config.basePath}?faceSearch=${encodeURIComponent(searchParam)}`);
   };
 
+  // Navigate to search by name only
+  const navigateToSearchByName = (name: string) => {
+    router.push(`${config.basePath}?faceSearch=${encodeURIComponent(`name:${name}`)}`);
+  };
+
+  // Navigate to search by person ID only
+  const navigateToSearchByPersonId = (personId: number) => {
+    router.push(`${config.basePath}?faceSearch=${encodeURIComponent(`person:${personId}`)}`);
+  };
+
+  // Handle face deletion - refresh to update the view
+  const handleFaceDelete = (faceId: number) => {
+    console.log('Face deleted:', faceId);
+    // Refresh the current album to update the UI
+    if (faceSearchParam) {
+      doFaceSearch(faceSearchParam);
+    } else {
+      fetchAlbum(albumIdParam);
+    }
+  };
+
+  // Handle person deletion - refresh to update the view
+  const handlePersonDelete = (personId: number) => {
+    console.log('Person deleted:', personId);
+    // Refresh the current album to update the UI
+    if (faceSearchParam) {
+      doFaceSearch(faceSearchParam);
+    } else {
+      fetchAlbum(albumIdParam);
+    }
+  };
+
   useEffect(() => {
     // Handle auth requirements
     if (config.requireAuth) {
@@ -184,13 +222,16 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
         return;
       }
     }
-    // If faceSearch param is present, do face search instead of album fetch
+    // Handle different view modes - route-based initialView takes priority
+    const effectiveView = config.initialView || viewParam;
     if (faceSearchParam) {
       doFaceSearch(faceSearchParam);
+    } else if (effectiveView === 'random' || effectiveView === 'recent') {
+      getApiUrl(effectiveView);
     } else {
       fetchAlbum(albumIdParam);
     }
-  }, [albumIdParam, faceSearchParam, authLoading, user, config.requireAuth]);
+  }, [albumIdParam, faceSearchParam, viewParam, authLoading, user, config.requireAuth]);
 
   // Fullscreen handling
   useEffect(() => {
@@ -275,6 +316,10 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     onGetApiUrl: getApiUrl,
     onSearchSubmit: config.onSearchSubmit || postSearchAlbum,
     onFaceSearch: navigateToFaceSearch,
+    onFaceDelete: handleFaceDelete,
+    onPersonDelete: handlePersonDelete,
+    onSearchByName: navigateToSearchByName,
+    onSearchByPersonId: navigateToSearchByPersonId,
     config
   };
 
@@ -306,7 +351,12 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
           )}
         </>
       ) : (
+        <>
         <p>No album found.</p>
+        <a href="#" className="home-link" onClick={e => { e.preventDefault(); router.push('/album'); }}
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Home
+          </a>
+        </>
       )}
     </main>
   );

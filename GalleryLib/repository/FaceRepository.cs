@@ -127,6 +127,13 @@ public class FaceRepository(DatabaseConfiguration dbConfig) : IDisposable, IAsyn
         return results.FirstOrDefault();
     }
 
+    public async Task<int> DeleteFaceEmbeddingByIdAsync(long faceId)
+    {
+        var sql = @"DELETE FROM public.face_embedding WHERE id = @id";              
+        var results = await _db.ExecuteAsync(sql, new { id = faceId });
+        return results;
+    }
+
     #endregion
 
     #region FacePerson Operations
@@ -171,6 +178,14 @@ public class FaceRepository(DatabaseConfiguration dbConfig) : IDisposable, IAsyn
 
         var results = await _db.QueryAsync(sql, FacePerson.CreateFromDataReader, new { id });
         return results.FirstOrDefault();
+    }
+
+    public async Task<int> DeleteFacePersonByIdAsync(long id)
+    {
+        var sql = @"DELETE FROM public.face_person WHERE id = @id";
+            
+        var results = await _db.ExecuteAsync(sql, new { id });
+        return results;
     }
 
     public async Task UpdateFacePersonAsync(FacePerson person)

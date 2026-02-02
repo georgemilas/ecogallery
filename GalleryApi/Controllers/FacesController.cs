@@ -36,7 +36,7 @@ public class FacesController : ControllerBase
             var person = await _faceRepository.GetFacePersonByIdAsync(personId);
             if (person == null)
             {
-                return NotFound(new { error = $"Person with ID {personId} not found" });
+                return NotFound(new { error = $"Person {personId} not found" });
             }
 
             var updatedPerson = person with { Name = request.Name };
@@ -50,27 +50,26 @@ public class FacesController : ControllerBase
         }
     }
 
-    // /// <summary>
-    // /// Get a face person by ID
-    // /// </summary>
-    // [HttpGet("person/{personId}")]
-    // public async Task<ActionResult<FacePerson>> GetPerson(long personId)
-    // {
-    //     try
-    //     {
-    //         var person = await _faceRepository.GetFacePersonByIdAsync(personId);
-    //         if (person == null)
-    //         {
-    //             return NotFound(new { error = $"Person with ID {personId} not found" });
-    //         }
-
-    //         return Ok(person);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         return StatusCode(500, new { error = ex.Message });
-    //     }
-    // }
+    /// <summary>
+    /// Delete a face person by ID
+    /// </summary>
+    [HttpDelete("person/{personId}")]
+    public async Task<ActionResult<FacePerson>> DeletePerson(long personId)
+    {
+        try
+        {
+            var cnt = await _faceRepository.DeleteFacePersonByIdAsync(personId);
+            if (cnt == 0)
+            {
+                return NotFound(new { error = $"Person {personId} not found" });
+            }
+            return Ok(new { success = true, personId });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
 
     // /// <summary>
     // /// Get all face persons
@@ -89,36 +88,26 @@ public class FacesController : ControllerBase
     //     }
     // }
 
-    // /// <summary>
-    // /// Get face embedding by ID (useful for getting person info from a face)
-    // /// </summary>
-    // [HttpGet("{faceId}")]
-    // public async Task<ActionResult<FaceBoxInfo>> GetFace(long faceId)
-    // {
-    //     try
-    //     {
-    //         var face = await _faceRepository.GetFaceEmbeddingByIdAsync(faceId);
-    //         if (face == null)
-    //         {
-    //             return NotFound(new { error = $"Face with ID {faceId} not found" });
-    //         }
-
-    //         // Get person name if available
-    //         string? personName = null;
-    //         if (face.FacePersonId.HasValue)
-    //         {
-    //             var person = await _faceRepository.GetFacePersonByIdAsync(face.FacePersonId.Value);
-    //             personName = person?.Name;
-    //         }
-
-    //         var faceBox = FaceBoxInfo.FromFaceEmbedding(face, personName);
-    //         return Ok(faceBox);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         return StatusCode(500, new { error = ex.Message });
-    //     }
-    // }
+    /// <summary>
+    /// Delete face embedding record by ID
+    /// </summary>
+    [HttpDelete("{faceId}")]
+    public async Task<ActionResult<FaceBoxInfo>> DeleteFace(long faceId)
+    {
+        try
+        {
+            var cnt = await _faceRepository.DeleteFaceEmbeddingByIdAsync(faceId);
+            if (cnt == 0)
+            {
+                return NotFound(new { error = $"Face {faceId} not found" });
+            }
+            return Ok(new { success = true, faceId });            
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
 
     /// <summary>
     /// Search for images containing a specific person by person ID.

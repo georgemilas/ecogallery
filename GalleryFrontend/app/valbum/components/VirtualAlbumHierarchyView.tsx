@@ -16,6 +16,10 @@ export interface VirtualAlbumHierarchyProps {
   onSortChange?: (settings: AlbumSettings) => void;
   clearLastViewedImage?: () => void;
   onFaceSearch?: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
 }
 
 export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {
@@ -25,30 +29,39 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
     settingsApiEndpoint: '/api/v1/valbums/settings',
     showSearch: false,
     getImageLabel: (album, imageName) => imageName,
-    renderNavMenu: (baseProps) => (
-      <nav className="menu">
-        <button onClick={() => baseProps.onGetApiUrl('')} className="page-button" title="Home">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
-            <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
-          </svg>Home
-        </button>
-        <button
-          onClick={() => baseProps.router.push(user ? '/album' : '/login')}
-          className="page-button"
-          title={user ? 'Go to private albums' : 'Login to access private albums'}
-        >
-          {user ? 'Private' : 'Login'}
-        </button>
-        <button onClick={() => baseProps.onGetApiUrl('random')} className="page-button" title="Random Images">Random</button>
-        <button onClick={() => baseProps.onGetApiUrl('recent')} className="page-button" title="Recent Images">Recent</button>
-        <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-            <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
-          </svg>
-          Top
-        </button>
-      </nav>
-    )
+    renderNavMenu: (baseProps) => {
+      const navigateOrRefresh = (path: string, apiEndpoint: string) => {
+        if (window.location.pathname === path) {
+          baseProps.onGetApiUrl(apiEndpoint);
+        } else {
+          baseProps.router.push(path);
+        }
+      };
+      return (
+        <nav className="menu">
+          <button onClick={() => baseProps.router.push('/valbum')} className="page-button" title="Home">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
+              <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
+            </svg>Home
+          </button>
+          <button
+            onClick={() => baseProps.router.push(user ? '/album' : '/login')}
+            className="page-button"
+            title={user ? 'Go to private albums' : 'Login to access private albums'}
+          >
+            {user ? 'Private' : 'Login'}
+          </button>
+          <button onClick={() => navigateOrRefresh('/valbum/random', 'random')} className="page-button" title="Random Images">Random</button>
+          <button onClick={() => navigateOrRefresh('/valbum/recent', 'recent')} className="page-button" title="Recent Images">Recent</button>
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
+              <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
+            </svg>
+            Top
+          </button>
+        </nav>
+      );
+    }
   };
 
   // Convert VirtualAlbumHierarchyProps to BaseHierarchyProps

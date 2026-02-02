@@ -30,6 +30,10 @@ export interface BaseHierarchyProps {
   onSortChange?: (settings: AlbumSettings) => void;
   clearLastViewedImage?: () => void;
   onFaceSearch?: (personId: number, personName: string | null) => void;
+  onFaceDelete?: (faceId: number) => void;
+  onPersonDelete?: (personId: number) => void;
+  onSearchByName?: (name: string) => void;
+  onSearchByPersonId?: (personId: number) => void;
   config: BaseHierarchyConfig;
 }
 
@@ -117,10 +121,12 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const handleSortedItemsChange = useCallback((sortedItems: ImageItemContent[] | AlbumItemContent[]) => {
     props.clearLastViewedImage?.();
     if (Array.isArray(sortedItems) && sortedItems.length > 0) {
+      // Type guard: ImageItemContent has 'is_movie' property, AlbumItemContent doesn't
       if ('is_movie' in sortedItems[0]) {
         setLocalImages(sortedItems as ImageItemContent[]);
+      } else {
+        setLocalAlbums(sortedItems as AlbumItemContent[]);
       }
-      // If you want to support album sorting, add local state for albums here
     }
     forceUpdate();
   }, [props.clearLastViewedImage]);
@@ -135,9 +141,12 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   }, [props.settings, props.onSortChange]);
 
   const [localImages, setLocalImages] = useState<ImageItemContent[]>(props.album.images);
-  // Sync localImages when album or search changes (before sorting kicks in)
+  const [localAlbums, setLocalAlbums] = useState<AlbumItemContent[]>(props.album.albums);
+
+  // Sync localImages and localAlbums when album or search changes (before sorting kicks in)
   useEffect(() => {
     setLocalImages(props.album.images);
+    setLocalAlbums(props.album.albums);
   }, [props.album.settings?.search_id || props.album.id]); // Use search_id for searches, album.id for albums
 
   // Get image label helper for VirtualizedGallery
@@ -365,17 +374,17 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
       </div>
       {renderSettingsModal()}
 
-      {props.album.albums.length > 0 && (
+      {localAlbums.length > 0 && (
         <div className='albums'>
-          <SortControl 
-            type="albums" 
-            album={props.album} 
-            onSortChange={handleSortedItemsChange} 
+          <SortControl
+            type="albums"
+            album={props.album}
+            onSortChange={handleSortedItemsChange}
             initialSort={settings.album_sort}
             onSortUpdate={(sort) => handleSortUpdate(sort, 'album')}
           />
           <ul className='albums-container'>
-            {props.album.albums.map(r => (
+            {localAlbums.map(r => (
               <li className='albums-item' key={r.id}>
                 <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.id);}}>
                   <CancellableImage 
@@ -414,6 +423,10 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           lastViewedImageId={props.lastViewedImage}
           showFaceBoxes={gallerySettings.showFaceBoxes}
           onFaceSearch={props.onFaceSearch}
+          onFaceDelete={props.onFaceDelete}
+          onPersonDelete={props.onPersonDelete}
+          onSearchByName={props.onSearchByName}
+          onSearchByPersonId={props.onSearchByPersonId}
         />
       </div>
     </>

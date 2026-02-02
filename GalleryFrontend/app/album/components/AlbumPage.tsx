@@ -5,7 +5,11 @@ import './gallery.css';
 import { AlbumHierarchyView } from './AlbumHierarchyView';
 import { BaseAlbumPage, BaseAlbumConfig, BaseAlbumPageProps } from '../../shared/BaseAlbumPage';
 
-export function AlbumPage(): JSX.Element {
+export interface AlbumPageProps {
+  initialView?: 'random' | 'recent';
+}
+
+export function AlbumPage({ initialView }: AlbumPageProps = {}): JSX.Element {
   const postSearchAlbum = async (expression: string, offset: number) => {
     // This will be called by the base component
   };
@@ -15,12 +19,13 @@ export function AlbumPage(): JSX.Element {
     basePath: '/album',
     requireAuth: true,
     useOriginalImage: true,
+    initialView,
     renderHierarchyView: (props: BaseAlbumPageProps) => (
-      <AlbumHierarchyView 
-        key={props.router.query?.id || 'root'} 
-        album={props.album} 
-        onAlbumClick={props.handleAlbumClick} 
-        onImageClick={props.handleImageClick} 
+      <AlbumHierarchyView
+        key={props.router.query?.id || 'root'}
+        album={props.album}
+        onAlbumClick={props.handleAlbumClick}
+        onImageClick={props.handleImageClick}
         lastViewedImage={props.lastViewedImage}
         settings={props.currentSettings}
         router={props.router}
@@ -31,6 +36,10 @@ export function AlbumPage(): JSX.Element {
         onGetApiUrl={props.onGetApiUrl}
         clearLastViewedImage={() => props.setLastViewedImage(null)}
         onFaceSearch={props.onFaceSearch}
+        onFaceDelete={props.onFaceDelete}
+        onPersonDelete={props.onPersonDelete}
+        onSearchByName={props.onSearchByName}
+        onSearchByPersonId={props.onSearchByPersonId}
       />
     )
   };
