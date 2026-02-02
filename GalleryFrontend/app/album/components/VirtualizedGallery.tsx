@@ -36,9 +36,11 @@ interface GalleryRowComponentProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  faceNames: Record<number, string>;
+  onFaceNameUpdate: (personId: number, newName: string) => void;
 }
 
-function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId }: GalleryRowComponentProps) {
+function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate }: GalleryRowComponentProps) {
   return (
     <div
       ref={onRef}
@@ -66,6 +68,8 @@ function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getIm
           onPersonDelete={onPersonDelete}
           onSearchByName={onSearchByName}
           onSearchByPersonId={onSearchByPersonId}
+          faceNames={faceNames}
+          onFaceNameUpdate={onFaceNameUpdate}
         />
       ))}
     </div>
@@ -463,11 +467,12 @@ interface GalleryItemProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  faceNames: Record<number, string>;
+  onFaceNameUpdate: (personId: number, newName: string) => void;
 }
 
-function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId }: GalleryItemProps) {
+function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate }: GalleryItemProps) {
   const [selectedFace, setSelectedFace] = useState<{ face: FaceBox; position: { x: number; y: number } } | null>(null);
-  const [faceNames, setFaceNames] = useState<Record<number, string>>({});
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -481,10 +486,6 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
       face,
       position: { x: e.clientX, y: e.clientY },
     });
-  };
-
-  const handleNameUpdate = (personId: number, newName: string) => {
-    setFaceNames(prev => ({ ...prev, [personId]: newName }));
   };
 
   const handleFaceSearch = (personId: number, personName: string | null) => {
@@ -548,7 +549,7 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
           face={selectedFace.face}
           position={selectedFace.position}
           onClose={() => setSelectedFace(null)}
-          onNameUpdate={handleNameUpdate}
+          onNameUpdate={onFaceNameUpdate}
           onFaceSearch={handleFaceSearch}
           onFaceDelete={onFaceDelete}
           onPersonDelete={onPersonDelete}
@@ -613,6 +614,12 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [visibleRows, setVisibleRows] = useState<Set<number>>(new Set());
+
+  // Shared face names state - lifted from GalleryItem so all items share the same names
+  const [faceNames, setFaceNames] = useState<Record<number, string>>({});
+  const handleFaceNameUpdate = useCallback((personId: number, newName: string) => {
+    setFaceNames(prev => ({ ...prev, [personId]: newName }));
+  }, []);
 
   // Track scroll state
   const pendingScrollTarget = useRef<number | null>(null);
@@ -775,6 +782,8 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
           onPersonDelete={onPersonDelete}
           onSearchByName={onSearchByName}
           onSearchByPersonId={onSearchByPersonId}
+          faceNames={faceNames}
+          onFaceNameUpdate={handleFaceNameUpdate}
         />
       ))}
     </div>

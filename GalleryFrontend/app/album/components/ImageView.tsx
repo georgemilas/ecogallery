@@ -45,24 +45,24 @@ export function ImageView(props: ImageViewProps): JSX.Element {
     props.image.is_movie ? (props.image.image_uhd_path || props.image.thumbnail_path) : null
   );
   
-  // Navigation handlers
+  // Navigation handlers - use window.location.pathname to preserve routes like /album/random, /album/recent, search results
   const handlePrevImage = React.useCallback(() => {
-    const content = props.album.images; 
+    const content = props.album.images;
     const ix = content.findIndex(item => item.id === props.image.id); // Using id to avoid issues with duplicate names
     const prev = ix > 0 ? content[ix - 1] : content[content.length - 1]; // Repeat to last if at start
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.set('image', prev.id.toString());
-    props.router.push(`${props.path}?${currentParams.toString()}`);
-  }, [props.album.images, props.image.id, props.router, props.path]);
+    props.router.push(`${window.location.pathname}?${currentParams.toString()}`);
+  }, [props.album.images, props.image.id, props.router]);
 
   const handleNextImage = React.useCallback(() => {
-    const content = props.album.images; 
+    const content = props.album.images;
     const ix = content.findIndex(item => item.id === props.image.id); // Using id to avoid issues with duplicate names
     const next = ix < content.length - 1 ? content[ix + 1] : content[0]; // Repeat to first if at end
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.set('image', next.id.toString());
-    props.router.push(`${props.path}?${currentParams.toString()}`);
-  }, [props.album.images, props.image.id, props.router, props.path]);
+    props.router.push(`${window.location.pathname}?${currentParams.toString()}`);
+  }, [props.album.images, props.image.id, props.router]);
 
 
   // Use zoom hook for all zoom-related functionality, but disable zoom if device supports native touch zoom

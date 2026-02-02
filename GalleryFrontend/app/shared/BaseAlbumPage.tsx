@@ -285,7 +285,8 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     currentParams.set('image', image.id.toString());
     currentParams.set('albumSort', currentSettings.album_sort);
     currentParams.set('imageSort', currentSettings.image_sort);
-    router.push(`${config.basePath}?${currentParams.toString()}`);
+    // Use current pathname to preserve routes like /album/random, /album/recent, search results
+    router.push(`${window.location.pathname}?${currentParams.toString()}`);
   };
 
   const handleCloseImage = () => {
@@ -294,7 +295,8 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     }
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.delete('image');
-    router.push(`${config.basePath}?${currentParams.toString()}`);
+    // Use current pathname to preserve routes like /album/random, /album/recent, search results
+    router.push(`${window.location.pathname}?${currentParams.toString()}`);
   };
 
   const baseProps: BaseAlbumPageProps = {
