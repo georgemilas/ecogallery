@@ -290,8 +290,7 @@ public class ImageMetadataProcessor: AlbumProcessor
                 using var image = await Image.LoadAsync(filePath);
                 exif.ImageWidth = image.Width;
                 exif.ImageHeight = image.Height;                                
-            }
-
+            }            
 
             // Get SubIFD directory (detailed photo info)
             var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
@@ -330,6 +329,23 @@ public class ImageMetadataProcessor: AlbumProcessor
             {
                 exif.SerialNumber = GetTag(makernoteDirectory, ExifDirectoryBase.TagBodySerialNumber);
                 exif.LensSerialNumber = GetTag(makernoteDirectory, ExifDirectoryBase.TagLensSerialNumber);
+            }
+
+            var gpsDir = directories.OfType<GpsDirectory>().FirstOrDefault();
+            if (gpsDir?.TryGetGeoLocation(out var location) == true)
+            {
+                exif.GpsLatitude = (decimal)location.Latitude;
+                exif.GpsLongitude = (decimal)location.Longitude;
+                // Altitude in rational format (meters above sea level)
+                if (gpsDir.TryGetRational(GpsDirectory.TagAltitude, out var altRational))
+                {
+                    exif.GpsAltitude = (decimal)altRational.ToDouble();
+                }
+                // // GPS timestamp
+                // if (gpsDir.GetGpsDate(GpsDirectory.TagGpsDateStamp, GpsDirectory.TagGpsTimeStamp) is { } gpsDateTime)
+                // {
+                //     exif.GpsTimestamp = gpsDateTime;
+                // }
             }
 
             return exif;

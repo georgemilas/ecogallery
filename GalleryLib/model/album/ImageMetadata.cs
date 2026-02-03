@@ -37,6 +37,10 @@ public class ImageMetadata   //EXIF, IPTC etc.
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
     public int? Orientation { get; set; }
+    public decimal? GpsLatitude { get; set; }
+    public decimal? GpsLongitude { get; set; }
+    public decimal? GpsAltitude { get; set; }
+    //public DateTimeOffset? GpsTimestamp { get; set; }
     public DateTimeOffset LastUpdatedUtc { get; set; }     //record last update time UTC
 
 

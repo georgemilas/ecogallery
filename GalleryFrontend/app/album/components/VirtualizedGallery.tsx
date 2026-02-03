@@ -50,7 +50,6 @@ function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getIm
         display: 'flex',
         gap: `${gap}px`,
         height: `${row.height}px`,
-        marginBottom: `${gap}px`,
       }}
     >
       {row.images.map(({ image, width }) => (
