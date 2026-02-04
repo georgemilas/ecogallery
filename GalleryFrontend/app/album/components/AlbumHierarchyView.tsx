@@ -2,6 +2,7 @@ import React from 'react';
 import { AlbumHierarchyProps } from './AlbumHierarchyProps';
 import { BaseHierarchyView, BaseHierarchyConfig, BaseHierarchyProps } from './BaseHierarchyView';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { ViewMenu } from './ViewMenu';
 
 export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
   const { user } = useAuth();
@@ -26,8 +27,11 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
             </svg>Home
           </button>
           <button onClick={() => baseProps.router.push('/valbum')} className="page-button" title="Public Albums">Public</button>
-          <button onClick={() => navigateOrRefresh('/album/random', 'random')} className="page-button" title="Random Images">Random</button>
-          <button onClick={() => navigateOrRefresh('/album/recent', 'recent')} className="page-button" title="Recent Images">Recent</button>
+          <ViewMenu
+            onPersonClick={(personName) => baseProps.onSearchByName?.(personName)}
+            onRandomClick={() => navigateOrRefresh('/album/random', 'random')}
+            onRecentClick={() => navigateOrRefresh('/album/recent', 'recent')}
+          />
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
               <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>

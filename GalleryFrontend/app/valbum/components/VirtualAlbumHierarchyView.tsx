@@ -3,6 +3,7 @@ import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from '../../album
 import { BaseHierarchyView, BaseHierarchyConfig, BaseHierarchyProps } from '../../album/components/BaseHierarchyView';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { ViewMenu } from '../../album/components/ViewMenu';
 
 export interface VirtualAlbumHierarchyProps {
   album: AlbumItemHierarchy;
@@ -51,8 +52,11 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
           >
             {user ? 'Private' : 'Login'}
           </button>
-          <button onClick={() => navigateOrRefresh('/valbum/random', 'random')} className="page-button" title="Random Images">Random</button>
-          <button onClick={() => navigateOrRefresh('/valbum/recent', 'recent')} className="page-button" title="Recent Images">Recent</button>
+          <ViewMenu
+            onRandomClick={() => navigateOrRefresh('/valbum/random', 'random')}
+            onRecentClick={() => navigateOrRefresh('/valbum/recent', 'recent')}
+            showPeopleMenu={false}
+          />
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
               <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>

@@ -377,5 +377,81 @@ public class FaceRepository(DatabaseConfiguration dbConfig) : IDisposable, IAsyn
         return await _db.QueryAsync(sql, FacePerson.CreateFromDataReader, new { name });
     }
 
+    /// <summary>
+    /// Get top N named persons ordered by distinct image count descending.
+    /// Groups by name (not person ID) so same-named persons are combined.
+    /// Includes a representative image path and face bounding box for thumbnail display.
+    /// </summary>
+    public async Task<List<PersonWithImageCount>> GetTopNamedPersonsAsync(int limit = 20)
+    {
+        var sql = @"
+            WITH person_counts AS (
+                SELECT fp.name, COUNT(DISTINCT (COALESCE(ai.image_sha256, ai.image_path))) as image_count
+                FROM public.face_person fp
+                JOIN public.face_embedding fe ON fe.face_person_id = fp.id
+                JOIN album_image ai ON ai.id = fe.album_image_id
+                WHERE fp.name IS NOT NULL AND fp.name != ''
+                GROUP BY fp.name
+                ORDER BY image_count DESC
+                LIMIT @limit
+            ),
+            person_faces AS (
+                SELECT DISTINCT ON (fp.name)
+                    fp.name,
+                    ai.image_path as thumbnail_path,
+                    ai.image_width,
+                    ai.image_height,
+                    fe.bounding_box_x,
+                    fe.bounding_box_y,
+                    fe.bounding_box_width,
+                    fe.bounding_box_height
+                FROM public.face_person fp
+                JOIN public.face_embedding fe ON fe.face_person_id = fp.id
+                JOIN public.album_image ai ON ai.id = fe.album_image_id
+                JOIN public.image_metadata exif ON ai.id = exif.album_image_id
+                WHERE fp.name IN (SELECT name FROM person_counts)
+                ORDER BY fp.name, coalesce(exif.date_taken, ai.image_timestamp_utc) DESC
+            )
+            SELECT
+                pc.name,
+                pc.image_count,
+                pf.thumbnail_path,
+                pf.image_width,
+                pf.image_height,
+                pf.bounding_box_x,
+                pf.bounding_box_y,
+                pf.bounding_box_width,
+                pf.bounding_box_height
+            FROM person_counts pc
+            LEFT JOIN person_faces pf ON pc.name = pf.name
+            ORDER BY pc.image_count DESC";
+
+        return await _db.QueryAsync(sql, reader => new PersonWithImageCount
+        {
+            Name = reader.GetString(reader.GetOrdinal("name")),
+            ImageCount = reader.GetInt32(reader.GetOrdinal("image_count")),
+            ThumbnailPath = reader.IsDBNull(reader.GetOrdinal("thumbnail_path")) ? null : reader.GetString(reader.GetOrdinal("thumbnail_path")),
+            ImageWidth = reader.IsDBNull(reader.GetOrdinal("image_width")) ? null : reader.GetInt32(reader.GetOrdinal("image_width")),
+            ImageHeight = reader.IsDBNull(reader.GetOrdinal("image_height")) ? null : reader.GetInt32(reader.GetOrdinal("image_height")),
+            BoundingBoxX = reader.IsDBNull(reader.GetOrdinal("bounding_box_x")) ? null : reader.GetFloat(reader.GetOrdinal("bounding_box_x")),
+            BoundingBoxY = reader.IsDBNull(reader.GetOrdinal("bounding_box_y")) ? null : reader.GetFloat(reader.GetOrdinal("bounding_box_y")),
+            BoundingBoxWidth = reader.IsDBNull(reader.GetOrdinal("bounding_box_width")) ? null : reader.GetFloat(reader.GetOrdinal("bounding_box_width")),
+            BoundingBoxHeight = reader.IsDBNull(reader.GetOrdinal("bounding_box_height")) ? null : reader.GetFloat(reader.GetOrdinal("bounding_box_height"))
+        }, new { limit });
+    }
+
     #endregion
+}
+
+public record PersonWithImageCount
+{
+    public required string Name { get; init; }
+    public int ImageCount { get; init; }
+    public string? ThumbnailPath { get; init; }
+    public int? ImageWidth { get; init; }
+    public int? ImageHeight { get; init; }
+    public float? BoundingBoxX { get; init; }
+    public float? BoundingBoxY { get; init; }
+    public float? BoundingBoxWidth { get; init; }
+    public float? BoundingBoxHeight { get; init; }
 }

@@ -44,11 +44,18 @@
 .gallery-banner-menubar .menu, .search-info {
     display: flex;
     gap: 8px;
-    align-self: flex;
+    align-items: stretch;
     border-radius: 8px;
     border: 1px solid #e8f09e; 
     background-color: rgba(50, 50, 50, 1); 
     color: white
+}
+.gallery-banner-menubar .menu > div {
+    display: flex;
+    align-items: stretch;
+}
+.gallery-banner-menubar .menu > div > .page-button {
+    height: 100%;
 }
 .gallery-banner-menubar .menu button, .search-info .page-button {
     color: #e8f09e;

@@ -43,26 +43,38 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [bannerEditMode, setBannerEditMode] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const { user, logout } = useAuth();
-  const { settings: gallerySettings, setShowFaceBoxes, setSearchPageSize } = useGallerySettings();
+  const { settings: gallerySettings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit } = useGallerySettings();
   const { settings, onSortChange, config } = props;
 
-  // Keyboard shortcut: 'f' to toggle face boxes (only for authenticated users)
+  // Keyboard shortcuts
   useEffect(() => {
-    if (!user) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input field
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
-      if (e.key === 'f' || e.key === 'F') {
+
+      // 's' or ',' (comma) to toggle settings modal
+      if (e.key === 's' || e.key === 'S' || e.key === ',') {
+        setShowSettingsModal(prev => !prev);
+        return;
+      }
+
+      // 'Escape' to close settings modal
+      if (e.key === 'Escape' && showSettingsModal) {
+        setShowSettingsModal(false);
+        return;
+      }
+
+      // 'f' to toggle face boxes (only for authenticated users)
+      if (user && (e.key === 'f' || e.key === 'F')) {
         setShowFaceBoxes(!gallerySettings.showFaceBoxes);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [user, gallerySettings.showFaceBoxes, setShowFaceBoxes]);
+  }, [user, gallerySettings.showFaceBoxes, setShowFaceBoxes, showSettingsModal]);
 
   const saveSettings = async (settings: any) => {
     if (user) {
@@ -299,6 +311,27 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
               onChange={(e) => setSearchPageSize(Math.max(1, parseInt(e.target.value) || 2000))}
               min="1"
               max="10000"
+              style={{
+                width: '80px',
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #555',
+                backgroundColor: '#333',
+                color: '#ddd',
+                textAlign: 'right',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <label htmlFor="peopleMenuLimit" style={{ color: '#ddd' }}>People Menu Limit</label>
+            <input
+              type="number"
+              id="peopleMenuLimit"
+              value={gallerySettings.peopleMenuLimit}
+              onChange={(e) => setPeopleMenuLimit(Math.max(1, Math.min(100, parseInt(e.target.value) || 20)))}
+              min="1"
+              max="100"
               style={{
                 width: '80px',
                 padding: '6px 10px',

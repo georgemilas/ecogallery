@@ -71,22 +71,39 @@ public class FacesController : ControllerBase
         }
     }
 
-    // /// <summary>
-    // /// Get all face persons
-    // /// </summary>
-    // [HttpGet("persons")]
-    // public async Task<ActionResult<List<FacePerson>>> GetAllPersons()
-    // {
-    //     try
-    //     {
-    //         var persons = await _faceRepository.GetAllFacePersonsAsync();
-    //         return Ok(persons);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         return StatusCode(500, new { error = ex.Message });
-    //     }
-    // }
+    /// <summary>
+    /// Get top N named persons ordered by image count (descending).
+    /// </summary>
+    [HttpGet("persons/top")]
+    public async Task<ActionResult<List<PersonWithImageCountResponse>>> GetTopNamedPersons([FromQuery] int limit = 20)
+    {
+        try
+        {
+            var baseUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
+            var persons = await _faceRepository.GetTopNamedPersonsAsync(limit);
+
+            var response = persons.Select(p => new PersonWithImageCountResponse
+            {
+                Name = p.Name,
+                ImageCount = p.ImageCount,
+                ThumbnailPath = p.ThumbnailPath != null
+                    ? GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(p.ThumbnailPath), (int)ThumbnailHeights.Thumb))
+                    : null,
+                ImageWidth = p.ImageWidth,
+                ImageHeight = p.ImageHeight,
+                BoundingBoxX = p.BoundingBoxX,
+                BoundingBoxY = p.BoundingBoxY,
+                BoundingBoxWidth = p.BoundingBoxWidth,
+                BoundingBoxHeight = p.BoundingBoxHeight
+            }).ToList();
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
 
     /// <summary>
     /// Delete face embedding record by ID
@@ -232,4 +249,17 @@ public class FacesController : ControllerBase
 public record UpdatePersonNameRequest
 {
     public string? Name { get; init; }
+}
+
+public record PersonWithImageCountResponse
+{
+    public required string Name { get; init; }
+    public int ImageCount { get; init; }
+    public string? ThumbnailPath { get; init; }
+    public int? ImageWidth { get; init; }
+    public int? ImageHeight { get; init; }
+    public float? BoundingBoxX { get; init; }
+    public float? BoundingBoxY { get; init; }
+    public float? BoundingBoxWidth { get; init; }
+    public float? BoundingBoxHeight { get; init; }
 }

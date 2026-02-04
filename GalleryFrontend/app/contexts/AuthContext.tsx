@@ -148,16 +148,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
 
-      // List of public routes that do NOT require authentication
-      const publicRoutes = [
-        '/login',
-        '/login/reset-password',
-        '/login/set-password',
-        '/login/register',
-        '/valbum',
-        '/',
-      ];
-      const isPublic = publicRoutes.includes(pathname) || publicRoutes.some(r => pathname.startsWith(r + '?'));
+      // Public route prefixes that do NOT require authentication
+      const publicPrefixes = ['/login', '/valbum'];
+      const isPublic = pathname === '/' || publicPrefixes.some(p => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?'));
 
       if (!storedUser && !token) {
         setUser(null);
