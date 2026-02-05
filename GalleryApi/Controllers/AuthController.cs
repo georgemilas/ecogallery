@@ -134,8 +134,9 @@ public class AuthController : ControllerBase
             // Ignore errors to avoid leaking user existence
             return Ok(new { success = true });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             return BadRequest(new { success = false, message = "Failed to process request" });
         }                
     }

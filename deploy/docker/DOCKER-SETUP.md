@@ -50,6 +50,45 @@ ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD
 PICTURES_PATH=C:/Users/YourName/Pictures
 ```
 
+**Optional: Email Configuration (for password reset)**
+
+To enable password reset emails, configure SMTP settings:
+
+```env
+# Auth type: Basic, OAuth2, or SendGrid
+# Basic Authentication (most common - use with Gmail App Password)
+SMTP_AUTH_TYPE=Basic
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=your-email@gmail.com
+```
+
+**Gmail Setup (Recommended):**
+1. Go to https://myaccount.google.com/security
+2. Enable 2-Step Verification
+3. Go to https://myaccount.google.com/apppasswords
+4. Create App Password for "Mail"
+5. Use the generated 16-character password as `SMTP_PASS`
+
+**Other Providers:**
+- **Outlook/Office365**: `SMTP_HOST=smtp.office365.com`
+- **Yahoo**: `SMTP_HOST=smtp.mail.yahoo.com`
+
+**Advanced: Gmail OAuth2** (optional, more secure but complex):
+```env
+SMTP_AUTH_TYPE=OAuth2
+# Then set OAuth credentials (see .env.example for details)
+```
+
+**SendGrid (no SMTP required):**
+```env
+SMTP_AUTH_TYPE=SendGrid
+SENDGRID_API_KEY=your-sendgrid-api-key
+SENDGRID_FROM=your-verified-from@domain.com
+```
+
 ### 3. Build the Application
 
 ```bash

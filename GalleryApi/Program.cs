@@ -58,6 +58,24 @@ builder.Services.AddSingleton(sp =>
 // Register HttpContextAccessor for accessing request information
 builder.Services.AddHttpContextAccessor();
 
+// Register HttpClient for OAuth2 token requests
+builder.Services.AddHttpClient();
+
+// Register email sender based on config
+var authType = builder.Configuration["Smtp:AuthType"]?.ToLowerInvariant() ?? "basic";
+if (authType == "oauth2")
+{
+    builder.Services.AddScoped<GalleryApi.service.email.IEmailSender, GalleryApi.service.email.OAuth2EmailSender>();
+}
+else if (authType == "sendgrid")
+{
+    builder.Services.AddScoped<GalleryApi.service.email.IEmailSender, GalleryApi.service.email.SendGridEmailSender>();
+}
+else
+{
+    builder.Services.AddScoped<GalleryApi.service.email.IEmailSender, GalleryApi.service.email.BasicAuthEmailSender>();
+}
+
 // Register business logic services
 builder.Services.AddScoped<AlbumRepository>();  
 builder.Services.AddScoped<AlbumImageRepository>();

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Mail;
 using GalleryApi.model;
+using GalleryApi.service.email;
 using GalleryLib.Model.Auth;
 using GalleryLib.Repository.Auth;
 
@@ -12,13 +13,20 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
     private readonly UserTokenRepository _userTokenRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConfiguration _configuration;
+    private readonly IEmailSender _emailSender;
 
-    public UserAuthService(AuthRepository authRepository, UserTokenRepository userTokenRepository, IConfiguration configuration,  IHttpContextAccessor httpContextAccessor)
+    public UserAuthService(
+        AuthRepository authRepository, 
+        UserTokenRepository userTokenRepository, 
+        IConfiguration configuration,  
+        IHttpContextAccessor httpContextAccessor,
+        IEmailSender emailSender)
         : base(authRepository)
     {
         _userTokenRepository = userTokenRepository;
         _httpContextAccessor = httpContextAccessor;
         _configuration = configuration;
+        _emailSender = emailSender;
     }
     
     public override void Dispose()
@@ -158,23 +166,11 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
         var frontendUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
         var link = $"{frontendUrl}/login/set-password?token={WebUtility.UrlEncode(token)}";
 
-        // Send email (simple SMTP, configure in appsettings)
-        var smtpHost = _configuration["Smtp:Host"];
-        var smtpPort = int.Parse(_configuration["Smtp:Port"] ?? "25");
-        var smtpUser = _configuration["Smtp:User"];
-        var smtpPass = _configuration["Smtp:Pass"];
-        var from = _configuration["Smtp:From"] ?? "noreply@example.com";
+        // Send email via IEmailSender
         var subject = "Password Reset Request";
         var body = $"Click the link to reset your password: {link}\nThis link will expire in 1 hour.";
         
-        using var client = new SmtpClient(smtpHost, smtpPort)
-        {
-            Credentials = new NetworkCredential(smtpUser, smtpPass),
-            EnableSsl = true
-        };
-        var mail = new MailMessage(from, request.Email, subject, body);
-        await client.SendMailAsync(mail);
-                
+        await _emailSender.SendEmailAsync(request.Email, subject, body);
     }
 
 
