@@ -62,9 +62,13 @@ public class AlbumImageRepository: IAlbumImageRepository, IDisposable, IAsyncDis
         return id;
     }
 
-    public async Task<long> UpdateImageDimensions(AlbumImage image)
+    public async Task<long> UpdateImageDimensionsAndDateTaken(AlbumImage image)
     {
-        var sql = @"UPDATE album_image SET last_updated_utc = @last_updated_utc, image_width = @image_width, image_height = @image_height
+        var sql = @"UPDATE album_image SET 
+                        last_updated_utc = @last_updated_utc, 
+                        image_width = @image_width, 
+                        image_height = @image_height,
+                        image_timestamp_utc = @image_timestamp_utc
                     WHERE id = @id
                     RETURNING id";
         var id = await _db.ExecuteScalarAsync<long>(sql, image);

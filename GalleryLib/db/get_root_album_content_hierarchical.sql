@@ -76,7 +76,7 @@ SELECT
     ai.image_width,
     ai.image_height,
     ai.last_updated_utc,
-    ai.image_timestamp_utc AS item_timestamp_utc,
+    coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata,
     coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces

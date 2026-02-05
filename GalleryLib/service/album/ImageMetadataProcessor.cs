@@ -56,8 +56,9 @@ public class ImageMetadataProcessor: AlbumProcessor
                 // Update album_image dimensions for fast aspect ratio access
                 albumImage.ImageWidth = videoMetadata.VideoWidth;
                 albumImage.ImageHeight = videoMetadata.VideoHeight;
+                albumImage.ImageTimestampUtc = videoMetadata.DateTaken ?? albumImage.ImageTimestampUtc;  // DateTaken or FileLastWrittenDateTime
                 albumImage.LastUpdatedUtc = DateTimeOffset.UtcNow;
-                await imageRepository.UpdateImageDimensions(albumImage);
+                await imageRepository.UpdateImageDimensionsAndDateTaken(albumImage);
 
                 if (logIfCreated)
                 {
@@ -83,8 +84,9 @@ public class ImageMetadataProcessor: AlbumProcessor
                 // Update album_image dimensions for fast aspect ratio access
                 albumImage.ImageWidth = exif.ImageWidth;
                 albumImage.ImageHeight = exif.ImageHeight;
+                albumImage.ImageTimestampUtc = exif.DateTaken ?? albumImage.ImageTimestampUtc;  // DateTaken or FileLastWrittenDateTime
                 albumImage.LastUpdatedUtc = DateTimeOffset.UtcNow;
-                await imageRepository.UpdateImageDimensions(albumImage);
+                await imageRepository.UpdateImageDimensionsAndDateTaken(albumImage);
 
                 if (logIfCreated)
                 {

@@ -77,7 +77,7 @@ public class MockAlbumImageRepository : IAlbumImageRepository
         return Task.FromResult(0L);
     }
 
-    public Task<long> UpdateImageDimensions(AlbumImage image)
+    public Task<long> UpdateImageDimensionsAndDateTaken(AlbumImage image)
     {
         if (_images.Values.Any(i => i.Id == image.Id))
         {

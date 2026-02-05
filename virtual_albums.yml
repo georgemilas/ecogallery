@@ -126,6 +126,19 @@ London:
      1030 1018 1004 0998 0993 0987 0984 0981 0975 0964 0947 0953 0945 0940 0932 0929 0913 0907 0903 0896 0848 0821 0815 0806 0798 0796 0791 0788 0784 0775 0770 0767 0761 0760 0765 0742 0739)
   feature: \2012\vacanta\londra\_MG_1259.jpg
 
+Us:
+  parent: Pictures Gallery
+  description: Our Family
+  expression: | 
+    {d>=:2008-01-01} and (
+    (({ai:Tutu} and {ai:Mimi}) and not ({ai:Andrew} {ai:Anthony} {ai:Iani} {ai:Razvan} {ai:Moni} {ai:Diana} {ai:Bogdi} {ai:Tati} {ai:Piri} {ai:Jana}))
+    or 
+    (({ai:Tutu} and {ai:Mimi} and {ai:Andrew} and {ai:Anthony}) and not ({ai:Babi} {ai:Mami Buni} {ai:Iani} {ai:Razvan} {ai:Moni} {ai:Diana} {ai:Bogdi} {ai:Tati} {ai:Piri} {ai:Jana} {ai:Angel} {ai:Petru} {ai:Romica} {ai:Mirela} {ai:Dani} {ai:Liliana} {ai:Baba Nedusa}))
+    )
+    and not (9249 "maya botez" teodora 7387 9318 9250 9249 5902 9252 4148 2330 2329 2203 1297 1294 1293 4184 1973 1967 100458 DSC02271 1347 3237 111634 172239 1721 "3 stars")
+    and not (2011 and wm)
+  feature: \2024\Andrew selected\_MG_9729-Enhanced-NR.jpg
+
 
 
 

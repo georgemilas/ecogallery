@@ -183,8 +183,16 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
     public async Task<(List<AlbumContentHierarchical>, AlbumSearch)> GetAlbumContentHierarchicalByExpression(AlbumSearch albumSearch)
     {
         var expression = System.Text.RegularExpressions.Regex.Replace(albumSearch.Expression, @"\s+", " "); //normalize spaces
-        var te = new SQLTokenEvaluator("image_path", SQLTokenEvaluator.OPERATOR_TYPE.ILIKE_ANY_ARRAY, SQLTokenEvaluator.FIELD_TYPE.STRING);
+        var fields = new SqlFields { 
+            DefaultField = "image_path", 
+            DateField = "coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc)",
+            //EXISTS (SELECT 1 FROM face_embedding fe JOIN face_person fp ON fe.face_person_id = fp.id WHERE fe.album_image_id = ai.id AND fp.name = '{FACE_NAME}')
+            //FaceSQL = "EXISTS (SELECT 1 FROM image_people ip WHERE ip.album_image_id = ai.id AND ip.person_names @> Array['{FACE_NAME}'])",
+            FaceField = "ip.person_names"
+        };        
+        var te = new SQLTokenEvaluator(fields, SQLTokenEvaluator.OPERATOR_TYPE.ILIKE_ANY_ARRAY, SQLTokenEvaluator.FIELD_TYPE.STRING);
         var parser =  new KeywordsExpressionParser(expression, new SQLSemantic(te));
+
         string where = (string)parser.Evaluate(null);        
         Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
         
@@ -194,11 +202,24 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         var orderby = albumSearch.GroupByPHash ? "ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC, ai.id DESC" : "ORDER BY ai.image_timestamp_utc DESC, ai.id DESC";
         var limitOffset1 = albumSearch.Limit > 0 ? $"select * from (" : "";
         var limitOffset2 = albumSearch.Limit > 0 ? $") LIMIT {albumSearch.Limit} OFFSET {albumSearch.Offset}" : "";
-        var sql = $@"WITH faces as (
-                        select fe.id as face_id, fe.face_person_id as person_id, fp.name as person_name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
-                        from face_person fp 
-                        join face_embedding fe on fp.id = fe.face_person_id 
-                    ) 
+        var faces = $@"WITH 
+                        -- Pre-aggregate which person names appear in each image (computed once)
+                        image_people AS (
+                            SELECT 
+                                fe.album_image_id,
+                                array_agg(DISTINCT lower(COALESCE(fp.name, 'box')))::text[] as person_names
+                            FROM face_embedding fe
+                            JOIN face_person fp ON fe.face_person_id = fp.id
+                            --WHERE fp.name IS NOT NULL
+                            GROUP BY fe.album_image_id
+                        ),
+                        -- Face details for final output
+                        faces AS (
+                            select fe.id as face_id, fe.face_person_id as person_id, fp.name as person_name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
+                            from face_person fp 
+                            join face_embedding fe on fp.id = fe.face_person_id 
+                        )"; 
+        var sql = $@"{faces} 
                     {limitOffset1}
                     {select}
                     ai.id,
@@ -215,7 +236,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                     ai.image_width,
                     ai.image_height,
                     ai.last_updated_utc,
-                    ai.image_timestamp_utc AS item_timestamp_utc,
+                    coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) AS item_timestamp_utc,
                     row_to_json(exif) AS image_metadata,
                     row_to_json(vm) AS video_metadata,
                     coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
@@ -223,6 +244,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
                 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
                 LEFT JOIN faces fe ON ai.id = fe.album_image_id
+                LEFT JOIN image_people ip ON ai.id = ip.album_image_id
                 WHERE {where}
                 GROUP BY ai.id, exif.id, vm.id
                 {orderby}
@@ -234,9 +256,14 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
             select = albumSearch.GroupByPHash ? ", COALESCE(ai.image_sha256, ai.image_path)" : "";
             // Ensure ORDER BY starts with the DISTINCT ON expression; add a deterministic tie-breaker
             var groupBy = albumSearch.GroupByPHash ? "GROUP BY COALESCE(ai.image_sha256, ai.image_path)" : "";
-            sql = $@"select count(*) FROM ( 
+            sql = $@"{faces}
+                    select count(*) FROM ( 
                         SELECT count(*) as count{select}
                         FROM album_image ai
+                        LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
+                        LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
+                        LEFT JOIN faces fe ON ai.id = fe.album_image_id
+                        LEFT JOIN image_people ip ON ai.id = ip.album_image_id
                         WHERE {where}
                         {groupBy}
                     )";
