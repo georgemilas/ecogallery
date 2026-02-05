@@ -34,6 +34,7 @@ export interface BaseHierarchyProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSortedImagesChange?: (images: ImageItemContent[]) => void;
   config: BaseHierarchyConfig;
 }
 
@@ -155,11 +156,16 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [localImages, setLocalImages] = useState<ImageItemContent[]>(props.album.images);
   const [localAlbums, setLocalAlbums] = useState<AlbumItemContent[]>(props.album.albums);
 
-  // Sync localImages and localAlbums when album or search changes (before sorting kicks in)
+  // Sync localImages and localAlbums when album data changes (before sorting kicks in)
   useEffect(() => {
     setLocalImages(props.album.images);
     setLocalAlbums(props.album.albums);
-  }, [props.album.settings?.search_id || props.album.id]); // Use search_id for searches, album.id for albums
+  }, [props.album.images, props.album.albums]);
+
+  // Report sorted images to parent for ImageView navigation
+  useEffect(() => {
+    props.onSortedImagesChange?.(localImages);
+  }, [localImages]);
 
   // Get image label helper for VirtualizedGallery
   const getImageLabelForGallery = useCallback((imageName: string) => {

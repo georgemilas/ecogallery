@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from '../album/components/AlbumHierarchyProps';
 import { ImageView } from '../album/components/ImageView';
@@ -36,6 +36,7 @@ export interface BaseAlbumPageProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSortedImagesChange?: (images: ImageItemContent[]) => void;
   config: BaseAlbumConfig;
 }
 
@@ -53,6 +54,8 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const faceSearchParam = searchParams.get('faceSearch');
   const viewParam = searchParams.get('view'); // 'random' or 'recent'
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
+  const [sortedImages, setSortedImages] = useState<ImageItemContent[]>([]);
+  const fetchedRef = useRef(false);
 
   // Sync currentSettings with album.settings when album changes
   useEffect(() => {
@@ -67,7 +70,9 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
       router.push(`${config.basePath}?${currentParams.toString()}`);
     }
   const viewMode = imageIdParam ? 'image' : 'gallery';
-  const selectedImage = album?.images.find(item => item.id === imageIdParam) || null;
+  // Use sorted images for lookup/navigation so ImageView matches gallery order
+  const effectiveImages = sortedImages.length > 0 ? sortedImages : (album?.images || []);
+  const selectedImage = effectiveImages.find(item => item.id === imageIdParam) || null;
 
   const convertToAlbum = (obj: any): AlbumItemHierarchy => {
     const album = Object.assign(new AlbumItemHierarchy(), obj);
@@ -213,15 +218,25 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     }
   };
 
+  // Reset fetch guard when the actual query parameters change
   useEffect(() => {
+    fetchedRef.current = false;
+  }, [albumIdParam, faceSearchParam, viewParam]);
+
+  useEffect(() => {
+    // Wait for auth to settle
+    if (authLoading) return;
+
     // Handle auth requirements
-    if (config.requireAuth) {
-      if (authLoading) return;
-      if (!user) {
-        router.push('/login');
-        return;
-      }
+    if (config.requireAuth && !user) {
+      router.push('/login');
+      return;
     }
+
+    // Prevent duplicate fetches when auth state settles in multiple steps
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     // Handle different view modes - route-based initialView takes priority
     const effectiveView = config.initialView || viewParam;
     if (faceSearchParam) {
@@ -322,6 +337,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     onPersonDelete: handlePersonDelete,
     onSearchByName: navigateToSearchByName,
     onSearchByPersonId: navigateToSearchByPersonId,
+    onSortedImagesChange: setSortedImages,
     config
   };
 
@@ -333,11 +349,11 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
         <>
           {viewMode === 'gallery' && config.renderHierarchyView(baseProps)}
           {viewMode === 'image' && selectedImage && (
-            <ImageView 
-              image={selectedImage} 
-              album={album} 
-              onAlbumClick={handleAlbumClick} 
-              onClose={handleCloseImage} 
+            <ImageView
+              image={selectedImage}
+              album={Object.assign(Object.create(Object.getPrototypeOf(album)), album, { images: effectiveImages })}
+              onAlbumClick={handleAlbumClick}
+              onClose={handleCloseImage}
               router={router}
               isFullscreen={isFullscreen}
               setIsFullscreen={setIsFullscreen}

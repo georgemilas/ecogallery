@@ -171,6 +171,7 @@ export interface AlbumHierarchyProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSortedImagesChange?: (images: ImageItemContent[]) => void;
 }
 
 

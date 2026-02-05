@@ -21,6 +21,7 @@ export interface VirtualAlbumHierarchyProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSortedImagesChange?: (images: ImageItemContent[]) => void;
 }
 
 export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {

@@ -40,6 +40,7 @@ export function AlbumPage({ initialView }: AlbumPageProps = {}): JSX.Element {
         onPersonDelete={props.onPersonDelete}
         onSearchByName={props.onSearchByName}
         onSearchByPersonId={props.onSearchByPersonId}
+        onSortedImagesChange={props.onSortedImagesChange}
       />
     )
   };
