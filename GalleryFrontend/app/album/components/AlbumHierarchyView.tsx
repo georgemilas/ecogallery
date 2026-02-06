@@ -19,9 +19,13 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
           baseProps.router.push(path);
         }
       };
+      const goHome = () => {
+        // Always reload the root album (handles case when viewing search results)
+        baseProps.onAlbumClick(null);
+      };
       return (
         <nav className="menu">
-          <button onClick={() => baseProps.router.push('/album')} className="page-button" title="Home">
+          <button onClick={goHome} className="page-button" title="Home">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
               <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
             </svg>Home

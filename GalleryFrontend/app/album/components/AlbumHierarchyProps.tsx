@@ -172,6 +172,14 @@ export interface AlbumHierarchyProps {
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
+  searchEditor?: {
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
+    text: string;
+    setText: (text: string) => void;
+    error: string | null;
+    clearError: () => void;
+  };
 }
 
 

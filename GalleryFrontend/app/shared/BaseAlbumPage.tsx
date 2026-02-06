@@ -6,6 +6,15 @@ import { apiFetch } from '@/app/utils/apiFetch';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
 
+export interface SearchEditorState {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  text: string;
+  setText: (text: string) => void;
+  error: string | null;
+  clearError: () => void;
+}
+
 export interface BaseAlbumConfig {
   apiBaseUrl: string; // '/api/v1/albums' or '/api/v1/valbums'
   basePath: string; // '/album' or '/valbum'
@@ -37,6 +46,7 @@ export interface BaseAlbumPageProps {
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
+  searchEditor: SearchEditorState;
   config: BaseAlbumConfig;
 }
 
@@ -55,7 +65,19 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const viewParam = searchParams.get('view'); // 'random' or 'recent'
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
   const [sortedImages, setSortedImages] = useState<ImageItemContent[]>([]);
+  const [searchEditorOpen, setSearchEditorOpen] = useState(false);
+  const [searchEditorText, setSearchEditorText] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
   const fetchedRef = useRef(false);
+
+  const searchEditor: SearchEditorState = {
+    isOpen: searchEditorOpen,
+    setIsOpen: setSearchEditorOpen,
+    text: searchEditorText,
+    setText: setSearchEditorText,
+    error: searchError,
+    clearError: () => setSearchError(null),
+  };
 
   // Sync currentSettings with album.settings when album changes
   useEffect(() => {
@@ -106,6 +128,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
 
   const postSearchAlbum = async (expression: string, offset: number) => {
     setLoading(true);
+    setSearchError(null); // Clear previous error
     try {
       const url = `${config.apiBaseUrl}/search`;
       console.log('Searching albums:', { expression, url });
@@ -117,15 +140,32 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
         body: JSON.stringify(searchInfo)
       });
       if (!res.ok) {
-        console.error('Search failed', res.status);
-        setAlbum(null);
+        // Try to get error message from response
+        let errorMessage = `Search failed (${res.status})`;
+        try {
+          const errorData = await res.json();
+          if (errorData.message || errorData.error || errorData.detail) {
+            errorMessage = errorData.message || errorData.error || errorData.detail;
+          }
+        } catch {
+          // If response isn't JSON, try text
+          try {
+            const errorText = await res.text();
+            if (errorText) errorMessage = errorText;
+          } catch {}
+        }
+        console.error('Search failed:', errorMessage);
+        setSearchError(errorMessage);
+        // Keep current album visible, don't set to null
       } else {
         const data = await res.json();
         setAlbum(convertToAlbum(data));
       }
     } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Search failed';
       console.error('Error searching albums', e);
-      setAlbum(null);
+      setSearchError(errorMessage);
+      // Keep current album visible, don't set to null
     } finally {
       setLoading(false);
     }
@@ -338,6 +378,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     onSearchByName: navigateToSearchByName,
     onSearchByPersonId: navigateToSearchByPersonId,
     onSortedImagesChange: setSortedImages,
+    searchEditor,
     config
   };
 

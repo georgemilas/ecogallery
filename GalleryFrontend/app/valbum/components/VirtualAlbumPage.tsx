@@ -34,6 +34,7 @@ export function VirtualAlbumPage({ initialView }: VirtualAlbumPageProps = {}): J
         onSearchByName={props.onSearchByName}
         onSearchByPersonId={props.onSearchByPersonId}
         onSortedImagesChange={props.onSortedImagesChange}
+        searchEditor={props.searchEditor}
       />
     )
   };

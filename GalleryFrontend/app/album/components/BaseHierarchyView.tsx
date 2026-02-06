@@ -35,15 +35,27 @@ export interface BaseHierarchyProps {
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
+  searchEditor?: {
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
+    text: string;
+    setText: (text: string) => void;
+    error: string | null;
+    clearError: () => void;
+  };
   config: BaseHierarchyConfig;
 }
 
 export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-  const [searchText, setSearchText] = React.useState('');
   const [bannerEditMode, setBannerEditMode] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
+  const showExpandedSearch = props.searchEditor?.isOpen ?? false;
+  const setShowExpandedSearch = props.searchEditor?.setIsOpen ?? (() => {});
+  const searchText = props.searchEditor?.text ?? '';
+  const setSearchText = props.searchEditor?.setText ?? (() => {});
+  const searchError = props.searchEditor?.error ?? null;
   const { user, logout } = useAuth();
   const { settings: gallerySettings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution } = useGallerySettings();
   const { settings, onSortChange, config } = props;
@@ -131,6 +143,24 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     if (searchText.trim().length === 0) return;
     props.onSearchSubmit?.(searchText.trim(), 0);
   };
+
+  const handleExpandedSearchSubmit = () => {
+    if (searchText.trim().length === 0) return;
+    props.onSearchSubmit?.(searchText.trim(), 0);
+    // Don't clear searchText or close the overlay - let user continue editing
+  };
+
+  const handleExpandedSearchKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Ctrl+Enter or Cmd+Enter
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleExpandedSearchSubmit();
+    }
+    // Close on Escape
+    if (e.key === 'Escape') {
+      setShowExpandedSearch(false);
+    }
+  };
     
   // Track responsive target height for gallery
   const [targetHeight, setTargetHeight] = useState(getResponsiveHeight());
@@ -216,15 +246,187 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     if (!config.showSearch) return (<div></div>);
 
     return (
-      <form className="searchbar" onSubmit={handleSearchSubmit}>
-        <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
-        <button type="submit" className="search-button" title="Search">
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="10" cy="10" r="6" stroke="white" strokeWidth="2"/>
-            <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <form className="searchbar" onSubmit={handleSearchSubmit}>
+          <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
+          <button type="submit" className="search-button" title="Search">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10" cy="10" r="6" stroke="white" strokeWidth="2"/>
+              <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
+            </svg>
+          </button>
+        </form>
+        <button
+          type="button"
+          onClick={() => setShowExpandedSearch(!showExpandedSearch)}
+          title={showExpandedSearch ? "Close search editor" : "Expand search editor"}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showExpandedSearch ? "#4CAF50" : "#e8f09e"} strokeWidth="2.5" strokeLinecap="round">
+            {showExpandedSearch ? (
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            ) : (
+              <>
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </>
+            )}
           </svg>
         </button>
-      </form>
+      </div>
+    );
+  };
+
+  const renderExpandedSearch = () => {
+    if (!showExpandedSearch) return null;
+
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: '80px',
+          right: '20px',
+          backgroundColor: '#2a2a2a',
+          borderRadius: '8px',
+          padding: '16px',
+          width: '450px',
+          minWidth: '300px',
+          border: '1px solid #e8f09e',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+          zIndex: 1000,
+          resize: 'both',
+          overflow: 'auto',
+          minHeight: '200px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ color: '#e8f09e', fontWeight: 'bold', fontSize: '14px' }}>Search Expression</span>
+          <button
+            onClick={() => setShowExpandedSearch(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="Close (Escape)"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <textarea
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          onKeyDown={handleExpandedSearchKeyDown}
+          placeholder="Enter your search expression..."
+          autoFocus
+          style={{
+            width: '100%',
+            height: 'calc(100% - 80px)',
+            minHeight: '100px',
+            padding: '10px',
+            borderRadius: '4px',
+            border: '1px solid #555',
+            backgroundColor: '#333',
+            color: '#ddd',
+            fontSize: '13px',
+            fontFamily: 'monospace',
+            resize: 'none',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+          <span style={{ color: '#666', fontSize: '11px' }}>Ctrl+Enter to search</span>
+          <button
+            onClick={handleExpandedSearchSubmit}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#e8f09e',
+              color: '#333',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="10" cy="10" r="6" stroke="#333" strokeWidth="2"/>
+              <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#333" strokeWidth="2"/>
+            </svg>
+            Search
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSearchError = () => {
+    if (!searchError) return null;
+
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#dc3545',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+          zIndex: 1001,
+          maxWidth: '600px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: '2px' }}>
+          <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/>
+          <line x1="12" y1="8" x2="12" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="12" cy="16" r="1" fill="white"/>
+        </svg>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Search Error</div>
+          <div style={{ fontSize: '13px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{searchError}</div>
+        </div>
+        <button
+          onClick={() => props.searchEditor?.clearError()}
+          style={{
+            background: 'rgba(255,255,255,0.2)',
+            border: 'none',
+            borderRadius: '4px',
+            padding: '4px 8px',
+            color: 'white',
+            cursor: 'pointer',
+            fontSize: '12px',
+            flexShrink: 0,
+          }}
+          title="Dismiss"
+        >
+          Dismiss
+        </button>
+      </div>
     );
   };
 
@@ -578,6 +780,8 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
       </div>
       {renderMenuPanel()}
       {renderSettingsModal()}
+      {renderExpandedSearch()}
+      {renderSearchError()}
 
       {localAlbums.length > 0 && (
         <div className='albums'>
