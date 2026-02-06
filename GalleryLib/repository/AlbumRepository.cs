@@ -427,7 +427,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
     }
 
 
-    public async Task<VirtualAlbum> AddNewVirtualAlbumAsync(VirtualAlbum album)
+    public async Task<VirtualAlbum> UpsertVirtualAlbumAsync(VirtualAlbum album)
     {
         //Console.WriteLine($"TRY save db: {album}");  
         //insert or update existing virtual album record 

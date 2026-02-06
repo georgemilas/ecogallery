@@ -86,6 +86,7 @@ public class AlbumProcessor: EmptyProcessor
 
     protected async Task UpdateImageHashAsync(string filePath, bool logIfCreated, AlbumImage albumImage)
     {
+        // TODO: what if the thumbnail does not exist yet?
         // Compute perceptual hash from 400px thumbnail if it exists
         var thumbnailPath = _configuration.GetThumbnailPath(filePath, 400);
         if (File.Exists(thumbnailPath))

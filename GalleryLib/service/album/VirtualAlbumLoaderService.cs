@@ -68,11 +68,11 @@ public class VirtualAlbumLoaderService : IHostedService
                             IsPublic = true,
                             LastUpdatedUtc = DateTimeOffset.UtcNow
                         };
-                        parent = await albumRepository.AddNewVirtualAlbumAsync(parent);
+                        parent = await albumRepository.UpsertVirtualAlbumAsync(parent);
                     }
                     album.ParentAlbumId = parent.Id;
                 }
-                await albumRepository.AddNewVirtualAlbumAsync(album);
+                await albumRepository.UpsertVirtualAlbumAsync(album);
                 Console.WriteLine($"Loaded virtual album: {album.AlbumName}");
             }
             

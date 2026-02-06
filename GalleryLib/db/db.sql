@@ -180,6 +180,9 @@ CREATE TABLE
     image_width integer NOT NULL DEFAULT 0,
     image_height integer NOT NULL DEFAULT 0,
     orientation integer NULL,
+    gps_latitude numeric NULL,
+    gps_longitude numeric NULL,
+    gps_altitude numeric NULL,
     last_updated_utc timestamp with time zone NOT NULL      --when the record was last updated
   );
 
@@ -233,7 +236,10 @@ CREATE TABLE
     format_name character varying(150) NULL,     -- e.g., "mov,mp4,m4a,3gp,3g2,mj2"
     software character varying(255) NULL,        -- Format long name or encoder
     camera character varying(150) NULL,          -- Camera make and model
-    rotation integer NULL,                       -- Rotation in degrees (0, 90, 180, 270)  
+    rotation integer NULL,                       -- Rotation in degrees (0, 90, 180, 270) 
+    gps_latitude numeric NULL,
+    gps_longitude numeric NULL,
+    gps_altitude numeric NULL, 
     last_updated_utc timestamp with time zone NOT NULL  -- when the record was last updated
   );
 

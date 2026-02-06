@@ -98,35 +98,94 @@ public class AlbumImageRepository: IAlbumImageRepository, IDisposable, IAsyncDis
         return videoMetadata.FirstOrDefault();                 
     }
 
-    public async Task<VideoMetadata> AddNewVideoMetadataAsync(VideoMetadata videoMetadata)
+    /// <summary>
+    /// Upsert Video Metadata 
+    /// </summary>
+    public async Task<VideoMetadata> UpsertVideoMetadataAsync(VideoMetadata videoMetadata)
     {
         var sql = @"INSERT INTO public.video_metadata(album_image_id, file_name, file_path, file_size_bytes, date_taken, date_modified, duration, 
                                                     video_width, video_height, video_codec, audio_codec, pixel_format, frame_rate, video_bit_rate, 
-                                                    audio_sample_rate, audio_channels, audio_bit_rate, format_name, software, camera, rotation, last_updated_utc)
+                                                    audio_sample_rate, audio_channels, audio_bit_rate, format_name, software, camera, rotation, gps_latitude, gps_longitude, gps_altitude, last_updated_utc)
                                     VALUES (@album_image_id, @file_name, @file_path, @file_size_bytes, @date_taken, @date_modified, @duration, 
                                                     @video_width, @video_height, @video_codec, @audio_codec, @pixel_format, @frame_rate, @video_bit_rate, 
-                                                    @audio_sample_rate, @audio_channels, @audio_bit_rate, @format_name, @software, @camera, @rotation, @last_updated_utc)                                     
+                                                    @audio_sample_rate, @audio_channels, @audio_bit_rate, @format_name, @software, @camera, @rotation, @gps_latitude, @gps_longitude, @gps_altitude, @last_updated_utc)                                     
                     ON CONFLICT (album_image_id) DO UPDATE
                         SET
-                            last_updated_utc = EXCLUDED.last_updated_utc                        
+                            file_size_bytes = EXCLUDED.file_size_bytes, 
+                            date_taken = EXCLUDED.date_taken, 
+                            date_modified = EXCLUDED.date_modified, 
+                            duration = EXCLUDED.duration,                             
+                            video_width = EXCLUDED.video_width, 
+                            video_height = EXCLUDED.video_height, 
+                            video_codec = EXCLUDED.video_codec, 
+                            audio_codec = EXCLUDED.audio_codec, 
+                            pixel_format = EXCLUDED.pixel_format, 
+                            frame_rate = EXCLUDED.frame_rate, 
+                            video_bit_rate = EXCLUDED.video_bit_rate, 
+                            audio_sample_rate = EXCLUDED.audio_sample_rate, 
+                            audio_channels = EXCLUDED.audio_channels, 
+                            audio_bit_rate = EXCLUDED.audio_bit_rate, 
+                            format_name = EXCLUDED.format_name, 
+                            software = EXCLUDED.software, 
+                            camera = EXCLUDED.camera, 
+                            rotation = EXCLUDED.rotation,
+                            gps_latitude = EXCLUDED.gps_latitude,
+                            gps_longitude = EXCLUDED.gps_longitude,
+                            gps_altitude = EXCLUDED.gps_altitude,
+                            last_updated_utc = EXCLUDED.last_updated_utc
+
                     RETURNING id";        
         videoMetadata.Id = await _db.ExecuteScalarAsync<long>(sql, videoMetadata);            
         return videoMetadata;                        
     }
-    public async Task<ImageMetadata> AddNewImageMetadataAsync(ImageMetadata exif)
+    public async Task<ImageMetadata> UpsertImageMetadataAsync(ImageMetadata exif)
     {
         var sql = @"INSERT INTO public.image_metadata(album_image_id, camera, lens, focal_length, aperture, exposure_time, iso, date_taken, 
                                                 rating, date_modified, flash, metering_mode, exposure_program, exposure_bias, exposure_mode, 
                                                 white_balance, color_space, scene_capture_type, circle_of_confusion, field_of_view, depth_of_field,
                                                 hyperfocal_distance, normalized_light_value, software, serial_number, lens_serial_number, file_name, 
-                                                file_path, file_size_bytes, image_width, image_height, orientation, last_updated_utc)
+                                                file_path, file_size_bytes, image_width, image_height, orientation, gps_latitude, gps_longitude, gps_altitude, last_updated_utc)
 	                                VALUES (@album_image_id, @camera, @lens, @focal_length, @aperture, @exposure_time, @iso, @date_taken, 
                                                 @rating, @date_modified, @flash, @metering_mode, @exposure_program, @exposure_bias, @exposure_mode, 
                                                 @white_balance, @color_space, @scene_capture_type, @circle_of_confusion, @field_of_view, @depth_of_field,
                                                 @hyperfocal_distance, @normalized_light_value, @software, @serial_number, @lens_serial_number, @file_name, 
-                                                @file_path, @file_size_bytes, @image_width, @image_height, @orientation, @last_updated_utc)                                     
+                                                @file_path, @file_size_bytes, @image_width, @image_height, @orientation, @gps_latitude, @gps_longitude, @gps_altitude, @last_updated_utc)                                     
                     ON CONFLICT (album_image_id) DO UPDATE
                         SET
+                            camera = EXCLUDED.camera, 
+                            lens = EXCLUDED.lens, 
+                            focal_length = EXCLUDED.focal_length, 
+                            aperture = EXCLUDED.aperture, 
+                            exposure_time = EXCLUDED.exposure_time, 
+                            iso = EXCLUDED.iso, 
+                            date_taken = EXCLUDED.date_taken, 
+                            rating = EXCLUDED.rating, 
+                            date_modified = EXCLUDED.date_modified, 
+                            flash = EXCLUDED.flash, 
+                            metering_mode = EXCLUDED.metering_mode, 
+                            exposure_program = EXCLUDED.exposure_program, 
+                            exposure_bias = EXCLUDED.exposure_bias, 
+                            exposure_mode = EXCLUDED.exposure_mode, 
+                            white_balance = EXCLUDED.white_balance, 
+                            color_space = EXCLUDED.color_space, 
+                            scene_capture_type = EXCLUDED.scene_capture_type, 
+                            circle_of_confusion = EXCLUDED.circle_of_confusion, 
+                            field_of_view = EXCLUDED.field_of_view, 
+                            depth_of_field = EXCLUDED.depth_of_field,
+                            hyperfocal_distance = EXCLUDED.hyperfocal_distance, 
+                            normalized_light_value = EXCLUDED.normalized_light_value, 
+                            software = EXCLUDED.software, 
+                            serial_number = EXCLUDED.serial_number, 
+                            lens_serial_number = EXCLUDED.lens_serial_number, 
+                            file_name = EXCLUDED.file_name, 
+                            file_path = EXCLUDED.file_path, 
+                            file_size_bytes = EXCLUDED.file_size_bytes, 
+                            image_width = EXCLUDED.image_width, 
+                            image_height = EXCLUDED.image_height, 
+                            orientation = EXCLUDED.orientation,
+                            gps_latitude = EXCLUDED.gps_latitude,
+                            gps_longitude = EXCLUDED.gps_longitude,
+                            gps_altitude = EXCLUDED.gps_altitude,
                             last_updated_utc = EXCLUDED.last_updated_utc                        
                     RETURNING id";        
         exif.Id = await _db.ExecuteScalarAsync<long>(sql, exif);            

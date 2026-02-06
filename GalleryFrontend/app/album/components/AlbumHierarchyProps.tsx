@@ -179,6 +179,8 @@ export interface AlbumHierarchyProps {
     setText: (text: string) => void;
     error: string | null;
     clearError: () => void;
+    panelWidth: number;
+    setPanelWidth: (width: number) => void;
   };
 }
 

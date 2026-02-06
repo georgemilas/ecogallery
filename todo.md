@@ -4,7 +4,8 @@
    * theme for an album (background, border, roundings)
    * going back to album on large albums (wait for gallery to render before setting to last image - show loading - pagination?)
    * movie hash ?
-   * {r:} regex, {s:} fuzzy search, {d=:} {d!=:} {d>:} {d>=:} {d<:} {d<=:} date 
+   * {s:} fuzzy search, {loc:}
+   * TODO: AlbumProcessor UpdateImageHash what if the thumbnail does not exist yet?
       
 
 ### Changes
@@ -18,6 +19,7 @@
    * extract movie metadata
    * random 100, recent 100
    * not doing: convert .mov to .mp4 during thumbnail processor for reliable viewing (converted as a separate process)
+   * {d=:} {d!=:} {d>:} {d>=:} {d<:} {d<=:} date, {ai:} {face:}
 
 ### ffmpeg
 To convert an .mts (or .api or .mov etc) file to .mp4 using FFmpeg, use:

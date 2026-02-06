@@ -13,6 +13,8 @@ export interface SearchEditorState {
   setText: (text: string) => void;
   error: string | null;
   clearError: () => void;
+  panelWidth: number;
+  setPanelWidth: (width: number) => void;
 }
 
 export interface BaseAlbumConfig {
@@ -68,6 +70,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const [searchEditorOpen, setSearchEditorOpen] = useState(false);
   const [searchEditorText, setSearchEditorText] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchEditorPanelWidth, setSearchEditorPanelWidth] = useState(450);
   const fetchedRef = useRef(false);
 
   const searchEditor: SearchEditorState = {
@@ -77,6 +80,8 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     setText: setSearchEditorText,
     error: searchError,
     clearError: () => setSearchError(null),
+    panelWidth: searchEditorPanelWidth,
+    setPanelWidth: setSearchEditorPanelWidth,
   };
 
   // Sync currentSettings with album.settings when album changes

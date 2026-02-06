@@ -16,24 +16,28 @@ namespace GalleryLib.service.album;
 public class ImageMetadataProcessor: AlbumProcessor
 {
 
-    public ImageMetadataProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration, dbConfig)
+    public ImageMetadataProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, bool reprocess = false):base(configuration, dbConfig)
     {
-
+        _reprocessMetadata = reprocess;
     }
 
     /// <summary>
     /// Constructor for testing with mock repositories
     /// </summary>
-    public ImageMetadataProcessor(PicturesDataConfiguration configuration, IAlbumImageRepository imageRepo, IAlbumRepository albumRepo)
+    public ImageMetadataProcessor(PicturesDataConfiguration configuration, IAlbumImageRepository imageRepo, IAlbumRepository albumRepo, bool reprocess = false)
         : base(configuration, imageRepo, albumRepo)
     {
+        _reprocessMetadata = reprocess;
     }
 
-    public static new FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)
+
+    public static FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1, bool reprocessMetadata = false)
     {
-        IFileProcessor processor = new ImageMetadataProcessor(configuration, dbConfig);
+        IFileProcessor processor = new ImageMetadataProcessor(configuration, dbConfig, reprocessMetadata);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
+
+    private readonly bool _reprocessMetadata;
 
     /// <summary>
     /// create image record and ensure album record exists, extract EXIF and compute thumbnail perceptual hash
@@ -45,13 +49,13 @@ public class ImageMetadataProcessor: AlbumProcessor
         if (_configuration.IsMovieFile(filePath))
         {
             var dbVideoMetadata = await imageRepository.GetVideoMetadataAsync(albumImage);
-            if (dbVideoMetadata == null)
+            if (dbVideoMetadata == null || _reprocessMetadata)
             {
                 VideoMetadata videoMetadata = await ExtractVideoMetadata(filePath);
                 videoMetadata.AlbumImageId = albumImage.Id;
                 videoMetadata.FilePath = albumImage.ImagePath;
                 videoMetadata.LastUpdatedUtc = DateTimeOffset.UtcNow;
-                await imageRepository.AddNewVideoMetadataAsync(videoMetadata);
+                await imageRepository.UpsertVideoMetadataAsync(videoMetadata);
 
                 // Update album_image dimensions for fast aspect ratio access
                 albumImage.ImageWidth = videoMetadata.VideoWidth;
@@ -71,7 +75,7 @@ public class ImageMetadataProcessor: AlbumProcessor
         }                        
 
         var dbExif = await imageRepository.GetImageMetadataAsync(albumImage);
-        if (dbExif == null)
+        if (dbExif == null || _reprocessMetadata)
         {
             ImageMetadata? exif = await ExtractImageMetadata(filePath);
             if (exif != null)
@@ -79,7 +83,7 @@ public class ImageMetadataProcessor: AlbumProcessor
                 exif.AlbumImageId = albumImage.Id;
                 exif.FilePath = albumImage.ImagePath;
                 exif.LastUpdatedUtc = DateTimeOffset.UtcNow;
-                await imageRepository.AddNewImageMetadataAsync(exif);
+                await imageRepository.UpsertImageMetadataAsync(exif);
 
                 // Update album_image dimensions for fast aspect ratio access
                 albumImage.ImageWidth = exif.ImageWidth;
@@ -159,6 +163,8 @@ public class ImageMetadataProcessor: AlbumProcessor
             // Metadata tags (creation_time, date taken, camera info, etc.)
             if (mediaInfo.Format.Tags != null)
             {
+                TryApplyVideoGpsTags(mediaInfo.Format.Tags, videoMetadata);
+
                 // Creation time from metadata
                 if (mediaInfo.Format.Tags.TryGetValue("creation_time", out string? creationTime))
                 {
@@ -196,6 +202,11 @@ public class ImageMetadataProcessor: AlbumProcessor
                 {
                     videoMetadata.Camera = encoder;
                 }
+            }
+
+            if ((videoMetadata.GpsLatitude == null || videoMetadata.GpsLongitude == null) && videoStream?.Tags != null)
+            {
+                TryApplyVideoGpsTags(videoStream.Tags, videoMetadata);
             }
 
             // Format/container info
@@ -385,5 +396,113 @@ public class ImageMetadataProcessor: AlbumProcessor
         {
             return null;
         }
+    }
+
+    private static void TryApplyVideoGpsTags(IReadOnlyDictionary<string, string> tags, VideoMetadata videoMetadata)
+    {
+        if (videoMetadata.GpsLatitude != null && videoMetadata.GpsLongitude != null)
+        {
+            return;
+        }
+
+        if (!tags.TryGetValue("location", out var location) || string.IsNullOrWhiteSpace(location))
+        {
+            tags.TryGetValue("com.apple.quicktime.location.ISO6709", out location);
+        }
+
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            tags.TryGetValue("location-eng", out location);
+        }
+
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            return;
+        }
+
+        if (TryParseIso6709(location, out var lat, out var lon, out var alt))
+        {
+            videoMetadata.GpsLatitude = lat;
+            videoMetadata.GpsLongitude = lon;
+            videoMetadata.GpsAltitude = alt;
+        }
+    }
+
+    private static bool TryParseIso6709(string value, out decimal? latitude, out decimal? longitude, out decimal? altitude)
+    {
+        latitude = null;
+        longitude = null;
+        altitude = null;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var trimmed = value.Trim();
+        if (trimmed.EndsWith("/", StringComparison.Ordinal))
+        {
+            trimmed = trimmed[..^1];
+        }
+
+        if (trimmed.Length < 2 || (trimmed[0] != '+' && trimmed[0] != '-'))
+        {
+            return false;
+        }
+
+        var index = 1;
+        var nextSignIndex = FindNextSign(trimmed, index);
+        if (nextSignIndex <= 0)
+        {
+            return false;
+        }
+
+        if (!decimal.TryParse(trimmed[..nextSignIndex], out var lat))
+        {
+            return false;
+        }
+
+        index = nextSignIndex;
+        nextSignIndex = FindNextSign(trimmed, index + 1);
+
+        if (nextSignIndex > 0)
+        {
+            if (!decimal.TryParse(trimmed[index..nextSignIndex], out var lon))
+            {
+                return false;
+            }
+
+            latitude = lat;
+            longitude = lon;
+
+            if (decimal.TryParse(trimmed[nextSignIndex..], out var alt))
+            {
+                altitude = alt;
+            }
+
+            return true;
+        }
+
+        if (!decimal.TryParse(trimmed[index..], out var lonOnly))
+        {
+            return false;
+        }
+
+        latitude = lat;
+        longitude = lonOnly;
+        return true;
+    }
+
+    private static int FindNextSign(string value, int startIndex)
+    {
+        for (var i = startIndex; i < value.Length; i++)
+        {
+            if (value[i] == '+' || value[i] == '-')
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

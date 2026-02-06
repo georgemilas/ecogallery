@@ -11,7 +11,7 @@ public interface IAlbumImageRepository
     Task<int> DeleteAlbumImageAsync(string filePath);
     Task<ImageMetadata?> GetImageMetadataAsync(AlbumImage albumImage);
     Task<VideoMetadata?> GetVideoMetadataAsync(AlbumImage albumImage);
-    Task<ImageMetadata> AddNewImageMetadataAsync(ImageMetadata exif);
-    Task<VideoMetadata> AddNewVideoMetadataAsync(VideoMetadata videoMetadata);
+    Task<ImageMetadata> UpsertImageMetadataAsync(ImageMetadata exif);
+    Task<VideoMetadata> UpsertVideoMetadataAsync(VideoMetadata videoMetadata);
     Task<List<AlbumImage>> GetAllAlbumImagesAsync();
 }

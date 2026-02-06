@@ -116,7 +116,7 @@ public class MockAlbumImageRepository : IAlbumImageRepository
         return Task.FromResult(metadata);
     }
 
-    public Task<ImageMetadata> AddNewImageMetadataAsync(ImageMetadata exif)
+    public Task<ImageMetadata> UpsertImageMetadataAsync(ImageMetadata exif)
     {
         exif.Id = _nextMetadataId++;
         _imageMetadata[exif.AlbumImageId] = exif;
@@ -124,7 +124,7 @@ public class MockAlbumImageRepository : IAlbumImageRepository
         return Task.FromResult(exif);
     }
 
-    public Task<VideoMetadata> AddNewVideoMetadataAsync(VideoMetadata videoMetadata)
+    public Task<VideoMetadata> UpsertVideoMetadataAsync(VideoMetadata videoMetadata)
     {
         videoMetadata.Id = _nextMetadataId++;
         _videoMetadata[videoMetadata.AlbumImageId] = videoMetadata;

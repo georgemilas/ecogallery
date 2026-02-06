@@ -29,6 +29,9 @@ public class VideoMetadata
     public string? Software { get; set; }
     public string? Camera { get; set; }
     public int? Rotation { get; set; }
+    public decimal? GpsLatitude { get; set; }
+    public decimal? GpsLongitude { get; set; }
+    public decimal? GpsAltitude { get; set; }
     public DateTimeOffset LastUpdatedUtc { get; set; }     //record last update time UTC
 
 
@@ -58,6 +61,9 @@ public class VideoMetadata
             Software =  reader.IsDBNull(  reader.GetOrdinal("software")) ? null : reader.GetString(reader.GetOrdinal("software")),
             Camera = reader.IsDBNull(reader.GetOrdinal("camera")) ? null : reader.GetString(reader.GetOrdinal("camera")),
             Rotation = reader.IsDBNull(reader.GetOrdinal("rotation")) ? null : reader.GetInt32(reader.GetOrdinal("rotation")),
+            GpsLatitude = reader.IsDBNull(reader.GetOrdinal("gps_latitude")) ? null : reader.GetDecimal(reader.GetOrdinal("gps_latitude")),
+            GpsLongitude = reader.IsDBNull(reader.GetOrdinal("gps_longitude")) ? null : reader.GetDecimal(reader.GetOrdinal("gps_longitude")),
+            GpsAltitude = reader.IsDBNull(reader.GetOrdinal("gps_altitude")) ? null : reader.GetDecimal(reader.GetOrdinal("gps_altitude")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc"))    
         };  
     }    

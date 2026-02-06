@@ -82,6 +82,9 @@ public class ImageMetadata   //EXIF, IPTC etc.
             ImageWidth = reader.GetInt32(reader.GetOrdinal("image_width")),
             ImageHeight = reader.GetInt32(reader.GetOrdinal("image_height")),
             Orientation = reader.IsDBNull(reader.GetOrdinal("orientation")) ? null : reader.GetInt32(reader.GetOrdinal("orientation")),
+            GpsLatitude = reader.IsDBNull(reader.GetOrdinal("gps_latitude")) ? null : reader.GetDecimal(reader.GetOrdinal("gps_latitude")),
+            GpsLongitude = reader.IsDBNull(reader.GetOrdinal("gps_longitude")) ? null : reader.GetDecimal(reader.GetOrdinal("gps_longitude")),
+            GpsAltitude = reader.IsDBNull(reader.GetOrdinal("gps_altitude")) ? null : reader.GetDecimal(reader.GetOrdinal("gps_altitude")),
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc"))    
         };
     }

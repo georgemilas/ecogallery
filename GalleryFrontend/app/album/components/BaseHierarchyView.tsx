@@ -10,6 +10,9 @@ import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.share
 import { useAuth } from '@/app/contexts/AuthContext';
 import { apiFetch } from '@/app/utils/apiFetch';
 import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
+import { SearchEditor, SearchEditorState } from './SearchEditor';
+import { SettingsModal } from './SettingsModal';
+import { MenuPanel } from './MenuPanel';
 
 export interface BaseHierarchyConfig {
   settingsApiEndpoint: string; // '/api/v1/albums/settings' or '/api/v1/valbums/settings'
@@ -35,14 +38,7 @@ export interface BaseHierarchyProps {
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
-  searchEditor?: {
-    isOpen: boolean;
-    setIsOpen: (open: boolean) => void;
-    text: string;
-    setText: (text: string) => void;
-    error: string | null;
-    clearError: () => void;
-  };
+  searchEditor?: SearchEditorState;
   config: BaseHierarchyConfig;
 }
 
@@ -51,13 +47,8 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [bannerEditMode, setBannerEditMode] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
-  const showExpandedSearch = props.searchEditor?.isOpen ?? false;
-  const setShowExpandedSearch = props.searchEditor?.setIsOpen ?? (() => {});
-  const searchText = props.searchEditor?.text ?? '';
-  const setSearchText = props.searchEditor?.setText ?? (() => {});
-  const searchError = props.searchEditor?.error ?? null;
-  const { user, logout } = useAuth();
-  const { settings: gallerySettings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution } = useGallerySettings();
+    const { user } = useAuth();
+  const { settings: gallerySettings, setShowFaceBoxes } = useGallerySettings();
   const { settings, onSortChange, config } = props;
 
   // Keyboard shortcuts
@@ -138,30 +129,6 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     return 300; // Desktop
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchText.trim().length === 0) return;
-    props.onSearchSubmit?.(searchText.trim(), 0);
-  };
-
-  const handleExpandedSearchSubmit = () => {
-    if (searchText.trim().length === 0) return;
-    props.onSearchSubmit?.(searchText.trim(), 0);
-    // Don't clear searchText or close the overlay - let user continue editing
-  };
-
-  const handleExpandedSearchKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Submit on Ctrl+Enter or Cmd+Enter
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleExpandedSearchSubmit();
-    }
-    // Close on Escape
-    if (e.key === 'Escape') {
-      setShowExpandedSearch(false);
-    }
-  };
-    
   // Track responsive target height for gallery
   const [targetHeight, setTargetHeight] = useState(getResponsiveHeight());
 
@@ -242,194 +209,6 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     </nav>
   );
 
-  const renderSearchBar = () => {
-    if (!config.showSearch) return (<div></div>);
-
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <form className="searchbar" onSubmit={handleSearchSubmit}>
-          <input type="text" placeholder="Search expression..." value={searchText} onChange={(e) => setSearchText(e.target.value)}/>
-          <button type="submit" className="search-button" title="Search">
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="10" cy="10" r="6" stroke="white" strokeWidth="2"/>
-              <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
-            </svg>
-          </button>
-        </form>
-        <button
-          type="button"
-          onClick={() => setShowExpandedSearch(!showExpandedSearch)}
-          title={showExpandedSearch ? "Close search editor" : "Expand search editor"}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showExpandedSearch ? "#4CAF50" : "#e8f09e"} strokeWidth="2.5" strokeLinecap="round">
-            {showExpandedSearch ? (
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            ) : (
-              <>
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </>
-            )}
-          </svg>
-        </button>
-      </div>
-    );
-  };
-
-  const renderExpandedSearch = () => {
-    if (!showExpandedSearch) return null;
-
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: '80px',
-          right: '20px',
-          backgroundColor: '#2a2a2a',
-          borderRadius: '8px',
-          padding: '16px',
-          width: '450px',
-          minWidth: '300px',
-          border: '1px solid #e8f09e',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-          zIndex: 1000,
-          resize: 'both',
-          overflow: 'auto',
-          minHeight: '200px',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ color: '#e8f09e', fontWeight: 'bold', fontSize: '14px' }}>Search Expression</span>
-          <button
-            onClick={() => setShowExpandedSearch(false)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '2px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            title="Close (Escape)"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-        <textarea
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          onKeyDown={handleExpandedSearchKeyDown}
-          placeholder="Enter your search expression..."
-          autoFocus
-          style={{
-            width: '100%',
-            height: 'calc(100% - 80px)',
-            minHeight: '100px',
-            padding: '10px',
-            borderRadius: '4px',
-            border: '1px solid #555',
-            backgroundColor: '#333',
-            color: '#ddd',
-            fontSize: '13px',
-            fontFamily: 'monospace',
-            resize: 'none',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-          <span style={{ color: '#666', fontSize: '11px' }}>Ctrl+Enter to search</span>
-          <button
-            onClick={handleExpandedSearchSubmit}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#e8f09e',
-              color: '#333',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <circle cx="10" cy="10" r="6" stroke="#333" strokeWidth="2"/>
-              <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#333" strokeWidth="2"/>
-            </svg>
-            Search
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSearchError = () => {
-    if (!searchError) return null;
-
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: '80px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: '#dc3545',
-          color: 'white',
-          padding: '12px 20px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-          zIndex: 1001,
-          maxWidth: '600px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: '2px' }}>
-          <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/>
-          <line x1="12" y1="8" x2="12" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-          <circle cx="12" cy="16" r="1" fill="white"/>
-        </svg>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Search Error</div>
-          <div style={{ fontSize: '13px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{searchError}</div>
-        </div>
-        <button
-          onClick={() => props.searchEditor?.clearError()}
-          style={{
-            background: 'rgba(255,255,255,0.2)',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '4px 8px',
-            color: 'white',
-            cursor: 'pointer',
-            fontSize: '12px',
-            flexShrink: 0,
-          }}
-          title="Dismiss"
-        >
-          Dismiss
-        </button>
-      </div>
-    );
-  };
-
   const renderMenuButton = () => (
     <button
       className="settings-button"
@@ -452,309 +231,6 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     </button>
   );
 
-  const renderMenuPanel = () => {
-    if (!showMenuPanel) return null;
-
-    return (
-      <div
-        onClick={() => setShowMenuPanel(false)}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          zIndex: 2000,
-        }}
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            bottom: 0,
-            width: '250px',
-            backgroundColor: '#2a2a2a',
-            borderRight: '1px solid #e8f09e',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '24px 0',
-          }}
-        >
-          <h3 style={{ margin: '0 0 24px 0', padding: '0 20px', color: '#e8f09e' }}>Menu</h3>
-
-          <button
-            onClick={() => {
-              setShowMenuPanel(false);
-              setShowSettingsModal(true);
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '14px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              color: '#ddd',
-              fontSize: '15px',
-              width: '100%',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
-              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            Settings
-          </button>
-
-          <button
-            onClick={() => {
-              setShowMenuPanel(false);
-              props.router.push('/manage-users');
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '14px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              color: '#ddd',
-              fontSize: '15px',
-              width: '100%',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Manage Users
-          </button>
-
-          <button
-            onClick={() => {
-              setShowMenuPanel(false);
-              logout();
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '14px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              color: '#ddd',
-              fontSize: '15px',
-              width: '100%',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc3545" strokeWidth="1.5">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSettingsModal = () => {
-    if (!showSettingsModal) return null;
-
-    return (
-      <div
-        className="settings-modal-overlay"
-        onClick={() => setShowSettingsModal(false)}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000,
-        }}
-      >
-        <div
-          className="settings-modal"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: '#2a2a2a',
-            borderRadius: '8px',
-            padding: '24px',
-            minWidth: '300px',
-            maxWidth: '400px',
-            border: '1px solid #e8f09e',
-            position: 'relative',
-          }}
-        >
-          <button
-            onClick={() => setShowSettingsModal(false)}
-            style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            title="Close"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-          <h3 style={{ margin: '0 0 20px 0', color: '#e8f09e' }}>Gallery Settings</h3>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <label htmlFor="showFaces" style={{ color: '#ddd' }}>Show Face Boxes</label>
-            <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
-              <input
-                type="checkbox"
-                id="showFaces"
-                checked={gallerySettings.showFaceBoxes}
-                onChange={(e) => setShowFaceBoxes(e.target.checked)}
-                style={{ opacity: 0, width: 0, height: 0 }}
-              />
-              <span
-                style={{
-                  position: 'absolute',
-                  cursor: 'pointer',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: gallerySettings.showFaceBoxes ? '#4CAF50' : '#555',
-                  transition: '0.3s',
-                  borderRadius: '26px',
-                }}
-              >
-                <span style={{
-                  position: 'absolute',
-                  content: '""',
-                  height: '20px',
-                  width: '20px',
-                  left: gallerySettings.showFaceBoxes ? '26px' : '3px',
-                  bottom: '3px',
-                  backgroundColor: 'white',
-                  transition: '0.3s',
-                  borderRadius: '50%',
-                }}/>
-              </span>
-            </label>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <label htmlFor="fullResolution" style={{ color: '#ddd' }}>Full Image Resolution</label>
-            <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
-              <input
-                type="checkbox"
-                id="fullResolution"
-                checked={gallerySettings.useFullResolution}
-                onChange={(e) => setUseFullResolution(e.target.checked)}
-                style={{ opacity: 0, width: 0, height: 0 }}
-              />
-              <span
-                style={{
-                  position: 'absolute',
-                  cursor: 'pointer',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: gallerySettings.useFullResolution ? '#4CAF50' : '#555',
-                  transition: '0.3s',
-                  borderRadius: '26px',
-                }}
-              >
-                <span style={{
-                  position: 'absolute',
-                  content: '""',
-                  height: '20px',
-                  width: '20px',
-                  left: gallerySettings.useFullResolution ? '26px' : '3px',
-                  bottom: '3px',
-                  backgroundColor: 'white',
-                  transition: '0.3s',
-                  borderRadius: '50%',
-                }}/>
-              </span>
-            </label>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <label htmlFor="searchPageSize" style={{ color: '#ddd' }}>Search Page Size</label>
-            <input
-              type="number"
-              id="searchPageSize"
-              value={gallerySettings.searchPageSize}
-              onChange={(e) => setSearchPageSize(Math.max(1, parseInt(e.target.value) || 2000))}
-              min="1"
-              max="10000"
-              style={{
-                width: '80px',
-                padding: '6px 10px',
-                borderRadius: '4px',
-                border: '1px solid #555',
-                backgroundColor: '#333',
-                color: '#ddd',
-                textAlign: 'right',
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <label htmlFor="peopleMenuLimit" style={{ color: '#ddd' }}>People Menu Limit</label>
-            <input
-              type="number"
-              id="peopleMenuLimit"
-              value={gallerySettings.peopleMenuLimit}
-              onChange={(e) => setPeopleMenuLimit(Math.max(1, Math.min(100, parseInt(e.target.value) || 20)))}
-              min="1"
-              max="100"
-              style={{
-                width: '80px',
-                padding: '6px 10px',
-                borderRadius: '4px',
-                border: '1px solid #555',
-                backgroundColor: '#333',
-                color: '#ddd',
-                textAlign: 'right',
-              }}
-            />
-          </div>
-
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       <DraggableBanner 
@@ -776,12 +252,21 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           {renderBreadcrumbs()}
         </div>
         {config.renderNavMenu(props)}
-        {renderSearchBar()}
+        {props.searchEditor && (
+          <SearchEditor
+            searchEditor={props.searchEditor}
+            onSearchSubmit={(expr, offset) => props.onSearchSubmit?.(expr, offset)}
+            showSearch={config.showSearch}
+          />
+        )}
       </div>
-      {renderMenuPanel()}
-      {renderSettingsModal()}
-      {renderExpandedSearch()}
-      {renderSearchError()}
+      <MenuPanel
+        isOpen={showMenuPanel}
+        onClose={() => setShowMenuPanel(false)}
+        onSettingsClick={() => setShowSettingsModal(true)}
+        router={props.router}
+      />
+      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
 
       {localAlbums.length > 0 && (
         <div className='albums'>
