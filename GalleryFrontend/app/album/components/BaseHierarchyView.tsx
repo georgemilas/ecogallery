@@ -43,8 +43,9 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [searchText, setSearchText] = React.useState('');
   const [bannerEditMode, setBannerEditMode] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showMenuPanel, setShowMenuPanel] = useState(false);
   const { user, logout } = useAuth();
-  const { settings: gallerySettings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit } = useGallerySettings();
+  const { settings: gallerySettings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution } = useGallerySettings();
   const { settings, onSortChange, config } = props;
 
   // Keyboard shortcuts
@@ -61,10 +62,22 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
         return;
       }
 
-      // 'Escape' to close settings modal
-      if (e.key === 'Escape' && showSettingsModal) {
-        setShowSettingsModal(false);
+      // 'm' to toggle menu panel
+      if (e.key === 'm' || e.key === 'M') {
+        setShowMenuPanel(prev => !prev);
         return;
+      }
+
+      // 'Escape' to close menu panel or settings modal
+      if (e.key === 'Escape') {
+        if (showSettingsModal) {
+          setShowSettingsModal(false);
+          return;
+        }
+        if (showMenuPanel) {
+          setShowMenuPanel(false);
+          return;
+        }
       }
 
       // 'f' to toggle face boxes (only for authenticated users)
@@ -75,7 +88,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [user, gallerySettings.showFaceBoxes, setShowFaceBoxes, showSettingsModal]);
+  }, [user, gallerySettings.showFaceBoxes, setShowFaceBoxes, showSettingsModal, showMenuPanel]);
 
   const saveSettings = async (settings: any) => {
     if (user) {
@@ -215,11 +228,11 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     );
   };
 
-  const renderSettingsButton = () => (
+  const renderMenuButton = () => (
     <button
       className="settings-button"
-      onClick={() => setShowSettingsModal(true)}
-      title="Gallery Settings"
+      onClick={() => setShowMenuPanel(true)}
+      title="Menu"
       style={{
         background: 'none',
         border: 'none',
@@ -229,12 +242,137 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
         alignItems: 'center',
       }}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
-        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
       </svg>
     </button>
   );
+
+  const renderMenuPanel = () => {
+    if (!showMenuPanel) return null;
+
+    return (
+      <div
+        onClick={() => setShowMenuPanel(false)}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          zIndex: 2000,
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            bottom: 0,
+            width: '250px',
+            backgroundColor: '#2a2a2a',
+            borderRight: '1px solid #e8f09e',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '24px 0',
+          }}
+        >
+          <h3 style={{ margin: '0 0 24px 0', padding: '0 20px', color: '#e8f09e' }}>Menu</h3>
+
+          <button
+            onClick={() => {
+              setShowMenuPanel(false);
+              setShowSettingsModal(true);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '14px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              color: '#ddd',
+              fontSize: '15px',
+              width: '100%',
+              textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Settings
+          </button>
+
+          <button
+            onClick={() => {
+              setShowMenuPanel(false);
+              props.router.push('/manage-users');
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '14px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              color: '#ddd',
+              fontSize: '15px',
+              width: '100%',
+              textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Manage Users
+          </button>
+
+          <button
+            onClick={() => {
+              setShowMenuPanel(false);
+              logout();
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '14px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              color: '#ddd',
+              fontSize: '15px',
+              width: '100%',
+              textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc3545" strokeWidth="1.5">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const renderSettingsModal = () => {
     if (!showSettingsModal) return null;
@@ -266,8 +404,30 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
             minWidth: '300px',
             maxWidth: '400px',
             border: '1px solid #e8f09e',
+            position: 'relative',
           }}
         >
+          <button
+            onClick={() => setShowSettingsModal(false)}
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="Close"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
           <h3 style={{ margin: '0 0 20px 0', color: '#e8f09e' }}>Gallery Settings</h3>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -299,6 +459,44 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
                   height: '20px',
                   width: '20px',
                   left: gallerySettings.showFaceBoxes ? '26px' : '3px',
+                  bottom: '3px',
+                  backgroundColor: 'white',
+                  transition: '0.3s',
+                  borderRadius: '50%',
+                }}/>
+              </span>
+            </label>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <label htmlFor="fullResolution" style={{ color: '#ddd' }}>Full Image Resolution</label>
+            <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
+              <input
+                type="checkbox"
+                id="fullResolution"
+                checked={gallerySettings.useFullResolution}
+                onChange={(e) => setUseFullResolution(e.target.checked)}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  cursor: 'pointer',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: gallerySettings.useFullResolution ? '#4CAF50' : '#555',
+                  transition: '0.3s',
+                  borderRadius: '26px',
+                }}
+              >
+                <span style={{
+                  position: 'absolute',
+                  content: '""',
+                  height: '20px',
+                  width: '20px',
+                  left: gallerySettings.useFullResolution ? '26px' : '3px',
                   bottom: '3px',
                   backgroundColor: 'white',
                   transition: '0.3s',
@@ -350,39 +548,6 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
-            <button
-              onClick={() => {
-                setShowSettingsModal(false);
-                logout();
-              }}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-              }}
-            >
-              Logout
-            </button>
-            <button
-              onClick={() => setShowSettingsModal(false)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#e8f09e',
-                color: '#333',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-              }}
-            >
-              Close
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -405,12 +570,13 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
       />
       <div className="gallery-banner-menubar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
-          {user && renderSettingsButton()}
+          {user && renderMenuButton()}
           {renderBreadcrumbs()}
         </div>
         {config.renderNavMenu(props)}
         {renderSearchBar()}
       </div>
+      {renderMenuPanel()}
       {renderSettingsModal()}
 
       {localAlbums.length > 0 && (

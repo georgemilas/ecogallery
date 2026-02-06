@@ -36,9 +36,16 @@ namespace GalleryLib.Repository.Auth
 
         public async Task CreateTokenAsync(long userId, string token, DateTime expiresUtc, string tokenType = "password_reset")
         {
-            const string sql = @"INSERT INTO user_tokens (user_id, token, token_type, created_utc, expires_utc, used) 
+            const string sql = @"INSERT INTO user_tokens (user_id, token, token_type, created_utc, expires_utc, used)
                                                 VALUES (@user_id, @token, @token_type, @created_utc, @expires_utc, false)";
             await _db.ExecuteAsync(sql, new { user_id = userId, token, token_type = tokenType, created_utc = DateTime.UtcNow, expires_utc = expiresUtc });
+        }
+
+        public async Task CreateTokenAsync(string token, DateTime expiresUtc, string tokenType)
+        {
+            const string sql = @"INSERT INTO user_tokens (user_id, token, token_type, created_utc, expires_utc, used)
+                                                VALUES (NULL, @token, @token_type, @created_utc, @expires_utc, false)";
+            await _db.ExecuteAsync(sql, new { token, token_type = tokenType, created_utc = DateTime.UtcNow, expires_utc = expiresUtc });
         }
 
         public async Task MarkUsedAsync(string token, string tokenType = "password_reset")

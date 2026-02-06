@@ -6,7 +6,7 @@ namespace GalleryLib.Model.Auth
     public class UserToken
     {
         public long Id { get; set; }
-        public long UserId { get; set; }
+        public long? UserId { get; set; }
         public string Token { get; set; } = string.Empty;
         public string TokenType { get; set; } = "password_reset"; // e.g., 'password_reset', 'user_registration'
         public DateTimeOffset CreatedUtc { get; set; }
@@ -18,7 +18,7 @@ namespace GalleryLib.Model.Auth
             return new UserToken
             {
                 Id = reader.GetInt64(reader.GetOrdinal("id")),
-                UserId = reader.GetInt64(reader.GetOrdinal("user_id")),
+                UserId = reader.IsDBNull(reader.GetOrdinal("user_id")) ? null : reader.GetInt64(reader.GetOrdinal("user_id")),
                 Token = reader.GetString(reader.GetOrdinal("token")),
                 TokenType = reader.GetString(reader.GetOrdinal("token_type")),
                 CreatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("created_utc")),

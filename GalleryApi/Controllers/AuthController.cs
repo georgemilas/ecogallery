@@ -111,8 +111,9 @@ public class AuthController : ControllerBase
         {
             return BadRequest(new { success = false, message = ex.Message });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             return StatusCode(500, new { success = false, message = "Registration failed. Username or email may already exist." });
         }
         

@@ -6,6 +6,7 @@ import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
 import { AuthenticatedVideo } from '@/app/utils/AuthenticatedVideo';
 import { useMediaLoader } from '../hooks/useImageLoader';
 import { useAuthenticatedImage } from '@/app/utils/useAuthenticatedImage';
+import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
 
 // function supportsNativeTouchZoom() {
 //   // if (typeof navigator === 'undefined') return false;
@@ -39,6 +40,7 @@ export function ImageView(props: ImageViewProps): JSX.Element {
   const [slideshowSpeed, setSlideshowSpeed] = React.useState(3000);
   const slideshowIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const [showExif, setShowExif] = React.useState(false);
+  const { settings: gallerySettings } = useGallerySettings();
   
   // Use authenticated loading for video poster thumbnails
   const authenticatedPoster = useAuthenticatedImage(
@@ -247,7 +249,7 @@ export function ImageView(props: ImageViewProps): JSX.Element {
                    poster={authenticatedPoster || props.image.thumbnail_path}  
                    controls onContextMenu={(e) => e.preventDefault()} />) 
                 : (
-                  <AuthenticatedImage ref={imageRef} src={props.useOriginalImage ? props.image.image_original_path : props.image.image_uhd_path} alt={props.image.name} onContextMenu={(e) => e.preventDefault()}
+                  <AuthenticatedImage ref={imageRef} src={props.useOriginalImage && gallerySettings.useFullResolution ? props.image.image_original_path : props.image.image_uhd_path} alt={props.image.name} onContextMenu={(e) => e.preventDefault()}
                     style={{
                       transform: `translate(${zoom.state.position.x}px, ${zoom.state.position.y}px) scale(${zoom.state.zoom})`,
                       transformOrigin: '0 0',

@@ -6,6 +6,7 @@ interface GallerySettings {
   showFaceBoxes: boolean;
   searchPageSize: number;
   peopleMenuLimit: number;
+  useFullResolution: boolean;
 }
 
 interface GallerySettingsContextType {
@@ -13,12 +14,14 @@ interface GallerySettingsContextType {
   setShowFaceBoxes: (show: boolean) => void;
   setSearchPageSize: (size: number) => void;
   setPeopleMenuLimit: (limit: number) => void;
+  setUseFullResolution: (use: boolean) => void;
 }
 
 const defaultSettings: GallerySettings = {
   showFaceBoxes: false,
   searchPageSize: 5000,
   peopleMenuLimit: 50,
+  useFullResolution: false,
 };
 
 const GallerySettingsContext = createContext<GallerySettingsContextType | undefined>(undefined);
@@ -66,8 +69,12 @@ export function GallerySettingsProvider({ children }: { children: React.ReactNod
     setSettings(prev => ({ ...prev, peopleMenuLimit: limit }));
   };
 
+  const setUseFullResolution = (use: boolean) => {
+    setSettings(prev => ({ ...prev, useFullResolution: use }));
+  };
+
   return (
-    <GallerySettingsContext.Provider value={{ settings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit }}>
+    <GallerySettingsContext.Provider value={{ settings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution }}>
       {children}
     </GallerySettingsContext.Provider>
   );

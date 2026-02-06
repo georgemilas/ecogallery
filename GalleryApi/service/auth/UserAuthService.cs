@@ -174,21 +174,39 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
     }
 
 
+    public async Task CreateUserInvitationAsync(InviteUserRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Name))
+            throw new InvalidInputException("Email and name are required.");
+
+        var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("=", "").Replace("+", "");
+        var expires = DateTime.UtcNow.AddDays(7);
+        await _userTokenRepository.CreateTokenAsync(token, expires, "user_registration");
+
+        var frontendUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
+        var link = $"{frontendUrl}/login/register?token={WebUtility.UrlEncode(token)}";
+
+        var subject = "You've been invited to join the Gallery";
+        var body = $"Hello {request.Name},\n\nYou've been invited to join the gallery. Click the link below to register:\n\n{link}\n\nThis invitation link will expire in 7 days.";
+
+        await _emailSender.SendEmailAsync(request.Email, subject, body);
+    }
+
     public async Task UpdateUserPasswordAsync(SetPasswordRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             throw new InvalidInputException("Either token is invalid or expired or password is insecure.");
 
         var tokenEntry = await _userTokenRepository.GetByTokenAsync(request.Token, "password_reset");
-        if (tokenEntry == null)
+        if (tokenEntry == null || tokenEntry.UserId == null)
             throw new InvalidInputException("Either token is invalid or expired or password is insecure.");
 
-        var user = await GetUserByIdAsync(tokenEntry.UserId);
+        var user = await GetUserByIdAsync(tokenEntry.UserId ?? 0);
         if (user == null)
             throw new InvalidInputException("Invalid User");  
 
         var newPasswordHash = AuthRepository.HashPassword(request.Password);
-        await _authRepository.UpdateUserPasswordAsync(tokenEntry.UserId, newPasswordHash);
+        await _authRepository.UpdateUserPasswordAsync(tokenEntry.UserId ?? 0, newPasswordHash);
         await _userTokenRepository.MarkUsedAsync(request.Token, "password_reset");
     }
 
