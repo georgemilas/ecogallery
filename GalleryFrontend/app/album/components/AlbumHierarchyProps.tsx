@@ -68,6 +68,7 @@ export interface ItemContent {
   id: number;
   name: string;
   description?: string;
+  role_id: number;
   navigation_path_segments: Array<AlbumPathElement>;
   thumbnail_path: string;
   last_updated_utc: Date;
@@ -88,7 +89,7 @@ export interface FaceBox {
 
 export interface ImageItemContent extends ItemContent {
   is_movie: boolean;
-  image_hd_path: string;
+  image_hd_path: string;  
   image_uhd_path: string;
   image_original_path: string;
   image_width: number;
@@ -96,10 +97,12 @@ export interface ImageItemContent extends ItemContent {
   image_metadata: ImageMetadata | null;
   video_metadata: VideoMetadata | null;
   faces?: FaceBox[];
+  role_id: number;
 }
 
 export interface AlbumItemContent extends ItemContent {
   image_hd_path: string;
+  role_id: number;
   settings: AlbumSettings | null;
 }
 
@@ -123,6 +126,7 @@ export interface SearchInfo {
 export class AlbumItemHierarchy implements AlbumItemContent {
   id: number = 0;
   name: string = '';
+  role_id: number = 0;
   description?: string;   // optional in AlbumItemContent interface therefor we must add it here
   navigation_path_segments: Array<AlbumPathElement> = [];
   thumbnail_path: string = '';

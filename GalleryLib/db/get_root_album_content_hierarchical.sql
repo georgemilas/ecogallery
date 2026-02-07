@@ -20,7 +20,8 @@ RETURNS TABLE (
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
     image_metadata JSON,
     video_metadata JSON,
-    faces JSON
+    faces JSON,
+    role_id BIGINT
 ) AS $$
 WITH ra AS (
     SELECT * FROM album
@@ -51,7 +52,8 @@ SELECT
     a.album_timestamp_utc AS item_timestamp_utc,
     NULL::json AS image_metadata,
     NULL::json AS video_metadata,
-    NULL::json AS faces
+    NULL::json AS faces,
+    a.role_id AS role_id
 FROM ra
 JOIN album AS a ON a.parent_album = ra.album_name
 LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path            --get the image record of the album feature image
@@ -68,7 +70,7 @@ SELECT
     ai.image_type AS item_type,
     ai.album_id as parent_album_id,
     ai.album_name AS parent_album_name,
-    ai.image_type AS feature_image_type,
+    ai.image_type AS feature_item_type,
     ai.image_path AS feature_item_path,
     ai.image_type AS inner_feature_item_type,
     ai.image_path AS inner_feature_item_path,
@@ -79,12 +81,14 @@ SELECT
     coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata,
-    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
+    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
+    a.role_id AS role_id
 FROM ra
 JOIN album_image ai ON ai.album_name = ra.album_name
+JOIN album AS a ON ai.album_name = a.album_name
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
 LEFT JOIN faces fe ON ai.id = fe.album_image_id
-GROUP BY ai.id, exif.id, vm.id
+GROUP BY ai.id, exif.id, vm.id, a.id
 ORDER BY item_type
 $$ LANGUAGE SQL;

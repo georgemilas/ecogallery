@@ -44,6 +44,7 @@ public class ServiceBase
         image.Id = item.Id;
         image.Name = item.ItemName;
         image.Description = item.ItemDescription;
+        image.RoleId = item.RoleId;
         
         string path = item.FeatureItemPath ?? string.Empty;     //get the relative path first                                
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative

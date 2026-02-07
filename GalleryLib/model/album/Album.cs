@@ -14,6 +14,7 @@ public record Album
     public DateTimeOffset AlbumTimestampUtc { get; set; }
     public string ParentAlbum { get; set; } = string.Empty;        
     public long ParentAlbumId { get; set; } = 0;
+    public long RoleId { get; set; } = 2; //defaults to private role
     public bool HasParentAlbum => !string.IsNullOrEmpty(ParentAlbum);
 
 
@@ -67,7 +68,8 @@ public record Album
             LastUpdatedUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("last_updated_utc")),
             AlbumTimestampUtc = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("album_timestamp_utc")),
             ParentAlbum = reader.GetString(reader.GetOrdinal("parent_album")),
-            ParentAlbumId = reader.GetInt64(reader.GetOrdinal("parent_album_id"))
+            ParentAlbumId = reader.GetInt64(reader.GetOrdinal("parent_album_id")),
+            RoleId = reader.GetInt64(reader.GetOrdinal("role_id"))
         };
     }
 

@@ -24,6 +24,7 @@ public record AlbumContentHierarchical
     public ImageMetadata? ImageMetadata { get; set; }
     public VideoMetadata? VideoMetadata { get; set; }
     public List<FaceBoxInfo> Faces { get; set; } = new List<FaceBoxInfo>();
+    public long RoleId { get; set; }   //Int64
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
     {
@@ -61,7 +62,8 @@ public record AlbumContentHierarchical
             VideoMetadata = reader.IsDBNull(reader.GetOrdinal("video_metadata"))
                                         ? null
                                         : JsonSerializer.Deserialize<VideoMetadata>(reader.GetString(reader.GetOrdinal("video_metadata")), options),
-            Faces = faces
+            Faces = faces,
+            RoleId = reader.GetInt64(reader.GetOrdinal("role_id"))
         };
     }
 

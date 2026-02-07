@@ -70,8 +70,30 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const [searchEditorOpen, setSearchEditorOpen] = useState(false);
   const [searchEditorText, setSearchEditorText] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [searchEditorPanelWidth, setSearchEditorPanelWidth] = useState(450);
+  const [searchEditorPanelWidth, setSearchEditorPanelWidth] = useState(() => {
+    // Responsive initial width - fit mobile screens
+    if (typeof window !== 'undefined') {
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 500) return screenWidth - 40; // Mobile: full width minus margin
+      return 450; // Desktop default
+    }
+    return 450;
+  });
   const fetchedRef = useRef(false);
+
+  // Ensure panel width fits screen on resize (especially for mobile orientation changes)
+  useEffect(() => {
+    const handleResize = () => {
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 500) {
+        setSearchEditorPanelWidth(screenWidth - 40);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    // Also run on mount in case SSR didn't have correct window size
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const searchEditor: SearchEditorState = {
     isOpen: searchEditorOpen,

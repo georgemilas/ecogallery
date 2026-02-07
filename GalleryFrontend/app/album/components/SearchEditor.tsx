@@ -76,47 +76,55 @@ export function SearchEditor({ searchEditor, onSearchSubmit, showSearch }: Searc
     if (!showSearch) return <div></div>;
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <form className="searchbar" onSubmit={handleSearchSubmit}>
+      <form className="searchbar" onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <input
             type="text"
             placeholder="Search expression..."
             value={text}
             onChange={(e) => setText(e.target.value)}
+            style={{ paddingRight: '28px' }}
           />
-          <button type="submit" className="search-button" title="Search">
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="10" cy="10" r="6" stroke="white" strokeWidth="2"/>
-              <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
+            title={isOpen ? "Close search editor" : "Expand search editor"}
+            style={{
+              position: 'absolute',
+              right: '4px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: 0.7,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isOpen ? "#4CAF50" : "#080808"} strokeWidth="2.5" strokeLinecap="round">
+              {isOpen ? (
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              ) : (
+                <>
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </>
+              )}
             </svg>
           </button>
-        </form>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          title={isOpen ? "Close search editor" : "Expand search editor"}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isOpen ? "#4CAF50" : "#e8f09e"} strokeWidth="2.5" strokeLinecap="round">
-            {isOpen ? (
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            ) : (
-              <>
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </>
-            )}
+        </div>
+        <button type="submit" className="search-button" title="Search">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="10" cy="10" r="6" stroke="white" strokeWidth="2"/>
+            <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="white" strokeWidth="2"/>
           </svg>
         </button>
-      </div>
+      </form>
     );
   };
 

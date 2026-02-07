@@ -29,7 +29,7 @@ public record AlbumContentHierarchical: AlbumItemContent
 
 public record AlbumItemContent: ItemContent
 {
-    public string ImageHDPath { get; set; } = string.Empty;         
+    public string ImageHDPath { get; set; } = string.Empty;                 
 }
 
 public record ImageItemContent: ItemContent
@@ -55,6 +55,7 @@ public record ItemContent
     public string ThumbnailPath { get; set; } = string.Empty;         
     public DateTimeOffset LastUpdatedUtc { get; set; }    
     public DateTimeOffset ItemTimestampUtc { get; set; }
+    public long RoleId { get; set; } = 0;
     
 }
 

@@ -151,6 +151,7 @@ public class AlbumsService: ServiceBase
         album.Id = item.Id;
         album.Name = item.ItemName;
         album.Description = item.ItemDescription;
+        album.RoleId = item.RoleId;
         
         string defaultFolderImage = "";
         //get the relative path first

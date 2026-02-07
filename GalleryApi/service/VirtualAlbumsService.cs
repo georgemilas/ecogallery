@@ -134,6 +134,7 @@ public class VirtualAlbumsService: ServiceBase
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute             
         album.ThumbnailPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
         album.ImageHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));
+        album.RoleId = valbum.RoleId;
         
         var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, AuthenticatedUser?.Id ?? 1, true);    //get admin settings if no user
         album.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
@@ -164,6 +165,7 @@ public class VirtualAlbumsService: ServiceBase
             albumItem.Id = calbum.Id;
             albumItem.Name = calbum.AlbumName;
             albumItem.Description = calbum.AlbumDescription;
+            albumItem.RoleId = calbum.RoleId;
             var cparents = await _albumRepository.GetAlbumParentsAsync(calbum.Id);
             albumItem.NavigationPathSegments = cparents.Select(p => new AlbumPathElement { Id = p.Id, Name = p.Path }).Reverse().ToList();
             albumItem.LastUpdatedUtc = calbum.LastUpdatedUtc;

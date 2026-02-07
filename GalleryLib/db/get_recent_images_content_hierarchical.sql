@@ -20,7 +20,8 @@ RETURNS TABLE (
     item_timestamp_utc TIMESTAMP WITH TIME ZONE,
     image_metadata JSON,
     video_metadata JSON,
-    faces JSON
+    faces JSON,
+    role_id BIGINT
 ) AS $$
 WITH recent_with_dates AS (
     -- Pre-select recent images using correct date (EXIF for images, date_taken for videos)
@@ -54,12 +55,14 @@ SELECT
     coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata,
-    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
+    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
+    a.role_id AS role_id
 FROM recent_with_dates rwd
 INNER JOIN album_image ai ON ai.id = rwd.id
+JOIN album AS a ON ai.album_name = a.album_name
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
 LEFT JOIN faces fe ON ai.id = fe.album_image_id
-GROUP BY ai.id, exif.id, vm.id
+GROUP BY ai.id, exif.id, vm.id, a.id
 
 $$ LANGUAGE SQL;

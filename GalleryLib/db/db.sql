@@ -4,6 +4,167 @@
 -- basically enables col ILIKE ANY(ARRAY[...]) to be fast by working against an index on col rather than table scan
 CREATE EXTENSION pg_trgm;
 
+
+
+------------------------------------------------------------------------------
+----------------- public.users------------------------------------------------  
+------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.users;
+
+CREATE TABLE
+  public.users (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    username character varying(100) NOT NULL,
+    email character varying(255) NOT NULL,
+    password_hash character varying(255) NOT NULL,
+    full_name character varying(255) NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    is_admin boolean NOT NULL DEFAULT false,
+    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    last_login_utc timestamp with time zone NULL
+  );
+
+ALTER TABLE
+  public.users
+ADD
+  CONSTRAINT users_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_username
+ON public.users (username);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email
+ON public.users (email);
+
+------------------------------------------------------------------------------
+----------------- public.sessions ---------------------------------------------  
+------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.sessions;
+
+CREATE TABLE
+  public.sessions (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    session_token character varying(255) NOT NULL,
+    user_id bigint NOT NULL,
+    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    expires_utc timestamp with time zone NOT NULL,
+    last_activity_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+    ip_address character varying(45) NULL,
+    user_agent character varying(500) NULL
+  );
+
+ALTER TABLE
+  public.sessions
+ADD
+  CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_session_session_token
+ON public.sessions (session_token);
+
+CREATE INDEX IF NOT EXISTS idx_session_user_id
+ON public.sessions (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_session_expires_utc
+ON public.sessions (expires_utc);
+
+ALTER TABLE
+  public.sessions 
+ADD
+  CONSTRAINT fk_session_user
+  FOREIGN KEY (user_id)
+  REFERENCES public.users (id)
+  ON DELETE CASCADE;
+
+
+------------------------------------------------------------------------------  
+----------------- public.roles -----------------------------------------------
+------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.roles;
+CREATE TABLE public.roles (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    name character varying(100) NOT NULL UNIQUE,
+    description character varying(500) NULL
+);
+
+ALTER TABLE
+  public.roles
+ADD
+  CONSTRAINT roles_pkey PRIMARY KEY (id);
+
+
+DROP TABLE IF EXISTS public.role_hierarchy;
+CREATE TABLE public.role_hierarchy (
+    parent_role_id bigint NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+    child_role_id bigint NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+    -- parent_role_name character varying(100) NOT NULL REFERENCES public.roles(name) ON DELETE CASCADE,
+    -- child_role_name character varying(100) NOT NULL REFERENCES public.roles(name) ON DELETE CASCADE,
+    PRIMARY KEY (parent_role_id, child_role_id)
+);
+
+DROP TABLE IF EXISTS public.user_roles;
+CREATE TABLE public.user_roles (
+    user_id bigint NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    role_id bigint NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, role_id)
+);
+
+INSERT INTO public.roles (name, description) VALUES
+('public', 'Public access'),
+('private', 'Private album access'),
+('client', 'Client access base'),
+('user_admin', 'Invite users and manage roles'),
+('album_admin', 'Create/modify albums and virtual albums'),
+('admin', 'Full access'),
+-- ('ibm', 'IBM client role'),
+-- ('microsoft', 'Microsoft client role')
+ON CONFLICT DO NOTHING;
+
+-- admin contains user_admin + album_admin
+INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
+SELECT p.id, c.id FROM public.roles p, public.roles c
+WHERE p.name = 'admin' AND c.name IN ('user_admin', 'album_admin')
+ON CONFLICT DO NOTHING;
+
+-- user_admin, album_admin include public/private/client
+INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
+SELECT p.id, c.id FROM public.roles p, public.roles c
+WHERE p.name IN ('user_admin','album_admin') AND c.name IN ('public','private','client')
+ON CONFLICT DO NOTHING;
+
+-- client includes public
+INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
+SELECT p.id, c.id FROM public.roles p, public.roles c
+WHERE p.name IN ('client') AND c.name IN ('public')
+ON CONFLICT DO NOTHING;
+
+-- -- client roles include client base
+-- INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
+-- SELECT p.id, c.id FROM public.roles p, public.roles c
+-- WHERE p.name IN ('ibm','microsoft') AND c.name = 'client'
+-- ON CONFLICT DO NOTHING;
+
+
+
+------------------------------------------------------------------------------
+----------------- public.user_tokens -----------------------------------------
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.user_tokens;
+
+CREATE TABLE public.user_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NULL REFERENCES public.users(id),
+    role_id bigint NULL REFERENCES public.roles(id),
+    token_type VARCHAR(50) NOT NULL DEFAULT 'password_reset',  -- e.g., 'password_reset', 'user_registration'
+    token VARCHAR(128) NOT NULL UNIQUE,
+    created_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW(),
+    expires_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW() + INTERVAL '1 hour',
+    used BOOLEAN NOT NULL DEFAULT FALSE
+);
+CREATE INDEX idx_user_tokens_token ON public.user_tokens(token);
+
+
 ------------------------------------------------------------------------------
 ----------------- public.album -----------------------------------------------
 ------------------------------------------------------------------------------
@@ -19,7 +180,8 @@ CREATE TABLE
     album_timestamp_utc timestamp with time zone NOT NULL,   --when the image file that caused the album to be created was last updated
     feature_image_path character varying(500) NULL,
     parent_album character varying(500) NULL,
-    parent_album_id bigint NULL
+    parent_album_id bigint NULL,
+    role_id bigint NULL REFERENCES public.roles(id)
   );
 
 ALTER TABLE
@@ -50,7 +212,8 @@ CREATE TABLE
     last_updated_utc timestamp with time zone NULL,          --when the record was last updated
     created_timestamp_utc timestamp with time zone NOT NULL,   --when the image file that caused the album to be created was last updated
     parent_album character varying(500) NULL,
-    parent_album_id bigint NULL
+    parent_album_id bigint NULL,
+    role_id bigint NULL REFERENCES public.roles(id)
   );    
 
 ALTER TABLE
@@ -264,97 +427,6 @@ ADD
   ON DELETE CASCADE;
 
 
-
-
-------------------------------------------------------------------------------
------------------ public.users------------------------------------------------  
-------------------------------------------------------------------------------
-
-DROP TABLE IF EXISTS public.users;
-
-CREATE TABLE
-  public.users (
-    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
-    username character varying(100) NOT NULL,
-    email character varying(255) NOT NULL,
-    password_hash character varying(255) NOT NULL,
-    full_name character varying(255) NULL,
-    is_active boolean NOT NULL DEFAULT true,
-    is_admin boolean NOT NULL DEFAULT false,
-    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
-    last_login_utc timestamp with time zone NULL
-  );
-
-ALTER TABLE
-  public.users
-ADD
-  CONSTRAINT users_pkey PRIMARY KEY (id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS ux_users_username
-ON public.users (username);
-
-CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email
-ON public.users (email);
-
-------------------------------------------------------------------------------
------------------ public.sessions ---------------------------------------------  
-------------------------------------------------------------------------------
-
-DROP TABLE IF EXISTS public.sessions;
-
-CREATE TABLE
-  public.sessions (
-    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
-    session_token character varying(255) NOT NULL,
-    user_id bigint NOT NULL,
-    created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
-    expires_utc timestamp with time zone NOT NULL,
-    last_activity_utc timestamp with time zone NOT NULL DEFAULT NOW(),
-    ip_address character varying(45) NULL,
-    user_agent character varying(500) NULL
-  );
-
-ALTER TABLE
-  public.sessions
-ADD
-  CONSTRAINT sessions_pkey PRIMARY KEY (id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS ux_session_session_token
-ON public.sessions (session_token);
-
-CREATE INDEX IF NOT EXISTS idx_session_user_id
-ON public.sessions (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_session_expires_utc
-ON public.sessions (expires_utc);
-
-ALTER TABLE
-  public.sessions 
-ADD
-  CONSTRAINT fk_session_user
-  FOREIGN KEY (user_id)
-  REFERENCES public.users (id)
-  ON DELETE CASCADE;
-
-
-
-------------------------------------------------------------------------------
------------------ public.user_tokens -----------------------------------------
-------------------------------------------------------------------------------
-DROP TABLE IF EXISTS public.user_tokens;
-
-CREATE TABLE public.user_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id BIGINT NULL REFERENCES public.users(id),
-    token_type VARCHAR(50) NOT NULL DEFAULT 'password_reset',  -- e.g., 'password_reset', 'user_registration'
-    token VARCHAR(128) NOT NULL UNIQUE,
-    created_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW(),
-    expires_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW() + INTERVAL '1 hour',
-    used BOOLEAN NOT NULL DEFAULT FALSE
-);
-CREATE INDEX idx_user_tokens_token ON public.user_tokens(token);
-
-
 ------------------------------------------------------------------------------
 ----------------- public.face_person -----------------------------------------
 -- Represents a named person (cluster of faces identified as the same person)
@@ -414,3 +486,9 @@ ADD CONSTRAINT fk_face_embedding_face_person
 FOREIGN KEY (face_person_id)
 REFERENCES public.face_person (id)
 ON DELETE SET NULL;
+
+
+
+
+
+

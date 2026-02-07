@@ -102,14 +102,15 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         //album.FeatureImagePath ??= string.Empty;
         //Console.WriteLine($"TRY save db: {album}");  
         //insert or update existing album record and use the last image as feature image
-        var sql = $@"INSERT INTO album (album_name, album_description, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id, album_timestamp_utc)
-                               VALUES (@album_name, @album_description, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id, @album_timestamp_utc)
+        var sql = $@"INSERT INTO album (album_name, album_description, album_type, last_updated_utc, feature_image_path, parent_album, parent_album_id, role_id, album_timestamp_utc)
+                               VALUES (@album_name, @album_description, @album_type, @last_updated_utc, @feature_image_path, @parent_album, @parent_album_id, @role_id, @album_timestamp_utc)
                     ON CONFLICT (album_name) DO UPDATE
                     SET
                         {updateFeature}
                         album_description = EXCLUDED.album_description,
                         last_updated_utc = EXCLUDED.last_updated_utc,
-                        album_timestamp_utc = EXCLUDED.album_timestamp_utc
+                        album_timestamp_utc = EXCLUDED.album_timestamp_utc,
+                        role_id = EXCLUDED.role_id
                     RETURNING id;";        
         album.Id = await _db.ExecuteScalarAsync<long>(sql, album);    
         //Console.WriteLine($"ran album save db: {album.AlbumName}");        
@@ -239,14 +240,16 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                     coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) AS item_timestamp_utc,
                     row_to_json(exif) AS image_metadata,
                     row_to_json(vm) AS video_metadata,
-                    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
+                    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
+                    a.role_id AS role_id
                 FROM album_image ai
+                JOIN album a ON ai.album_id = a.id
                 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
                 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
                 LEFT JOIN faces fe ON ai.id = fe.album_image_id
                 LEFT JOIN image_people ip ON ai.id = ip.album_image_id
                 WHERE {where}
-                GROUP BY ai.id, exif.id, vm.id
+                GROUP BY ai.id, exif.id, vm.id, a.id
                 {orderby}
                 {limitOffset2};";
         Console.WriteLine($"Debug: AlbumContentByExpression SQL: {sql}");
@@ -304,13 +307,15 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 ai.image_timestamp_utc AS item_timestamp_utc,
                 row_to_json(exif) AS image_metadata,
                 row_to_json(vm) AS video_metadata,
-                coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces
+                coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
+                a.role_id AS role_id
             FROM album_image ai
+            JOIN album a ON ai.album_id = a.id
             LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
             LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
             LEFT JOIN faces fe ON ai.id = fe.album_image_id
             WHERE ai.id = ANY(@image_ids)
-            GROUP BY ai.id, exif.id, vm.id
+            GROUP BY ai.id, exif.id, vm.id, a.id
             ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC";
 
         var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), new { image_ids = imageIds.ToArray() });
@@ -342,7 +347,8 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                         a.album_timestamp_utc AS item_timestamp_utc,
                         NULL::json AS image_metadata,
                         NULL::json AS video_metadata,
-                        NULL::json AS faces
+                        NULL::json AS faces,
+                        a.role_id AS role_id
                     FROM album AS a
                     LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
                     LEFT JOIN album_image ai ON a.feature_image_path = ai.image_path        --get the image record of the album feature image
@@ -431,8 +437,8 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
     {
         //Console.WriteLine($"TRY save db: {album}");  
         //insert or update existing virtual album record 
-        var sql = $@"INSERT INTO virtual_album (album_name, album_description, album_expression, album_folder, album_type, persistent_expression, is_public, feature_image_path, last_updated_utc, created_timestamp_utc, parent_album, parent_album_id)
-                               VALUES (@album_name, @album_description, @album_expression, @album_folder, @album_type, @persistent_expression, @is_public, @feature_image_path, @last_updated_utc, @created_timestamp_utc, @parent_album, @parent_album_id)
+        var sql = $@"INSERT INTO virtual_album (album_name, album_description, album_expression, album_folder, album_type, persistent_expression, is_public, feature_image_path, last_updated_utc, created_timestamp_utc, parent_album, parent_album_id, role_id)
+                               VALUES (@album_name, @album_description, @album_expression, @album_folder, @album_type, @persistent_expression, @is_public, @feature_image_path, @last_updated_utc, @created_timestamp_utc, @parent_album, @parent_album_id, @role_id)
                     ON CONFLICT (parent_album, album_name) DO UPDATE
                     SET
                         album_description = EXCLUDED.album_description,
@@ -442,7 +448,8 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                         is_public = EXCLUDED.is_public,
                         persistent_expression = EXCLUDED.persistent_expression,
                         album_type = EXCLUDED.album_type,
-                        album_folder = EXCLUDED.album_folder                        
+                        album_folder = EXCLUDED.album_folder,
+                        role_id = EXCLUDED.role_id                        
                     RETURNING id;";        
         album.Id = await _db.ExecuteScalarAsync<long>(sql, album);    
         //Console.WriteLine($"ran album save db: {album.AlbumName}");        

@@ -28,10 +28,14 @@ DROP TABLE IF EXISTS public.virtual_album CASCADE;
 -- Drop auth tables (sessions depends on users)
 DROP TABLE IF EXISTS public.sessions CASCADE;
 DROP TABLE IF EXISTS public.user_tokens CASCADE;
+DROP TABLE IF EXISTS public.user_roles;
 DROP TABLE IF EXISTS public.users CASCADE;
 
 DROP TABLE IF EXISTS public.face_embedding;
 DROP TABLE IF EXISTS public.face_person;
+
+DROP TABLE IF EXISTS public.role_hierarchy;
+DROP TABLE IF EXISTS public.roles;
 
 -- Optionally drop the extension (uncomment if you want to recreate it)
 -- DROP EXTENSION IF EXISTS pg_trgm;
