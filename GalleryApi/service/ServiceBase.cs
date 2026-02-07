@@ -22,11 +22,11 @@ public class ServiceBase
     /// <summary>
     /// Access the authenticated user (if any) 
     /// </summary>
-    protected GalleryLib.Model.Auth.User? AuthenticatedUser
+    protected GalleryLib.Model.Auth.UserInfo? AuthenticatedUser
     {
         get
         {
-            return _httpContextAccessor.HttpContext?.Items["User"] as GalleryLib.Model.Auth.User;
+            return _httpContextAccessor.HttpContext?.Items["User"] as GalleryLib.Model.Auth.UserInfo;
         }
     }
 

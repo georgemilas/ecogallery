@@ -1,3 +1,5 @@
+using System;
+
 namespace GalleryLib.Model.Auth;
 
 public class LoginRequest
@@ -21,4 +23,5 @@ public class UserInfo
     public string Email { get; set; } = string.Empty;
     public string? FullName { get; set; }
     public bool IsAdmin { get; set; }
+    public IReadOnlyList<string> Roles { get; set; } = Array.Empty<string>();
 }

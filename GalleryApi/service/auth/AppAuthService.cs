@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using GalleryLib.Model.Auth;
 using GalleryLib.Repository.Auth;
 
@@ -47,13 +49,20 @@ public class AppAuthService: IDisposable, IAsyncDisposable
                 return null;
             }
 
+            var roles = await _authRepository.GetEffectiveRolesAsync(user.Id);
+            if (user.IsAdmin && !roles.Contains("admin", StringComparer.OrdinalIgnoreCase))
+            {
+                roles = roles.Concat(new[] { "admin" }).ToList();
+            }
+
             return new UserInfo
             {
                 Id = user.Id,
                 Username = user.Username,
                 Email = user.Email,
                 FullName = user.FullName,
-                IsAdmin = user.IsAdmin
+                IsAdmin = user.IsAdmin,
+                Roles = roles
             };
         }
         catch

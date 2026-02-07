@@ -1,4 +1,5 @@
     
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using GalleryLib.Model.Auth;
@@ -51,6 +52,28 @@ public class AuthRepository : IDisposable, IAsyncDisposable
         var parameters = new { id = userId };
         var result = await _db.QueryAsync(sql, reader => User.CreateFromDataReader(reader), parameters);
         return result.FirstOrDefault();
+    }
+
+    public async Task<IReadOnlyList<string>> GetEffectiveRolesAsync(long userId)
+    {
+        const string sql = @"
+            WITH RECURSIVE role_tree AS (
+                SELECT r.id, r.name
+                FROM public.user_roles ur
+                JOIN public.roles r ON r.id = ur.role_id
+                WHERE ur.user_id = @user_id
+                
+                UNION
+                
+                SELECT r2.id, r2.name
+                FROM role_tree rt
+                JOIN public.role_hierarchy rh ON rh.parent_role_id = rt.id
+                JOIN public.roles r2 ON r2.id = rh.child_role_id
+            )
+            SELECT DISTINCT name FROM role_tree ORDER BY name;";
+
+        var result = await _db.QueryAsync(sql, reader => reader.GetString(0), new { user_id = userId });
+        return result.ToList();
     }
 
     public async Task<long> CreateUserAsync(string username, string email, string passwordHash, string? fullName = null, bool isAdmin = false)

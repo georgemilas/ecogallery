@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using GalleryApi.model;
@@ -73,6 +75,12 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
             // Update last login
             await _authRepository.UpdateLastLoginAsync(user.Id);
 
+            var roles = await _authRepository.GetEffectiveRolesAsync(user.Id);
+            if (user.IsAdmin && !roles.Contains("admin", StringComparer.OrdinalIgnoreCase))
+            {
+                roles = roles.Concat(new[] { "admin" }).ToList();
+            }
+
             return new LoginResponse
             {
                 Success = true,
@@ -84,7 +92,8 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
                     Username = user.Username,
                     Email = user.Email,
                     FullName = user.FullName,
-                    IsAdmin = user.IsAdmin
+                    IsAdmin = user.IsAdmin,
+                    Roles = roles
                 }
             };
         }
