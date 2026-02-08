@@ -34,6 +34,7 @@ public record AlbumItemContent: ItemContent
 
 public record ImageItemContent: ItemContent
 {
+    public string ImageSmallHDPath { get; set; } = string.Empty;
     public string ImageHDPath { get; set; } = string.Empty;
     public string ImageUHDPath { get; set; } = string.Empty;
     public string ImageOriginalPath { get; set; } = string.Empty;

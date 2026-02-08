@@ -208,6 +208,7 @@ public class FacesController : ControllerBase
             Description = item.ItemDescription,
             RoleId = item.RoleId,
             ThumbnailPath = GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(item.FeatureItemPath), (int)ThumbnailHeights.Thumb)),
+            ImageSmallHDPath = GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(item.FeatureItemPath), (int)ThumbnailHeights.SmallHD)),
             ImageHDPath = GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(item.FeatureItemPath), (int)ThumbnailHeights.HD)),
             ImageUHDPath = GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(item.FeatureItemPath), (int)ThumbnailHeights.UHD)),
             ImageOriginalPath = GetPicturesUrl(baseUrl, GetFullPath(item.FeatureItemPath)),

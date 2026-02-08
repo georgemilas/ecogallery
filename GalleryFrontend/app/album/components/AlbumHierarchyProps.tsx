@@ -89,6 +89,7 @@ export interface FaceBox {
 
 export interface ImageItemContent extends ItemContent {
   is_movie: boolean;
+  image_small_hd_path: string;
   image_hd_path: string;  
   image_uhd_path: string;
   image_original_path: string;

@@ -50,6 +50,7 @@ public class ServiceBase
         path = path.StartsWith("\\") || path.StartsWith("/") ? path.Substring(1) : path; //make sure it's relative
         path = Path.Combine(_picturesConfig.RootFolder.FullName, path);                  //then make it absolute 
         image.ThumbnailPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.Thumb));
+        image.ImageSmallHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.SmallHD));
         image.ImageHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));    
         image.ImageUHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.UHD));
         image.ImageOriginalPath = GetPicturesUrl(path);

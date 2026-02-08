@@ -199,7 +199,7 @@ services:
       - ${PICTURES_PATH:-./pictures}:/pictures
     networks:
       - ecogallery-network
-    command: ["cleanup", "-f", "/pictures", "-h", "400", "1440", "-pl", "no"]
+    command: ["cleanup", "-f", "/pictures", "-h", "400", "800", "1440", "-pl", "no"]
     profiles:
       - cleanup  # Only start when explicitly requested
 

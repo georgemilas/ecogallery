@@ -102,9 +102,9 @@ public enum ThumbnailHeights
 {
     Thumb = 400,
     /// <summary>
-    /// Small HD resolution should be 720p but to save space we only created UltraHD images at 1440 height
+    /// Small HD resolution should be 720p but we create 800p thumbnails
     /// </summary>
-    SmallHD = 1440,  //720
+    SmallHD = 800,  //720
     /// <summary>
     /// HD aka Full HD resolution should be 1080p but to save space we only created UltraHD images at 1440 height
     /// </summary>

@@ -45,7 +45,7 @@ var dbConfig = serviceProvider.GetRequiredService<IOptions<DatabaseConfiguration
 var rootCommand = new RootCommand("Pictures background services console application");
 var folderOption = new Option<string>(new[] {"--folder", "-f"}, () => picturesConfig.Folder, "Pictures folder path");
 var yamlFileOption = new Option<string?>(new[] {"--yaml", "-y"}, () => null, "YAML file path");
-var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 400, 1440 }, "Thumbnail heights in pixels (can specify multiple)")  //{ 400, 1080, 1440 }
+var heightsOption = new Option<int[]>(new[] {"--height", "-h"}, () => new[] { 400, 800, 1440 }, "Thumbnail heights in pixels (can specify multiple) defaults to -h 400 800 1440")  //{ 400, 800, 1080, 1440 }
 {
     AllowMultipleArgumentsPerToken = true
 };
@@ -207,8 +207,9 @@ var syncCommand = new Command("sync", "Run the sync processor (thumbnails and db
 syncCommand.AddOption(folderOption);
 syncCommand.AddOption(parallelDegreeOption);
 syncCommand.AddOption(databaseNameOption);
+syncCommand.AddOption(heightsOption);
 syncCommand.AddOption(reprocessMetadataOption);
-syncCommand.SetHandler(async (string folder, int parallelDegree, string databaseName, bool reprocess) =>
+syncCommand.SetHandler(async (string folder, int parallelDegree, string databaseName, int[] heights, bool reprocess) =>
 {
     picturesConfig.Folder = folder;
     dbConfig.Database = databaseName;
@@ -222,7 +223,7 @@ syncCommand.SetHandler(async (string folder, int parallelDegree, string database
             //we are combining them into a single processor
             var processors = new List<IFileProcessor> { 
                 new DbSyncProcessor(picturesConfig, dbConfig, reprocess), 
-                new MultipleThumbnailsProcessor(picturesConfig, new[] { 400, 1440 })  //{ 400, 1080, 1440 }
+                new MultipleThumbnailsProcessor(picturesConfig, heights)  //{ 400, 800, 1080, 1440 }
             };
 
             services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(processors, picturesConfig, parallelDegree));                        
@@ -231,7 +232,7 @@ syncCommand.SetHandler(async (string folder, int parallelDegree, string database
 
     Console.WriteLine($"Starting sync processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, parallelDegreeOption, databaseNameOption, reprocessMetadataOption);
+}, folderOption, parallelDegreeOption, databaseNameOption, heightsOption, reprocessMetadataOption);
 rootCommand.AddCommand(syncCommand);
 
 

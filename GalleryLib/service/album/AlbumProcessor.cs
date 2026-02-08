@@ -86,18 +86,18 @@ public class AlbumProcessor: EmptyProcessor
 
     protected async Task UpdateImageHashAsync(string filePath, bool logIfCreated, AlbumImage albumImage)
     {
-        // TODO: what if the thumbnail does not exist yet?
-        // Compute perceptual hash from 400px thumbnail if it exists
+        // Compute SHA-256 hash from 400px thumbnail if it exists
         var thumbnailPath = _configuration.GetThumbnailPath(filePath, 400);
-        if (File.Exists(thumbnailPath))
+        var hashPath = File.Exists(thumbnailPath) ? thumbnailPath : filePath;
+        if (File.Exists(hashPath))
         {
-            var thumbStream = new FileStream(thumbnailPath, FileMode.Open, FileAccess.Read);
-            albumImage.ImageSha256 = await ImageHash.ComputeSha256Async(thumbStream);
+            var hashStream = new FileStream(hashPath, FileMode.Open, FileAccess.Read);
+            albumImage.ImageSha256 = await ImageHash.ComputeSha256Async(hashStream);
             var id = await imageRepository.UpdateImageHash(albumImage);
             if (logIfCreated)
             {
                 string isOk = id == albumImage.Id ? "successfully" : "unsuccessfully";
-                Console.WriteLine($"Computed and stored {isOk} SHA-256 hash for image thumbnail: {filePath}");
+                Console.WriteLine($"Computed and stored {isOk} SHA-256 hash for file: {filePath}");
             }
         }
     }
