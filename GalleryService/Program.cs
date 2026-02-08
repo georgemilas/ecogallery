@@ -54,6 +54,7 @@ var parallelDegreeOption = new Option<int>(new[] {"--parallel", "-p"}, () => Env
 var isPlanOption = new Option<string>(new[] {"--plan", "-pl"}, () => "yes", "Run the process in plan mode only");
 var passwordOption = new Option<string>(new[] {"--password", "-pw"}, () => "admin123", "Admin user password");
 var logIfProcessed = new Option<bool>(new[] {"--log", "-l"}, () => false, "Log details to output");
+var reprocessMetadataOption = new Option<bool>(new[] {"--reprocess", "-r"}, () => false, "Reprocess metadata");
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the thumbnail background service and keep the app running
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -139,7 +140,9 @@ var imageExifCommand = new Command("db", "Run the db sync processor as a backgro
 imageExifCommand.AddOption(folderOption);
 imageExifCommand.AddOption(parallelDegreeOption);
 imageExifCommand.AddOption(databaseNameOption);
-imageExifCommand.SetHandler(async (string folder, int parallelDegree, string databaseName) =>
+imageExifCommand.AddOption(reprocessMetadataOption);
+
+imageExifCommand.SetHandler(async (string folder, int parallelDegree, string databaseName, bool reprocess) =>
 {
     picturesConfig.Folder = folder;
     dbConfig.Database = databaseName;
@@ -149,13 +152,13 @@ imageExifCommand.SetHandler(async (string folder, int parallelDegree, string dat
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
-            services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree));                        
+            services.AddSingleton<IHostedService>(sp => DbSyncProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, reprocess));                        
         })
         .Build();
 
     Console.WriteLine($"Starting db sync processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, parallelDegreeOption, databaseNameOption);
+}, folderOption, parallelDegreeOption, databaseNameOption, reprocessMetadataOption);
 rootCommand.AddCommand(imageExifCommand);
 
 
@@ -204,7 +207,8 @@ var syncCommand = new Command("sync", "Run the sync processor (thumbnails and db
 syncCommand.AddOption(folderOption);
 syncCommand.AddOption(parallelDegreeOption);
 syncCommand.AddOption(databaseNameOption);
-syncCommand.SetHandler(async (string folder, int parallelDegree, string databaseName) =>
+syncCommand.AddOption(reprocessMetadataOption);
+syncCommand.SetHandler(async (string folder, int parallelDegree, string databaseName, bool reprocess) =>
 {
     picturesConfig.Folder = folder;
     dbConfig.Database = databaseName;
@@ -217,7 +221,7 @@ syncCommand.SetHandler(async (string folder, int parallelDegree, string database
             //could add these as 2 separate services.AddSingleton() but because of the possible of console feadback overlap
             //we are combining them into a single processor
             var processors = new List<IFileProcessor> { 
-                new DbSyncProcessor(picturesConfig, dbConfig), 
+                new DbSyncProcessor(picturesConfig, dbConfig, reprocess), 
                 new MultipleThumbnailsProcessor(picturesConfig, new[] { 400, 1440 })  //{ 400, 1080, 1440 }
             };
 
@@ -227,7 +231,7 @@ syncCommand.SetHandler(async (string folder, int parallelDegree, string database
 
     Console.WriteLine($"Starting sync processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
     await host.RunAsync(cts.Token);
-}, folderOption, parallelDegreeOption, databaseNameOption);
+}, folderOption, parallelDegreeOption, databaseNameOption, reprocessMetadataOption);
 rootCommand.AddCommand(syncCommand);
 
 

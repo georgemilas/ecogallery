@@ -12,14 +12,14 @@ namespace GalleryLib.service.album;
 /// </summary>
 public class DbSyncProcessor:  ImageMetadataProcessor
 {
-    public DbSyncProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig):base(configuration, dbConfig)
+    public DbSyncProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, bool reprocess = false):base(configuration, dbConfig, reprocess)
     {
         
     }
 
-    public static new FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1)
+    public static new FileObserverService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1, bool reprocess = false)
     {
-        IFileProcessor processor = new DbSyncProcessor(configuration, dbConfig);
+        IFileProcessor processor = new DbSyncProcessor(configuration, dbConfig, reprocess);
         return new FileObserverService(processor,intervalMinutes: 2, degreeOfParallelism: degreeOfParallelism);
     }
 
