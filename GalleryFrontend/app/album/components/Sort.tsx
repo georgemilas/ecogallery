@@ -75,7 +75,7 @@ export function SortControl(props: SortControlProps): JSX.Element {
         props.onSortChange(sortedCopy as ImageItemContent[]);
       }
     }
-  }, [sortField, sortOrder, items.length, props.album.settings?.search_id || props.album.id]); // Use search_id for searches, album.id for albums
+  }, [sortField, sortOrder, items.length, props.album.settings?.unique_data_id || props.album.id]); // Use search_id for searches, album.id for albums
 
   const handleSortChange = (field: SortField, order: SortOrder) => {
     setSortField(field);

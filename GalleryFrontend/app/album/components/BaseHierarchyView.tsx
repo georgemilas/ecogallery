@@ -141,18 +141,50 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Track sorted images with their data_id to detect stale data
+  // TODO: Backend will provide data_id for unique identification
+  const [sortedImagesState, setSortedImagesState] = useState<{
+    dataId: string | number | undefined,
+    images: ImageItemContent[]
+  } | null>(null);
+
+  // Track sorted albums with their data_id
+  const [sortedAlbumsState, setSortedAlbumsState] = useState<{
+    dataId: string | number | undefined,
+    albums: AlbumItemContent[]
+  } | null>(null);
+
+  // Get the current data_id from album settings (search_id for searches, id for albums)
+  const currentDataId = props.album.settings?.unique_data_id ?? props.album.id;
+
+  // Derive localImages and localAlbums: use sorted if data_id matches, else use props
+  const localImages = (sortedImagesState !== null && sortedImagesState.dataId === currentDataId)
+    ? sortedImagesState.images
+    : props.album.images;
+  const localAlbums = (sortedAlbumsState !== null && sortedAlbumsState.dataId === currentDataId)
+    ? sortedAlbumsState.albums
+    : props.album.albums;
+
   const handleSortedItemsChange = useCallback((sortedItems: ImageItemContent[] | AlbumItemContent[]) => {
     props.clearLastViewedImage?.();
+    const dataId = props.album.settings?.unique_data_id ?? props.album.id;
     if (Array.isArray(sortedItems) && sortedItems.length > 0) {
       // Type guard: ImageItemContent has 'is_movie' property, AlbumItemContent doesn't
       if ('is_movie' in sortedItems[0]) {
-        setLocalImages(sortedItems as ImageItemContent[]);
+        const sorted = sortedItems as ImageItemContent[];
+        setSortedImagesState({ dataId, images: sorted });
+        // Report sorted images to parent immediately after sorting
+        props.onSortedImagesChange?.(sorted);
       } else {
-        setLocalAlbums(sortedItems as AlbumItemContent[]);
+        setSortedAlbumsState({ dataId, albums: sortedItems as AlbumItemContent[] });
       }
+    } else if (sortedItems.length === 0) {
+      // Handle empty case
+      setSortedImagesState({ dataId, images: [] });
+      props.onSortedImagesChange?.([]);
     }
     forceUpdate();
-  }, [props.clearLastViewedImage]);
+  }, [props.clearLastViewedImage, props.onSortedImagesChange, props.album.settings?.unique_data_id, props.album.id]);
 
   // Handle sort value update: save to API and propagate AlbumSettings to parent
   const handleSortUpdate = useCallback(async (sortValue: string, target: 'album' | 'image') => {
@@ -162,20 +194,6 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     await saveSettings(newSettings);
     props.onSortChange?.(newSettings);
   }, [props.settings, props.onSortChange]);
-
-  const [localImages, setLocalImages] = useState<ImageItemContent[]>(props.album.images);
-  const [localAlbums, setLocalAlbums] = useState<AlbumItemContent[]>(props.album.albums);
-
-  // Sync localImages and localAlbums when album data changes (before sorting kicks in)
-  useEffect(() => {
-    setLocalImages(props.album.images);
-    setLocalAlbums(props.album.albums);
-  }, [props.album.images, props.album.albums]);
-
-  // Report sorted images to parent for ImageView navigation
-  useEffect(() => {
-    props.onSortedImagesChange?.(localImages);
-  }, [localImages]);
 
   // Get image label helper for VirtualizedGallery
   const getImageLabelForGallery = useCallback((imageName: string) => {

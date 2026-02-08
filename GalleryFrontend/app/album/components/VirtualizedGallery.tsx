@@ -763,6 +763,9 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
       className="gallery virtualized-gallery"
       style={{
         minHeight: totalHeight > 0 ? `${totalHeight}px` : undefined,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: `${gap}px`,
       }}
     >
       {rows.map((row, rowIndex) => (

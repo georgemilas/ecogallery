@@ -6,7 +6,7 @@ public record AlbumSettings
 {
     public long Id { get; set; }
     public long AlbumId { get; set; }
-    public string? SearchId { get; set; }  // hash of search expression (for search result preferences)
+    public required string UniqueDataId { get; set; }  // guaranteed unique identifier whether we have a search, people, album, valbum etc. 
     public long UserId { get; set; } = 0;
     public bool IsVirtual { get; set; } = false;
     public int BannerPositionY { get; set; } = 38;
@@ -17,12 +17,11 @@ public record AlbumSettings
 
     public static AlbumSettings CreateFromDataReader(DbDataReader reader)
     {
-        var searchIdOrdinal = reader.GetOrdinal("search_id");
         return new AlbumSettings
         {
             Id = reader.GetInt64(reader.GetOrdinal("id")),
             AlbumId = reader.GetInt64(reader.GetOrdinal("album_id")),
-            SearchId = reader.IsDBNull(searchIdOrdinal) ? null : reader.GetString(searchIdOrdinal),
+            UniqueDataId = reader.GetString(reader.GetOrdinal("unique_data_id")),   
             UserId = reader.GetInt64(reader.GetOrdinal("user_id")),
             BannerPositionY = reader.GetInt32(reader.GetOrdinal("banner_position_y")),
             AlbumSort = reader.GetString(reader.GetOrdinal("album_sort")),

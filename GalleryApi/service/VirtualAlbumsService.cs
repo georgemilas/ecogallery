@@ -20,7 +20,8 @@ public class VirtualAlbumsService: ServiceBase
         {
             throw new AlbumNotFoundException($"Virtual album with id {albumId} not found.");
         }
-        VirtualAlbumContent album = await GetFromVirtualAlbum(valbum);
+        string uniqueDataId = $"valbum/id:{valbum.Id}:{AuthenticatedUser?.Id ?? 1}";
+        VirtualAlbumContent album = await GetFromVirtualAlbum(valbum, uniqueDataId);
                 
         return album;
     }
@@ -32,7 +33,8 @@ public class VirtualAlbumsService: ServiceBase
         {
             throw new AlbumNotFoundException("No root virtual albums found.");
         }
-        VirtualAlbumContent album = await GetFromVirtualAlbum(valbum);                
+        string uniqueDataId = $"valbum/root:{valbum.Id}:{AuthenticatedUser?.Id ?? 1}";
+        VirtualAlbumContent album = await GetFromVirtualAlbum(valbum, uniqueDataId);                
         return album;
     }
 
@@ -40,12 +42,13 @@ public class VirtualAlbumsService: ServiceBase
      public async Task<VirtualAlbumContent> GetRandomImages()
     {
         var searchId = GenerateSearchId("__random__");
+        string uniqueDataId = $"valbum/random:{searchId}:{AuthenticatedUser?.Id ?? 1}";
         var album = await PickImagesFromAll((all) =>
         {
             var random = new Random();
             var nRandom = all.OrderBy(x => random.Next()).Take(100).ToList();
             return nRandom;
-        }, searchId);
+        }, uniqueDataId);
         album.Name = "Random Images";
         album.Description = album.Images.Any() ? $"{album.Images.Count} random images" : "No images found";
         return album;
@@ -54,17 +57,20 @@ public class VirtualAlbumsService: ServiceBase
     public async Task<VirtualAlbumContent> GetRecentImages()
     {
         var searchId = GenerateSearchId("__recent__");
+        string uniqueDataId = $"valbum/recent:{searchId}:{AuthenticatedUser?.Id ?? 1}";
         var album = await PickImagesFromAll((all) =>
         {
             var nRecent = all.OrderByDescending(x => x.ItemTimestampUtc).Take(100).ToList();
             return nRecent;
-        }, searchId);
+        }, uniqueDataId);
         album.Name = "Recent Images";
         album.Description = album.Images.Any() ? $"{album.Images.Count} recent images" : "No images found";
         return album;
     }
 
-    private async Task<VirtualAlbumContent> PickImagesFromAll(Func<List<GalleryLib.model.album.AlbumContentHierarchical>, List<GalleryLib.model.album.AlbumContentHierarchical>> filter, string searchId)
+    private async Task<VirtualAlbumContent> PickImagesFromAll(
+        Func<List<GalleryLib.model.album.AlbumContentHierarchical>, List<GalleryLib.model.album.AlbumContentHierarchical>> filter,
+        string uniqueDataId)
     {
         var albums = await _albumRepository.GetAllVirtualAlbumsAsync();
         var all = new List<GalleryLib.model.album.AlbumContentHierarchical>();
@@ -92,13 +98,11 @@ public class VirtualAlbumsService: ServiceBase
         valbum.ImageHDPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
 
         var userId = AuthenticatedUser?.Id ?? 1;   //get admin settings if no user
-        var settings = searchId != null 
-            ? await _albumRepository.GetAlbumSettingsBySearchIdAsync(searchId, userId) 
-            : await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, userId, true);    
+        var settings = await _albumRepository.GetAlbumSettingsByUniqueDataIdAsync(uniqueDataId);
         valbum.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
         {
             AlbumId = 0,
-            SearchId = searchId,
+            UniqueDataId = uniqueDataId,
             IsVirtual = true,     //the main album is virtual so is recent/random/search 
             UserId = userId
         };     
@@ -118,7 +122,7 @@ public class VirtualAlbumsService: ServiceBase
 
 
 
-    private async Task<VirtualAlbumContent> GetFromVirtualAlbum(GalleryLib.model.album.VirtualAlbum valbum)
+    private async Task<VirtualAlbumContent> GetFromVirtualAlbum(GalleryLib.model.album.VirtualAlbum valbum, string uniqueDataId)
     {
         var album = new VirtualAlbumContent();
         album.Id = valbum.Id;
@@ -136,11 +140,12 @@ public class VirtualAlbumsService: ServiceBase
         album.ImageHDPath = GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD));
         album.RoleId = valbum.RoleId;
         
-        var settings = await _albumRepository.GetAlbumSettingsByAlbumIdAsync(valbum.Id, AuthenticatedUser?.Id ?? 1, true);    //get admin settings if no user
+        var settings = await _albumRepository.GetAlbumSettingsByUniqueDataIdAsync(uniqueDataId);    //get admin settings if no user
         album.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
         {
             AlbumId = valbum.Id,
             IsVirtual = true,
+            UniqueDataId = uniqueDataId,
             UserId = AuthenticatedUser?.Id ?? 1
         };        
         

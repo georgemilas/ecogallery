@@ -144,7 +144,9 @@ public class FacesController : ControllerBase
             }
 
             var content = await _albumRepository.GetAlbumContentByImageIdsAsync(imageIds);
-            return Ok(CreateVirtualAlbumResult(content, personName, $"person:{personId}"));
+            var uniqueDataId = $"faces/search/person/id:{personId}:{AuthenticatedUser?.Id ?? 1}";
+            var res = await CreateVirtualAlbumResult(content, personName, $"person:{personId}", uniqueDataId);
+            return Ok(res);
         }
         catch (Exception ex)
         {
@@ -168,7 +170,9 @@ public class FacesController : ControllerBase
             }
 
             var content = await _albumRepository.GetAlbumContentByImageIdsAsync(imageIds);
-            return Ok(CreateVirtualAlbumResult(content, personName, $"name:{personName}"));
+            var uniqueDataId = $"faces/search/name:{personName}:{AuthenticatedUser?.Id ?? 1}";
+            var res = await CreateVirtualAlbumResult(content, personName, $"name:{personName}", uniqueDataId);
+            return Ok(res);
         }
         catch (Exception ex)
         {
@@ -183,6 +187,7 @@ public class FacesController : ControllerBase
         {
             Id = 0,
             Name = "Face Search",
+            RoleId = 2,  //default to private
             Description = description,
             NavigationPathSegments = new List<AlbumPathElement>(),
             Images = new List<ImageItemContent>(),
@@ -193,7 +198,7 @@ public class FacesController : ControllerBase
         };
     }
 
-    private VirtualAlbumContent CreateVirtualAlbumResult(List<AlbumContentHierarchical> content, string personName, string expression)
+    private async Task<VirtualAlbumContent> CreateVirtualAlbumResult(List<AlbumContentHierarchical> content, string personName, string expression, string uniqueDataId)
     {
         var baseUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
         var images = content.Select(item => new ImageItemContent
@@ -201,6 +206,7 @@ public class FacesController : ControllerBase
             Id = item.Id,
             Name = item.ItemName,
             Description = item.ItemDescription,
+            RoleId = item.RoleId,
             ThumbnailPath = GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(item.FeatureItemPath), (int)ThumbnailHeights.Thumb)),
             ImageHDPath = GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(item.FeatureItemPath), (int)ThumbnailHeights.HD)),
             ImageUHDPath = GetPicturesUrl(baseUrl, _picturesConfig.GetThumbnailPath(GetFullPath(item.FeatureItemPath), (int)ThumbnailHeights.UHD)),
@@ -216,11 +222,14 @@ public class FacesController : ControllerBase
             NavigationPathSegments = new List<AlbumPathElement>()
         }).ToList();
 
+        var settings = await _albumRepository.GetAlbumSettingsByUniqueDataIdAsync(uniqueDataId);
+        
         return new VirtualAlbumContent
         {
             Id = 0,
             Name = $"Photos of {personName}",
             Description = $"{images.Count} images found",
+            RoleId = 2,  //default to private
             NavigationPathSegments = new List<AlbumPathElement>(),
             Images = images,
             Albums = new List<AlbumItemContent>(),
@@ -228,7 +237,14 @@ public class FacesController : ControllerBase
             ItemTimestampUtc = DateTimeOffset.UtcNow,
             ThumbnailPath = images.FirstOrDefault()?.ThumbnailPath ?? "",
             ImageHDPath = images.FirstOrDefault()?.ImageHDPath ?? "",
-            Expression = expression
+            Expression = expression,
+            Settings = settings ?? new GalleryLib.model.album.AlbumSettings
+            {
+                AlbumId = 0,
+                UniqueDataId = uniqueDataId,
+                IsVirtual = true,
+                UserId = AuthenticatedUser?.Id ?? 1
+            }
         };
     }
 
@@ -243,6 +259,17 @@ public class FacesController : ControllerBase
         path = path.Replace(_picturesConfig.RootFolder.FullName, $"{baseUrl}/pictures");
         path = path.Replace("\\", "/");
         return path;
+    }
+
+    /// <summary>
+    /// Access the authenticated user (if any) 
+    /// </summary>
+    protected GalleryLib.Model.Auth.UserInfo? AuthenticatedUser
+    {
+        get
+        {
+            return _httpContextAccessor.HttpContext?.Items["User"] as GalleryLib.Model.Auth.UserInfo;
+        }
     }
 }
 

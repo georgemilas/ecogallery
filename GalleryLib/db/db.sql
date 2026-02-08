@@ -233,7 +233,7 @@ DROP TABLE IF EXISTS public.album_settings;
 CREATE TABLE public.album_settings (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
     album_id BIGINT NOT NULL DEFAULT 0,
-    search_id character varying(100) NULL,       -- hash of search expression (for search result preferences)
+    unique_data_id character varying(100) NULL,  -- guaranteed unique identifier whether we have a search, people, album, valbum etc.
     is_virtual boolean NOT NULL DEFAULT false,
     user_id BIGINT NOT NULL,
     banner_position_y INT NOT NULL DEFAULT 38,
