@@ -24,6 +24,7 @@ public record AlbumContentHierarchical
     public ImageMetadata? ImageMetadata { get; set; }
     public VideoMetadata? VideoMetadata { get; set; }
     public List<FaceBoxInfo> Faces { get; set; } = new List<FaceBoxInfo>();
+    public List<ImageLocationCluster> Locations { get; set; } = new List<ImageLocationCluster>();
     public long RoleId { get; set; }   //Int64
 
     public static AlbumContentHierarchical CreateFromDataReader(DbDataReader reader)
@@ -37,6 +38,14 @@ public record AlbumContentHierarchical
         {
             var facesJson = reader.GetString(facesOrdinal);
             faces = JsonSerializer.Deserialize<List<FaceBoxInfo>>(facesJson, options) ?? new List<FaceBoxInfo>();
+        }
+
+        List<ImageLocationCluster> locations = new();
+        var locationsOrdinal = reader.GetOrdinal("locations");
+        if (!reader.IsDBNull(locationsOrdinal))
+        {
+            var locationsJson = reader.GetString(locationsOrdinal);
+            locations = JsonSerializer.Deserialize<List<ImageLocationCluster>>(locationsJson, options) ?? new List<ImageLocationCluster>();
         }
 
         return new AlbumContentHierarchical
@@ -63,6 +72,7 @@ public record AlbumContentHierarchical
                                         ? null
                                         : JsonSerializer.Deserialize<VideoMetadata>(reader.GetString(reader.GetOrdinal("video_metadata")), options),
             Faces = faces,
+            Locations = locations,
             RoleId = reader.GetInt64(reader.GetOrdinal("role_id"))
         };
     }

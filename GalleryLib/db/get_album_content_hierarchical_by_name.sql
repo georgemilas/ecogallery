@@ -20,13 +20,20 @@ RETURNS TABLE (
     image_metadata JSON,
     video_metadata JSON,
     faces JSON,
+    locations JSON,
     role_id BIGINT
 ) AS $$
 WITH faces as (
   select fe.id as face_id, fe.face_person_id as person_id, fp.name as person_name, fe.album_image_id, fe.bounding_box_x, fe.bounding_box_y, fe.bounding_box_width, fe.bounding_box_height, fe.confidence
   from face_person fp 
   join face_embedding fe on fp.id = fe.face_person_id 
+),
+locations as (
+  select lc.id as cluster_id, lc.tier_meters, lc.name, li.album_image_id, ST_Y(lc.centroid) AS centroid_latitude, ST_X(lc.centroid) AS centroid_longitude  
+  from location_cluster lc 
+  join location_cluster_item li on lc.id = li.cluster_id
 ) 
+
 SELECT
     a.id,
     a.album_name AS item_name,
@@ -46,6 +53,7 @@ SELECT
     NULL::json AS image_metadata,
     NULL::json AS video_metadata,
     NULL::json AS faces,
+    NULL::json AS locations,
     a.role_id AS role_id
 FROM album AS a
 LEFT JOIN album ca ON a.feature_image_path = ca.album_name              --get the child album
@@ -74,12 +82,14 @@ SELECT
     row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata,
     coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
+    coalesce(json_agg(row_to_json(loc)) FILTER (WHERE loc.cluster_id is not NULL), null::json) AS locations,
     a.role_id AS role_id
 FROM album_image ai
 JOIN album AS a ON ai.album_name = a.album_name
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
 LEFT JOIN faces fe ON ai.id = fe.album_image_id
+LEFT JOIN locations loc ON ai.id = loc.album_image_id
 WHERE ai.album_name = p_album_name
 GROUP BY ai.id, exif.id, vm.id, a.id
 

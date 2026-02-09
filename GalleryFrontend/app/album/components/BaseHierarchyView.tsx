@@ -126,20 +126,21 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
     const width = window.innerWidth;
     if (width < 768) return 150;  // Mobile
     if (width < 1024) return 200; // Tablet
-    return 300; // Desktop
+    return gallerySettings.desktopThumbnailHeight; // Desktop
   };
 
   // Track responsive target height for gallery
   const [targetHeight, setTargetHeight] = useState(getResponsiveHeight());
 
-  // Update target height on window resize
+  // Update target height on window resize or settings change
   useEffect(() => {
+    setTargetHeight(getResponsiveHeight());
     const handleResize = debounce(() => {
       setTargetHeight(getResponsiveHeight());
     }, 150);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [gallerySettings.desktopThumbnailHeight]);
 
   // Track sorted images with their data_id to detect stale data
   // TODO: Backend will provide data_id for unique identification
@@ -328,7 +329,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
         <VirtualizedGallery
           images={localImages}
           targetHeight={targetHeight}
-          gap={8}
+          gap={gallerySettings.galleryGap}
           overscan={2}
           onImageClick={props.onImageClick}
           getImageLabel={getImageLabelForGallery}

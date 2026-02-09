@@ -44,6 +44,7 @@ public record ImageItemContent: ItemContent
     public ImageMetadata? ImageMetadata { get; set; }
     public VideoMetadata? VideoMetadata { get; set; }
     public List<FaceBoxInfo> Faces { get; set; } = new List<FaceBoxInfo>();
+    public List<ImageLocationCluster> Locations { get; set; } = new List<ImageLocationCluster>();
 
 }
 

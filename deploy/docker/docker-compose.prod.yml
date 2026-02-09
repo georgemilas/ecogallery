@@ -5,7 +5,8 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    #using postgres 16 version with postgis
+    image: postgis/postgis:16-3.4
     container_name: ecogallery-postgres
     restart: unless-stopped
     environment:

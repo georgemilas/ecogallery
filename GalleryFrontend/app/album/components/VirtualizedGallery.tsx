@@ -571,7 +571,7 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
       <a href={`#${image.id}`} onClick={handleClick}>
         {isVisible ? (
           <CancellableImage
-            src={image.thumbnail_path}
+            src={height > 400 ? image.image_small_hd_path : image.thumbnail_path}
             alt={image.name}
             loading="lazy"
             enableCancellation={true}

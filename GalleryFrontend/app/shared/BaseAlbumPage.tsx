@@ -111,13 +111,14 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     if (album?.settings) setCurrentSettings(album.settings);
   }, [album?.settings]);
 
-    // Helper to update sort in URL
-    const updateSortInUrl = (newSettings: AlbumSettings) => {
-      const currentParams = new URLSearchParams(window.location.search);
-      if (newSettings.album_sort) currentParams.set('albumSort', newSettings.album_sort);
-      if (newSettings.image_sort) currentParams.set('imageSort', newSettings.image_sort);
-      router.push(`${config.basePath}?${currentParams.toString()}`);
-    }
+  // Helper to update sort in URL
+  const updateSortInUrl = (newSettings: AlbumSettings) => {
+    const currentParams = new URLSearchParams(window.location.search);
+    if (newSettings.album_sort) currentParams.set('albumSort', newSettings.album_sort);
+    if (newSettings.image_sort) currentParams.set('imageSort', newSettings.image_sort);
+    // Preserve /random, /recent, and other route-based views.
+    router.push(`${window.location.pathname}?${currentParams.toString()}`);
+  };
   const viewMode = imageIdParam ? 'image' : 'gallery';
   // Use sorted images for lookup/navigation so ImageView matches gallery order
   const effectiveImages = sortedImages.length > 0 ? sortedImages : (album?.images || []);

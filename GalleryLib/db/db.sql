@@ -2,7 +2,8 @@
 
 -- Enable once per database the pg_trgm extension for trigram indexing and searching
 -- basically enables col ILIKE ANY(ARRAY[...]) to be fast by working against an index on col rather than table scan
-CREATE EXTENSION pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 
 
@@ -486,6 +487,53 @@ ADD CONSTRAINT fk_face_embedding_face_person
 FOREIGN KEY (face_person_id)
 REFERENCES public.face_person (id)
 ON DELETE SET NULL;
+
+
+------------------------------------------------------------------------------
+----------------- public.location_cluster ------------------------------------
+-- Represents a geospatial cluster for a given distance tier
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.location_cluster_item;
+DROP TABLE IF EXISTS public.location_cluster;
+
+CREATE TABLE public.location_cluster (
+  id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+  tier_meters integer NOT NULL,                  -- clustering radius (e.g. 1000, 5000, 25000)
+  name character varying(255) NULL,              -- user-assigned label (nullable)
+  centroid geometry(Point, 4326) NOT NULL,       -- centroid in WGS-84
+  created_utc timestamp with time zone NOT NULL DEFAULT NOW(),
+  last_updated_utc timestamp with time zone NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.location_cluster
+ADD CONSTRAINT location_cluster_pkey PRIMARY KEY (id);
+
+CREATE INDEX idx_location_cluster_tier ON public.location_cluster (tier_meters);
+CREATE INDEX idx_location_cluster_name ON public.location_cluster (name) WHERE name IS NOT NULL;
+
+
+------------------------------------------------------------------------------
+----------------- public.location_cluster_item -------------------------------
+-- Maps media (album_image) to location clusters
+------------------------------------------------------------------------------
+CREATE TABLE public.location_cluster_item (
+  id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+  cluster_id bigint NOT NULL REFERENCES public.location_cluster(id) ON DELETE CASCADE,
+  album_image_id bigint NOT NULL REFERENCES public.album_image(id) ON DELETE CASCADE,
+  created_utc timestamp with time zone NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.location_cluster_item
+ADD CONSTRAINT location_cluster_item_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX ux_location_cluster_item_cluster_image
+ON public.location_cluster_item (cluster_id, album_image_id);
+
+CREATE INDEX idx_location_cluster_item_cluster_id
+ON public.location_cluster_item (cluster_id);
+
+CREATE INDEX idx_location_cluster_item_album_image_id
+ON public.location_cluster_item (album_image_id);
 
 
 

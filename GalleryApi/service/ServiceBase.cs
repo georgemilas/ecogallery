@@ -63,6 +63,7 @@ public class ServiceBase
         image.ImageMetadata = item.ImageMetadata;
         image.VideoMetadata = item.VideoMetadata;
         image.Faces = item.Faces; //.Select(f => GalleryLib.model.album.FaceBoxInfo.FromFaceEmbedding(f)).ToList();
+        image.Locations = item.Locations;
         return image;
     }
 

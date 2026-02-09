@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
 
 interface SettingsModalProps {
@@ -6,8 +6,25 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
+function useTextNumericField(value: number, setter: (v: number) => void, min: number, max: number, fallback: number) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => { setText(String(value)); }, [value]);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setText(e.target.value);
+  const onBlur = () => {
+    const parsed = parseInt(text);
+    if (isNaN(parsed)) { setter(fallback); setText(String(fallback)); }
+    else { const clamped = Math.max(min, Math.min(max, parsed)); setter(clamped); setText(String(clamped)); }
+  };
+  return { value: text, onChange, onBlur };
+}
+
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps): JSX.Element | null {
-  const { settings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution } = useGallerySettings();
+  const { settings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution, setDesktopThumbnailHeight, setGalleryGap } = useGallerySettings();
+
+  const searchPageSizeField = useTextNumericField(settings.searchPageSize, setSearchPageSize, 1, 10000, 2000);
+  const peopleMenuLimitField = useTextNumericField(settings.peopleMenuLimit, setPeopleMenuLimit, 1, 100, 50);
+  const thumbnailHeightField = useTextNumericField(settings.desktopThumbnailHeight, setDesktopThumbnailHeight, 100, 600, 300);
+  const galleryGapField = useTextNumericField(settings.galleryGap, setGalleryGap, 0, 50, 8);
 
   if (!isOpen) return null;
 
@@ -36,7 +53,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps): JSX.Elem
           borderRadius: '8px',
           padding: '24px',
           minWidth: '300px',
-          maxWidth: '400px',
+          maxWidth: '440px',
           border: '1px solid #e8f09e',
           position: 'relative',
         }}
@@ -143,12 +160,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps): JSX.Elem
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <label htmlFor="searchPageSize" style={{ color: '#ddd' }}>Search Page Size</label>
           <input
-            type="number"
+            type="text"
             id="searchPageSize"
-            value={settings.searchPageSize}
-            onChange={(e) => setSearchPageSize(Math.max(1, parseInt(e.target.value) || 2000))}
-            min="1"
-            max="10000"
+            title="Range: 1 – 10000"
+            {...searchPageSizeField}
             style={{
               width: '80px',
               padding: '6px 10px',
@@ -164,12 +179,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps): JSX.Elem
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <label htmlFor="peopleMenuLimit" style={{ color: '#ddd' }}>People Menu Limit</label>
           <input
-            type="number"
+            type="text"
             id="peopleMenuLimit"
-            value={settings.peopleMenuLimit}
-            onChange={(e) => setPeopleMenuLimit(Math.max(1, Math.min(100, parseInt(e.target.value) || 20)))}
-            min="1"
-            max="100"
+            title="Range: 1 – 100"
+            {...peopleMenuLimitField}
             style={{
               width: '80px',
               padding: '6px 10px',
@@ -180,6 +193,55 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps): JSX.Elem
               textAlign: 'right',
             }}
           />
+        </div>
+
+        <div style={{
+          border: '1px solid #555',
+          borderRadius: '6px',
+          padding: '14px',
+          marginBottom: '16px',
+        }}>
+          <label style={{ color: '#e8f09e', fontSize: '13px', marginBottom: '10px', display: 'block' }}>Desktop Gallery Layout</label>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="desktopThumbnailHeight" style={{ color: '#ddd', fontSize: '12px', marginBottom: '4px', display: 'block' }}>Thumbnail Size</label>
+              <input
+                type="text"
+                id="desktopThumbnailHeight"
+                title="Range: 100 – 600"
+                {...thumbnailHeightField}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  borderRadius: '4px',
+                  border: '1px solid #555',
+                  backgroundColor: '#333',
+                  color: '#ddd',
+                  textAlign: 'right',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="galleryGap" style={{ color: '#ddd', fontSize: '12px', marginBottom: '4px', display: 'block' }}>Gap</label>
+              <input
+                type="text"
+                id="galleryGap"
+                title="Range: 0 – 50"
+                {...galleryGapField}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  borderRadius: '4px',
+                  border: '1px solid #555',
+                  backgroundColor: '#333',
+                  color: '#ddd',
+                  textAlign: 'right',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -264,6 +264,39 @@ rootCommand.AddCommand(createDbCommand);
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Command to run the geospatial location clustering background service and keep the app running
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var geoCommand = new Command("geo", "Run the geospatial location clustering processor as a background service");
+geoCommand.AddOption(folderOption);
+geoCommand.AddOption(parallelDegreeOption);
+geoCommand.AddOption(databaseNameOption);
+geoCommand.AddOption(isPlanOption);
+geoCommand.AddOption(logIfProcessed);
+geoCommand.SetHandler(async (string folder, int parallelDegree, string databaseName, string isPlan, bool logIfProcessed) =>
+{
+    picturesConfig.Folder = folder;
+    dbConfig.Database = databaseName;
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
+
+    var host = Host.CreateDefaultBuilder()
+        .ConfigureServices(services =>
+        {
+            bool planMode = isPlan.Equals("yes", StringComparison.OrdinalIgnoreCase);
+            services.AddSingleton<IHostedService>(sp => GeospatialLocationProcessor.CreateProcessor(picturesConfig, dbConfig, parallelDegree, planMode, logIfProcessed));
+
+            Console.WriteLine("Configured services.");
+
+        })
+        .Build();
+
+    Console.WriteLine($"Starting geospatial clustering processor on {dbConfig.Database}/'{picturesConfig.Folder}'. Press Ctrl+C to stop.");
+    await host.RunAsync(cts.Token);
+}, folderOption, parallelDegreeOption, databaseNameOption, isPlanOption, logIfProcessed);
+rootCommand.AddCommand(geoCommand);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Command to run the face detection background service and keep the app running
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var faceCommand = new Command("face", "Run the face detection processor as a background service");

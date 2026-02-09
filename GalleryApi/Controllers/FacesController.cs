@@ -218,6 +218,7 @@ public class FacesController : ControllerBase
             ImageMetadata = item.ImageMetadata,
             VideoMetadata = item.VideoMetadata,
             Faces = item.Faces,  //.Select(f => FaceBoxInfo.FromFaceEmbedding(f)).ToList(),
+            Locations = item.Locations,
             LastUpdatedUtc = item.LastUpdatedUtc,
             ItemTimestampUtc = item.ItemTimestampUtc,
             NavigationPathSegments = new List<AlbumPathElement>()

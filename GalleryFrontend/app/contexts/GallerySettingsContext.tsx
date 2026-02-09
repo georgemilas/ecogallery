@@ -7,6 +7,8 @@ interface GallerySettings {
   searchPageSize: number;
   peopleMenuLimit: number;
   useFullResolution: boolean;
+  desktopThumbnailHeight: number;
+  galleryGap: number;
 }
 
 interface GallerySettingsContextType {
@@ -15,6 +17,8 @@ interface GallerySettingsContextType {
   setSearchPageSize: (size: number) => void;
   setPeopleMenuLimit: (limit: number) => void;
   setUseFullResolution: (use: boolean) => void;
+  setDesktopThumbnailHeight: (height: number) => void;
+  setGalleryGap: (gap: number) => void;
 }
 
 const defaultSettings: GallerySettings = {
@@ -22,6 +26,8 @@ const defaultSettings: GallerySettings = {
   searchPageSize: 5000,
   peopleMenuLimit: 50,
   useFullResolution: false,
+  desktopThumbnailHeight: 300,
+  galleryGap: 8,
 };
 
 const GallerySettingsContext = createContext<GallerySettingsContextType | undefined>(undefined);
@@ -73,8 +79,16 @@ export function GallerySettingsProvider({ children }: { children: React.ReactNod
     setSettings(prev => ({ ...prev, useFullResolution: use }));
   };
 
+  const setDesktopThumbnailHeight = (height: number) => {
+    setSettings(prev => ({ ...prev, desktopThumbnailHeight: height }));
+  };
+
+  const setGalleryGap = (gap: number) => {
+    setSettings(prev => ({ ...prev, galleryGap: gap }));
+  };
+
   return (
-    <GallerySettingsContext.Provider value={{ settings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution }}>
+    <GallerySettingsContext.Provider value={{ settings, setShowFaceBoxes, setSearchPageSize, setPeopleMenuLimit, setUseFullResolution, setDesktopThumbnailHeight, setGalleryGap }}>
       {children}
     </GallerySettingsContext.Provider>
   );
