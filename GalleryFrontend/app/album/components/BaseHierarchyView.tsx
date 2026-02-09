@@ -37,6 +37,8 @@ export interface BaseHierarchyProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSearchByClusterId?: (clusterId: number) => void;
+  onSearchByClusterName?: (name: string) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
   searchEditor?: SearchEditorState;
   config: BaseHierarchyConfig;
@@ -340,6 +342,8 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           onPersonDelete={props.onPersonDelete}
           onSearchByName={props.onSearchByName}
           onSearchByPersonId={props.onSearchByPersonId}
+          onSearchByClusterId={props.onSearchByClusterId}
+          onSearchByClusterName={props.onSearchByClusterName}
         />
       </div>
     </>

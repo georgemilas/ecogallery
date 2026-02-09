@@ -47,6 +47,8 @@ export interface BaseAlbumPageProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSearchByClusterId?: (clusterId: number) => void;
+  onSearchByClusterName?: (name: string) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
   searchEditor: SearchEditorState;
   config: BaseAlbumConfig;
@@ -64,6 +66,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const albumIdParam = searchParams.get('id') ? parseInt(searchParams.get('id') || '', 10) : null;
   const imageIdParam = searchParams.get('image') ? parseInt(searchParams.get('image') || '', 10) : null;
   const faceSearchParam = searchParams.get('faceSearch');
+  const locationSearchParam = searchParams.get('locationSearch');
   const viewParam = searchParams.get('view'); // 'random' or 'recent'
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
   const [sortedImages, setSortedImages] = useState<ImageItemContent[]>([]);
@@ -264,6 +267,39 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     router.push(`${config.basePath}?faceSearch=${encodeURIComponent(`person:${personId}`)}`);
   };
 
+  // Internal function to fetch location search results
+  const doLocationSearch = async (searchParam: string) => {
+    setLoading(true);
+    try {
+      const [type, value] = searchParam.split(':');
+      const endpoint = type === 'name'
+        ? `/api/v1/locations/search/name/${encodeURIComponent(value)}`
+        : `/api/v1/locations/search/cluster/${value}`;
+      console.log('Searching locations:', { searchParam, endpoint });
+      const res = await apiFetch(endpoint);
+      if (!res.ok) {
+        console.error('Location search failed', res.status);
+        setAlbum(null);
+      } else {
+        const data = await res.json();
+        setAlbum(convertToAlbum(data));
+      }
+    } catch (e) {
+      console.error('Error searching locations', e);
+      setAlbum(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const navigateToSearchByClusterId = (clusterId: number) => {
+    router.push(`${config.basePath}?locationSearch=${encodeURIComponent(`cluster:${clusterId}`)}`);
+  };
+
+  const navigateToSearchByClusterName = (name: string) => {
+    router.push(`${config.basePath}?locationSearch=${encodeURIComponent(`name:${name}`)}`);
+  };
+
   // Handle face deletion - refresh to update the view
   const handleFaceDelete = (faceId: number) => {
     console.log('Face deleted:', faceId);
@@ -289,7 +325,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   // Reset fetch guard when the actual query parameters change
   useEffect(() => {
     fetchedRef.current = false;
-  }, [albumIdParam, faceSearchParam, viewParam]);
+  }, [albumIdParam, faceSearchParam, locationSearchParam, viewParam]);
 
   useEffect(() => {
     // Wait for auth to settle
@@ -309,12 +345,14 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     const effectiveView = config.initialView || viewParam;
     if (faceSearchParam) {
       doFaceSearch(faceSearchParam);
+    } else if (locationSearchParam) {
+      doLocationSearch(locationSearchParam);
     } else if (effectiveView === 'random' || effectiveView === 'recent') {
       getApiUrl(effectiveView);
     } else {
       fetchAlbum(albumIdParam);
     }
-  }, [albumIdParam, faceSearchParam, viewParam, authLoading, user, config.requireAuth]);
+  }, [albumIdParam, faceSearchParam, locationSearchParam, viewParam, authLoading, user, config.requireAuth]);
 
   // Fullscreen handling
   useEffect(() => {
@@ -405,6 +443,8 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     onPersonDelete: handlePersonDelete,
     onSearchByName: navigateToSearchByName,
     onSearchByPersonId: navigateToSearchByPersonId,
+    onSearchByClusterId: navigateToSearchByClusterId,
+    onSearchByClusterName: navigateToSearchByClusterName,
     onSortedImagesChange: setSortedImages,
     searchEditor,
     config

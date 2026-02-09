@@ -87,6 +87,16 @@ export interface FaceBox {
   confidence: number;
 }
 
+export interface ImageLocationCluster {
+  cluster_id: number;
+  tier_meters: number;
+  tier_name: string;
+  name: string | null;
+  album_image_id: number;
+  centroid_latitude: number;
+  centroid_longitude: number;  
+}
+
 export interface ImageItemContent extends ItemContent {
   is_movie: boolean;
   image_small_hd_path: string;
@@ -98,6 +108,7 @@ export interface ImageItemContent extends ItemContent {
   image_metadata: ImageMetadata | null;
   video_metadata: VideoMetadata | null;
   faces?: FaceBox[];
+  locations?: ImageLocationCluster[];
   role_id: number;
 }
 
@@ -160,6 +171,13 @@ export class AlbumItemHierarchy implements AlbumItemContent {
   }
 }
 
+export interface LocationHandlers {
+  clusterNames: Record<number, string>;
+  onClusterNameUpdate: (clusterId: number, newName: string) => void;
+  onSearchByClusterId?: (clusterId: number) => void;
+  onSearchByClusterName?: (name: string) => void;
+}
+
 export interface AlbumHierarchyProps {
   album: AlbumItemHierarchy;
   onAlbumClick: (albumId: number | null) => void;
@@ -176,6 +194,8 @@ export interface AlbumHierarchyProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSearchByClusterId?: (clusterId: number) => void;
+  onSearchByClusterName?: (name: string) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
   searchEditor?: {
     isOpen: boolean;

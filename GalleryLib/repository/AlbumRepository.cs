@@ -224,6 +224,16 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                             select lc.id as cluster_id, lc.tier_meters, lc.name, li.album_image_id, ST_Y(lc.centroid) AS centroid_latitude, ST_X(lc.centroid) AS centroid_longitude  
                             from location_cluster lc 
                             join location_cluster_item li on lc.id = li.cluster_id
+                        ),
+                        faces_agg as (
+                            select album_image_id, json_agg(row_to_json(fe)) as faces
+                            from faces fe
+                            group by album_image_id
+                        ),
+                        locations_agg as (
+                            select album_image_id, json_agg(row_to_json(loc)) as locations
+                            from locations loc
+                            group by album_image_id
                         )"; 
         var sql = $@"{faces} 
                     {limitOffset1}
@@ -245,18 +255,17 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                     coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) AS item_timestamp_utc,
                     row_to_json(exif) AS image_metadata,
                     row_to_json(vm) AS video_metadata,
-                    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
-                    coalesce(json_agg(row_to_json(loc)) FILTER (WHERE loc.cluster_id is not NULL), null::json) AS locations,
+                    coalesce(fa.faces, null::json) AS faces,
+                    coalesce(la.locations, null::json) AS locations,
                     a.role_id AS role_id
                 FROM album_image ai
                 JOIN album a ON ai.album_id = a.id
                 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
                 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-                LEFT JOIN faces fe ON ai.id = fe.album_image_id
+                LEFT JOIN faces_agg fa ON ai.id = fa.album_image_id
                 LEFT JOIN image_people ip ON ai.id = ip.album_image_id
-                LEFT JOIN locations loc ON ai.id = loc.album_image_id
+                LEFT JOIN locations_agg la ON ai.id = la.album_image_id
                 WHERE {where}
-                GROUP BY ai.id, exif.id, vm.id, a.id
                 {orderby}
                 {limitOffset2};";
         Console.WriteLine($"Debug: AlbumContentByExpression SQL: {sql}");
@@ -272,9 +281,9 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                         FROM album_image ai
                         LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
                         LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-                        LEFT JOIN faces fe ON ai.id = fe.album_image_id
                         LEFT JOIN image_people ip ON ai.id = ip.album_image_id
-                        LEFT JOIN locations loc ON ai.id = loc.album_image_id
+                        LEFT JOIN faces_agg fa ON ai.id = fa.album_image_id
+                        LEFT JOIN locations_agg la ON ai.id = la.album_image_id
                         WHERE {where}
                         {groupBy}
                     )";
@@ -301,6 +310,16 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 select lc.id as cluster_id, lc.tier_meters, lc.name, li.album_image_id, ST_Y(lc.centroid) AS centroid_latitude, ST_X(lc.centroid) AS centroid_longitude  
                 from location_cluster lc 
                 join location_cluster_item li on lc.id = li.cluster_id
+            ),
+            faces_agg as (
+                select album_image_id, json_agg(row_to_json(fe)) as faces
+                from faces fe
+                group by album_image_id
+            ),
+            locations_agg as (
+                select album_image_id, json_agg(row_to_json(loc)) as locations
+                from locations loc
+                group by album_image_id
             )
             SELECT DISTINCT ON (COALESCE(ai.image_sha256, ai.image_path))
                 ai.id,
@@ -320,17 +339,16 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 ai.image_timestamp_utc AS item_timestamp_utc,
                 row_to_json(exif) AS image_metadata,
                 row_to_json(vm) AS video_metadata,
-                coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
-                coalesce(json_agg(row_to_json(loc)) FILTER (WHERE loc.cluster_id is not NULL), null::json) AS locations,
+                coalesce(fa.faces, null::json) AS faces,
+                coalesce(la.locations, null::json) AS locations,
                 a.role_id AS role_id
             FROM album_image ai
             JOIN album a ON ai.album_id = a.id
             LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
             LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-            LEFT JOIN faces fe ON ai.id = fe.album_image_id
-            LEFT JOIN locations loc ON ai.id = loc.album_image_id
+            LEFT JOIN faces_agg fa ON ai.id = fa.album_image_id
+            LEFT JOIN locations_agg la ON ai.id = la.album_image_id
             WHERE ai.id = ANY(@image_ids)
-            GROUP BY ai.id, exif.id, vm.id, a.id
             ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC";
 
         var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), new { image_ids = imageIds.ToArray() });

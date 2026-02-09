@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ImageItemContent, FaceBox } from './AlbumHierarchyProps';
+import { ImageItemContent, FaceBox, LocationHandlers } from './AlbumHierarchyProps';
+import { LocationContextMenu } from './LocationContextMenu';
 import { useVirtualizedGallery, LayoutRow } from './useVirtualizedGallery';
 import { CancellableImage } from './CancellableImage';
 import { apiFetch } from '@/app/utils/apiFetch';
@@ -20,6 +21,8 @@ interface VirtualizedGalleryProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSearchByClusterId?: (clusterId: number) => void;
+  onSearchByClusterName?: (name: string) => void;
 }
 
 interface GalleryRowComponentProps {
@@ -38,9 +41,10 @@ interface GalleryRowComponentProps {
   onSearchByPersonId?: (personId: number) => void;
   faceNames: Record<number, string>;
   onFaceNameUpdate: (personId: number, newName: string) => void;
+  locationHandlers: LocationHandlers;
 }
 
-function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate }: GalleryRowComponentProps) {
+function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate, locationHandlers }: GalleryRowComponentProps) {
   return (
     <div
       ref={onRef}
@@ -69,6 +73,7 @@ function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getIm
           onSearchByPersonId={onSearchByPersonId}
           faceNames={faceNames}
           onFaceNameUpdate={onFaceNameUpdate}
+          locationHandlers={locationHandlers}
         />
       ))}
     </div>
@@ -468,10 +473,12 @@ interface GalleryItemProps {
   onSearchByPersonId?: (personId: number) => void;
   faceNames: Record<number, string>;
   onFaceNameUpdate: (personId: number, newName: string) => void;
+  locationHandlers: LocationHandlers;
 }
 
-function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate }: GalleryItemProps) {
+function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate, locationHandlers }: GalleryItemProps) {
   const [selectedFace, setSelectedFace] = useState<{ face: FaceBox; position: { x: number; y: number } } | null>(null);
+  const [showLocationMenu, setShowLocationMenu] = useState<{ position: { x: number; y: number } } | null>(null);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -556,6 +563,14 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
           onSearchByPersonId={onSearchByPersonId}
         />
       )}
+      {showLocationMenu && image.locations && (
+        <LocationContextMenu
+          clusters={image.locations}
+          position={showLocationMenu.position}
+          onClose={() => setShowLocationMenu(null)}
+          locationHandlers={locationHandlers}
+        />
+      )}
       <div
       className="gallery-item"
       data-image-id={image.id}
@@ -594,6 +609,40 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
           />
         )}
         {renderFaceBoxes()}
+        {image.locations && image.locations.length > 0 && (() => {
+          const smallestTier = image.locations.reduce((min, c) => c.tier_meters < min.tier_meters ? c : min, image.locations[0]);
+          var displayName = locationHandlers.clusterNames[smallestTier.cluster_id] ?? smallestTier.name;
+          displayName = image.locations.toSorted((a, b) => a.tier_meters - b.tier_meters).find(l => l.name)?.name ?? displayName;
+
+          return (
+            <div
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLocationMenu({ position: { x: e.clientX, y: e.clientY } }); }}
+              style={{
+                position: 'absolute',
+                top: '4px',
+                left: '4px',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                borderRadius: '4px',
+                padding: '2px 6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                zIndex: 10,
+              }}
+              title={displayName || 'Location'}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#e8f09e" stroke="none">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              {displayName && (
+                <span style={{ color: '#e8f09e', fontSize: '10px', whiteSpace: 'nowrap', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {displayName}
+                </span>
+              )}
+            </div>
+          );
+        })()}
         {image.is_movie && (
           <svg className="gallery-item-video-icon" viewBox="0 0 24 24" fill="none">
             <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
@@ -607,7 +656,7 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
   );
 }
 
-export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, showFaceBoxes = false, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId }: VirtualizedGalleryProps) {
+export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, showFaceBoxes = false, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, onSearchByClusterId, onSearchByClusterName }: VirtualizedGalleryProps) {
   const { rows, totalHeight, containerRef } = useVirtualizedGallery({images, targetHeight, gap, });
 
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -619,6 +668,18 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
   const handleFaceNameUpdate = useCallback((personId: number, newName: string) => {
     setFaceNames(prev => ({ ...prev, [personId]: newName }));
   }, []);
+
+  // Shared cluster names state - lifted so all items share updated names
+  const [clusterNames, setClusterNames] = useState<Record<number, string>>({});
+  const handleClusterNameUpdate = useCallback((clusterId: number, newName: string) => {
+    setClusterNames(prev => ({ ...prev, [clusterId]: newName }));
+  }, []);
+  const locationHandlers: LocationHandlers = {
+    clusterNames,
+    onClusterNameUpdate: handleClusterNameUpdate,
+    onSearchByClusterId,
+    onSearchByClusterName,
+  };
 
   // Track scroll state
   const pendingScrollTarget = useRef<number | null>(null);
@@ -786,6 +847,7 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
           onSearchByPersonId={onSearchByPersonId}
           faceNames={faceNames}
           onFaceNameUpdate={handleFaceNameUpdate}
+          locationHandlers={locationHandlers}
         />
       ))}
     </div>

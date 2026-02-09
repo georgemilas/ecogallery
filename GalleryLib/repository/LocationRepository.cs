@@ -110,6 +110,42 @@ public class LocationRepository(DatabaseConfiguration dbConfig) : IDisposable, I
         });
     }
 
+    public async Task UpdateClusterNameAsync(long clusterId, string? name)
+    {
+        var sql = @"
+            UPDATE public.location_cluster
+            SET name = @name, last_updated_utc = @last_updated_utc
+            WHERE id = @cluster_id";
+
+        await _db.ExecuteAsync(sql, new
+        {
+            clusterId,
+            name,
+            lastUpdatedUtc = DateTimeOffset.UtcNow
+        });
+    }
+
+    public async Task<List<long>> GetImageIdsByClusterIdAsync(long clusterId)
+    {
+        var sql = @"
+            SELECT album_image_id
+            FROM public.location_cluster_item
+            WHERE cluster_id = @cluster_id";
+
+        return await _db.QueryAsync(sql, reader => reader.GetInt64(0), new { clusterId });
+    }
+
+    public async Task<List<long>> GetImageIdsByClusterNameAsync(string name)
+    {
+        var sql = @"
+            SELECT DISTINCT lci.album_image_id
+            FROM public.location_cluster_item lci
+            JOIN public.location_cluster lc ON lc.id = lci.cluster_id
+            WHERE lc.name = @name";
+
+        return await _db.QueryAsync(sql, reader => reader.GetInt64(0), new { name });
+    }
+
     public async Task UpdateClusterCentroidAsync(long clusterId)
     {
                 var sql = @"

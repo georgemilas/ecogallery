@@ -21,6 +21,8 @@ export interface VirtualAlbumHierarchyProps {
   onPersonDelete?: (personId: number) => void;
   onSearchByName?: (name: string) => void;
   onSearchByPersonId?: (personId: number) => void;
+  onSearchByClusterId?: (clusterId: number) => void;
+  onSearchByClusterName?: (name: string) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
   searchEditor?: {
     isOpen: boolean;

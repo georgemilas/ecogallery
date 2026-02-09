@@ -42,6 +42,16 @@ locations as (
   select lc.id as cluster_id, lc.tier_meters, lc.name, li.album_image_id, ST_Y(lc.centroid) AS centroid_latitude, ST_X(lc.centroid) AS centroid_longitude  
   from location_cluster lc 
   join location_cluster_item li on lc.id = li.cluster_id
+),
+faces_agg as (
+  select album_image_id, json_agg(row_to_json(fe)) as faces
+  from faces fe
+  group by album_image_id
+),
+locations_agg as (
+  select album_image_id, json_agg(row_to_json(loc)) as locations
+  from locations loc
+  group by album_image_id
 )
 SELECT 
     ai.id,
@@ -61,16 +71,15 @@ SELECT
     coalesce(exif.date_taken, vm.date_taken, ai.image_timestamp_utc) AS item_timestamp_utc,
     row_to_json(exif) AS image_metadata,
     row_to_json(vm) AS video_metadata,
-    coalesce(json_agg(row_to_json(fe)) FILTER (WHERE fe.face_id is not NULL), null::json) AS faces,
-    coalesce(json_agg(row_to_json(loc)) FILTER (WHERE loc.cluster_id is not NULL), null::json) AS locations,
+    coalesce(fa.faces, null::json) AS faces,
+    coalesce(la.locations, null::json) AS locations,
     a.role_id AS role_id
 FROM recent_with_dates rwd
 INNER JOIN album_image ai ON ai.id = rwd.id
 JOIN album AS a ON ai.album_name = a.album_name
 LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
 LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-LEFT JOIN faces fe ON ai.id = fe.album_image_id
-LEFT JOIN locations loc ON ai.id = loc.album_image_id
-GROUP BY ai.id, exif.id, vm.id, a.id
+  LEFT JOIN faces_agg fa ON ai.id = fa.album_image_id
+  LEFT JOIN locations_agg la ON ai.id = la.album_image_id
 
 $$ LANGUAGE SQL;

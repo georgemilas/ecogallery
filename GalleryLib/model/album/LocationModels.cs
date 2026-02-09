@@ -52,6 +52,22 @@ public record ImageLocationCluster
 {
     public long ClusterId { get; set; }
     public int TierMeters { get; set; }
+    public string TierName { 
+        get {
+            if (TierMeters <= 300)
+            {
+                return "Location";
+            }
+            else if (TierMeters <= 2000)
+            {
+                return "Neighborhood";
+            }
+            else
+            {
+                return "Area";
+            }
+        } 
+    } 
     public string? Name { get; set; }
     public long AlbumImageId { get; set; }
     public double CentroidLatitude { get; set; }
