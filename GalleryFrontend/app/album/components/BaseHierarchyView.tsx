@@ -270,7 +270,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
       />
       <div className="gallery-banner-menubar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
-          {hasPrivateRole && renderMenuButton()}
+          {renderMenuButton()}
           {renderBreadcrumbs()}
         </div>
         {config.renderNavMenu(props)}
@@ -282,17 +282,19 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           />
         )}
       </div>
-      {hasPrivateRole && (
+      
         <>
           <MenuPanel
             isOpen={showMenuPanel}
             onClose={() => setShowMenuPanel(false)}
-            onSettingsClick={() => setShowSettingsModal(true)}
+            onSettingsClick={hasPrivateRole ? () => setShowSettingsModal(true) : ()=>{}}
             router={props.router}
           />
+          {hasPrivateRole && (
           <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+          )}
         </>
-      )}
+      
 
       {localAlbums.length > 0 && (
         <div className='albums'>

@@ -99,6 +99,34 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
+    [HttpGet("token-info")]
+    public async Task<IActionResult> GetTokenInfo([FromQuery] string token)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest(new { success = false, message = "Token is required." });
+
+            var tokenEntry = await _authService.GetRegistrationTokenInfoAsync(token);
+            if (tokenEntry == null)
+                return BadRequest(new { success = false, message = "Token is invalid or expired." });
+
+            string? roleName = null;
+            if (tokenEntry.RoleId.HasValue)
+            {
+                var roles = await _authService.GetAllRolesAsync();
+                roleName = roles.FirstOrDefault(r => r.Id == tokenEntry.RoleId.Value)?.Name;
+            }
+
+            return Ok(new { success = true, email = tokenEntry.Email, name = tokenEntry.Name, roleName });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return StatusCode(500, new { success = false, message = "Failed to retrieve token info." });
+        }
+    }
+
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {

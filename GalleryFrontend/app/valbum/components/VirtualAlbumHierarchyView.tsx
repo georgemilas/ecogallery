@@ -58,13 +58,23 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
               <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
             </svg>Home
           </button>
-          <button
-            onClick={() => baseProps.router.push(user ? '/album' : '/login')}
-            className="page-button"
-            title={user ? 'Go to private albums' : 'Login to access private albums'}
-          >
-            {user ? 'Private' : 'Login'}
-          </button>
+          {user?.roles?.includes('private') ? (
+            <button
+              onClick={() => baseProps.router.push('/album')}
+              className="page-button"
+              title="Go to private albums"
+            >
+              Private
+            </button>
+          ) : !user ? (
+            <button
+              onClick={() => baseProps.router.push('/login')}
+              className="page-button"
+              title="Login to access private albums"
+            >
+              Login
+            </button>
+          ) : null}
           <ViewMenu
             onPersonClick={(personName) => baseProps.onSearchByName?.(personName)}
             onRandomClick={() => navigateOrRefresh('/valbum/random', 'random')}

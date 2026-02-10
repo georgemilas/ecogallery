@@ -21,6 +21,7 @@ export interface BaseAlbumConfig {
   apiBaseUrl: string; // '/api/v1/albums' or '/api/v1/valbums'
   basePath: string; // '/album' or '/valbum'
   requireAuth: boolean;
+  requireRole?: string;
   useOriginalImage: boolean;
   renderHierarchyView: (props: BaseAlbumPageProps) => React.ReactNode;
   onSearchSubmit?: (expression: string, offset: number) => void;
@@ -334,6 +335,12 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     // Handle auth requirements
     if (config.requireAuth && !user) {
       router.push('/login');
+      return;
+    }
+
+    // Handle role requirements
+    if (config.requireRole && user && (!user.roles || !user.roles.includes(config.requireRole))) {
+      router.push('/valbum');
       return;
     }
 

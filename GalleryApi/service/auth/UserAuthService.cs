@@ -121,7 +121,7 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
     }
 
     public async Task CreateUserAsync(RegisterRequest request, bool isAdmin = false)
-    {        
+    {
         if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             throw new InvalidInputException("Token is either invalid or expired or password is insecure.");
 
@@ -130,7 +130,13 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
             throw new InvalidInputException("Token is either invalid or expired or password is insecure.");
 
         var passwordHash = AuthRepository.HashPassword(request.Password);
-        await _authRepository.CreateUserAsync(request.Username, request.Email, passwordHash, request.FullName, isAdmin);                    
+        var userId = await _authRepository.CreateUserAsync(request.Username, request.Email, passwordHash, request.FullName, isAdmin);
+
+        if (tokenEntry.RoleId.HasValue)
+        {
+            await _authRepository.AssignRoleToUserAsync(userId, tokenEntry.RoleId.Value);
+        }
+
         await _userTokenRepository.MarkUsedAsync(request.Token, "user_registration");
     }
 
@@ -187,10 +193,12 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Name))
             throw new InvalidInputException("Email and name are required.");
+        if (request.RoleId <= 0)
+            throw new InvalidInputException("A role must be selected.");
 
         var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("=", "").Replace("+", "");
         var expires = DateTime.UtcNow.AddDays(7);
-        await _userTokenRepository.CreateTokenAsync(token, expires, "user_registration");
+        await _userTokenRepository.CreateTokenAsync(token, expires, "user_registration", request.RoleId, request.Email, request.Name);
 
         var frontendUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
         var link = $"{frontendUrl}/login/register?token={WebUtility.UrlEncode(token)}";
@@ -199,6 +207,34 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
         var body = $"Hello {request.Name},\n\nYou've been invited to join the gallery. Click the link below to register:\n\n{link}\n\nThis invitation link will expire in 7 days.";
 
         await _emailSender.SendEmailAsync(request.Email, subject, body);
+    }
+
+    public async Task<UserToken?> GetRegistrationTokenInfoAsync(string token)
+    {
+        return await _userTokenRepository.GetByTokenAsync(token, "user_registration");
+    }
+
+    public async Task<List<Role>> GetAllRolesAsync()
+    {
+        return await _authRepository.GetAllRolesAsync();
+    }
+
+    public async Task<IReadOnlyList<string>> GetEffectiveRolesForRoleAsync(long roleId)
+    {
+        return await _authRepository.GetEffectiveRolesForRoleAsync(roleId);
+    }
+
+    public async Task<long> CreateRoleAsync(string name, string? description, long? parentRoleId)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidInputException("Role name is required.");
+
+        var roleId = await _authRepository.CreateRoleAsync(name, description);
+        if (parentRoleId.HasValue)
+        {
+            await _authRepository.AddRoleHierarchyAsync(parentRoleId.Value, roleId);
+        }
+        return roleId;
     }
 
     public async Task UpdateUserPasswordAsync(SetPasswordRequest request)

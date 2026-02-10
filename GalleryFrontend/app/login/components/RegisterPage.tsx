@@ -20,10 +20,33 @@ export function RegisterPage(): JSX.Element {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
 
+  const [roleName, setRoleName] = useState('');
+  const [emailReadOnly, setEmailReadOnly] = useState(false);
+
   useEffect(() => {
     if (!token) {
       setError('Invalid or missing registration token.');
+      return;
     }
+    const fetchTokenInfo = async () => {
+      try {
+        const res = await apiFetch(`/api/v1/auth/token-info?token=${encodeURIComponent(token)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.email) {
+            setEmail(data.email);
+            setEmailReadOnly(true);
+          }
+          if (data.name) setFullName(data.name);
+          if (data.role_name) setRoleName(data.role_name);
+        } else {
+          setError('Invalid or expired registration token.');
+        }
+      } catch {
+        setError('Unable to validate registration token.');
+      }
+    };
+    fetchTokenInfo();
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,6 +122,8 @@ export function RegisterPage(): JSX.Element {
               placeholder="Enter email"
               required
               disabled={loading}
+              readOnly={emailReadOnly}
+              style={emailReadOnly ? { backgroundColor: '#e9e9e9', cursor: 'not-allowed' } : undefined}
             />
           </div>
           <div className="form-group">
@@ -127,6 +152,11 @@ export function RegisterPage(): JSX.Element {
               disabled={loading}
             />
           </div>
+          {roleName && (
+            <div style={{ marginBottom: '10px', fontSize: '0.9em', color: '#888' }}>
+              Assigned role: <strong>{roleName}</strong>
+            </div>
+          )}
           {error && <div className="error-message">{error}</div>}
           {message && <div className="success-message">{message}</div>}
           <button type="submit" className="login-button" disabled={loading || !token}>

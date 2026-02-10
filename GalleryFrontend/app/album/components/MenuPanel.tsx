@@ -10,7 +10,7 @@ interface MenuPanelProps {
 }
 
 export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPanelProps): JSX.Element | null {
-  const { user, logout } = useAuth();
+  const { user, logout, login } = useAuth();
 
   if (!isOpen) return null;
 
@@ -57,23 +57,25 @@ export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPane
         }}
       >
         <h3 style={{ margin: '0 0 24px 0', padding: '0 20px', color: '#e8f09e' }}>Menu</h3>
-
-        <button
-          onClick={() => {
-            onClose();
-            onSettingsClick();
-          }}
-          style={menuButtonStyle}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
-            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-          Settings
-        </button>
-
+        
+        {user?.roles?.includes('private') && (
+          <button
+            onClick={() => {
+              onClose();
+              onSettingsClick();
+            }}
+            style={menuButtonStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Settings
+          </button>
+        )}
+        
         {user?.roles?.includes('user_admin') && (
           <button
             onClick={() => {
@@ -97,7 +99,7 @@ export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPane
         <button
           onClick={() => {
             onClose();
-            logout();
+            user ? logout() : router.push('/login');
           }}
           style={menuButtonStyle}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
@@ -108,7 +110,7 @@ export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPane
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          Logout
+          {user ? 'Logout' : 'Login'}
         </button>
       </div>
     </div>

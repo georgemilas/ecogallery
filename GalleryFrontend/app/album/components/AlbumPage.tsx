@@ -18,6 +18,7 @@ export function AlbumPage({ initialView }: AlbumPageProps = {}): JSX.Element {
     apiBaseUrl: '/api/v1/albums',
     basePath: '/album',
     requireAuth: true,
+    requireRole: 'private',
     useOriginalImage: true,
     initialView,
     renderHierarchyView: (props: BaseAlbumPageProps) => (

@@ -15,6 +15,52 @@ public class UserManagementController : ControllerBase
         _authService = authService;
     }
 
+    [HttpGet("roles")]
+    public async Task<IActionResult> GetRoles()
+    {
+        try
+        {
+            var roles = await _authService.GetAllRolesAsync();
+            var result = new List<object>();
+            foreach (var role in roles)
+            {
+                var effectiveRoles = await _authService.GetEffectiveRolesForRoleAsync(role.Id);
+                result.Add(new
+                {
+                    id = role.Id,
+                    name = role.Name,
+                    description = role.Description,
+                    effectiveRoles = effectiveRoles
+                });
+            }
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return StatusCode(500, new { success = false, message = "Failed to retrieve roles." });
+        }
+    }
+
+    [HttpPost("roles")]
+    public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request)
+    {
+        try
+        {
+            var roleId = await _authService.CreateRoleAsync(request.Name, request.Description, request.ParentRoleId);
+            return Ok(new { success = true, id = roleId, message = "Role created successfully." });
+        }
+        catch (InvalidInputException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return StatusCode(500, new { success = false, message = "Failed to create role." });
+        }
+    }
+
     [HttpPost("invite")]
     public async Task<IActionResult> InviteUser([FromBody] InviteUserRequest request)
     {

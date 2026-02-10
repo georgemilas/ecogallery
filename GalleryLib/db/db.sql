@@ -125,25 +125,25 @@ ON CONFLICT DO NOTHING;
 -- admin contains user_admin + album_admin
 INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
 SELECT p.id, c.id FROM public.roles p, public.roles c
-WHERE p.name = 'admin' AND c.name IN ('user_admin', 'album_admin')
+WHERE c.name = 'admin' AND p.name IN ('user_admin', 'album_admin')
 ON CONFLICT DO NOTHING;
 
 -- user_admin, album_admin include public/private/client
 INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
 SELECT p.id, c.id FROM public.roles p, public.roles c
-WHERE p.name IN ('user_admin','album_admin') AND c.name IN ('public','private','client')
+WHERE c.name IN ('user_admin','album_admin') AND p.name IN ('public','private','client')
 ON CONFLICT DO NOTHING;
 
 -- client includes public
 INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
 SELECT p.id, c.id FROM public.roles p, public.roles c
-WHERE p.name IN ('client') AND c.name IN ('public')
+WHERE c.name IN ('client') AND p.name IN ('public')
 ON CONFLICT DO NOTHING;
 
 -- -- client roles include client base
 -- INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
 -- SELECT p.id, c.id FROM public.roles p, public.roles c
--- WHERE p.name IN ('ibm','microsoft') AND c.name = 'client'
+-- WHERE c.name IN ('ibm','microsoft') AND p.name = 'client'
 -- ON CONFLICT DO NOTHING;
 
 
@@ -159,6 +159,8 @@ CREATE TABLE public.user_tokens (
     role_id bigint NULL REFERENCES public.roles(id),
     token_type VARCHAR(50) NOT NULL DEFAULT 'password_reset',  -- e.g., 'password_reset', 'user_registration'
     token VARCHAR(128) NOT NULL UNIQUE,
+    email VARCHAR(255) NULL,
+    name VARCHAR(255) NULL,
     created_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW(),
     expires_utc TIMESTAMP with time zone NOT NULL DEFAULT NOW() + INTERVAL '1 hour',
     used BOOLEAN NOT NULL DEFAULT FALSE
