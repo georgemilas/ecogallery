@@ -133,6 +133,31 @@ export function LocationContextMenu({ clusters, position, onClose, locationHandl
         </button>
       </div>
 
+      {sortedClusters.length > 0 && (() => {
+        const lat = sortedClusters[0].centroid_latitude;
+        const lng = sortedClusters[0].centroid_longitude;
+        return (
+          <div style={{ marginBottom: '10px' }}>
+            <iframe
+              width="100%"
+              height="150"
+              style={{ border: 0, borderRadius: '4px' }}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              src={`https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`}
+            />
+            <a
+              href={`https://www.google.com/maps?q=${lat},${lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#e8f09e', fontSize: '11px', textDecoration: 'none' }}
+            >
+              Open in Google Maps
+            </a>
+          </div>
+        );
+      })()}
+
       {sortedClusters.map((cluster) => (
         <div
           key={cluster.cluster_id}

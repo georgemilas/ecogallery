@@ -83,7 +83,25 @@ public record ImageLocationCluster
             Name = reader.IsDBNull(nameOrdinal) ? null : reader.GetString(nameOrdinal),
             AlbumImageId = reader.GetInt64(reader.GetOrdinal("album_image_id")),
             CentroidLatitude = reader.GetDouble(reader.GetOrdinal("centroid_latitude")),
-            CentroidLongitude = reader.GetDouble(reader.GetOrdinal("centroid_longitude")),            
+            CentroidLongitude = reader.GetDouble(reader.GetOrdinal("centroid_longitude")),
+        };
+    }
+}
+
+public record LocationClusterSummary
+{
+    public long RepresentativeClusterId { get; set; }
+    public string? Name { get; set; }
+    public int ImageCount { get; set; }
+
+    public static LocationClusterSummary CreateFromDataReader(DbDataReader reader)
+    {
+        var nameOrdinal = reader.GetOrdinal("name");
+        return new LocationClusterSummary
+        {
+            RepresentativeClusterId = reader.GetInt64(reader.GetOrdinal("representative_cluster_id")),
+            Name = reader.IsDBNull(nameOrdinal) ? null : reader.GetString(nameOrdinal),
+            ImageCount = reader.GetInt32(reader.GetOrdinal("image_count"))
         };
     }
 }

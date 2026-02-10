@@ -35,13 +35,11 @@ export function AlbumHierarchyView(props: AlbumHierarchyProps): JSX.Element {
             onPersonClick={(personName) => baseProps.onSearchByName?.(personName)}
             onRandomClick={() => navigateOrRefresh('/album/random', 'random')}
             onRecentClick={() => navigateOrRefresh('/album/recent', 'recent')}
+            onSearchByClusterId={(id) => baseProps.onSearchByClusterId?.(id)}
+            onSearchByClusterName={(name) => baseProps.onSearchByClusterName?.(name)}
+            showPeopleMenu={user?.roles?.includes('private') ?? false}
+            showLocationsMenu={user?.roles?.includes('private') ?? false}
           />
-          <button onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="page-button" title="Scroll to Top">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0', marginLeft: '4px', marginBottom: '4px', marginRight: '4px'}}>
-              <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
-            </svg>
-            Top
-          </button>
         </nav>
       );
     }

@@ -408,3 +408,13 @@
 .gallery-item-placeholder {
     background-color: #1a1a1a;
 }
+
+.scroll-to-top-button {
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.scroll-to-top-button:hover {
+    background-color: rgba(232, 240, 158, 0.9) !important;
+    color: #222 !important;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}

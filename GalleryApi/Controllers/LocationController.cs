@@ -43,6 +43,30 @@ public class LocationController : ControllerBase
     }
 
     /// <summary>
+    /// Get top location clusters by image count for a given tier.
+    /// </summary>
+    [HttpGet("clusters/top")]
+    public async Task<ActionResult<List<LocationClusterSummaryResponse>>> GetTopLocationClusters(
+        [FromQuery] int tierMeters = 300, [FromQuery] int limit = 50)
+    {
+        try
+        {
+            var clusters = await _locationRepository.GetTopLocationClustersAsync(tierMeters, limit);
+            var response = clusters.Select(c => new LocationClusterSummaryResponse
+            {
+                RepresentativeClusterId = c.RepresentativeClusterId,
+                Name = c.Name,
+                ImageCount = c.ImageCount
+            }).ToList();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Search for images in a specific location cluster by cluster ID.
     /// </summary>
     [HttpGet("search/cluster/{clusterId}")]
@@ -186,4 +210,11 @@ public class LocationController : ControllerBase
 public record UpdateClusterNameRequest
 {
     public string? Name { get; init; }
+}
+
+public record LocationClusterSummaryResponse
+{
+    public long RepresentativeClusterId { get; init; }
+    public string? Name { get; init; }
+    public int ImageCount { get; init; }
 }

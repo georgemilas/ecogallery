@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ImageItemContent, FaceBox, LocationHandlers } from './AlbumHierarchyProps';
+import { ImageItemContent, FaceBox, ImageLocationCluster, LocationHandlers } from './AlbumHierarchyProps';
 import { LocationContextMenu } from './LocationContextMenu';
 import { useVirtualizedGallery, LayoutRow } from './useVirtualizedGallery';
 import { CancellableImage } from './CancellableImage';
@@ -610,9 +610,11 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
         )}
         {renderFaceBoxes()}
         {image.locations && image.locations.length > 0 && (() => {
-          const smallestTier = image.locations.reduce((min, c) => c.tier_meters < min.tier_meters ? c : min, image.locations[0]);
-          var displayName = locationHandlers.clusterNames[smallestTier.cluster_id] ?? smallestTier.name;
-          displayName = image.locations.toSorted((a, b) => a.tier_meters - b.tier_meters).find(l => l.name)?.name ?? displayName;
+          // Find the best display name: check each tier from smallest to largest,
+          // using updated clusterNames first, then original data
+          const getLocationName = (l: ImageLocationCluster) => locationHandlers.clusterNames[l.cluster_id] || l.name;
+          const bestLocation = image.locations.toSorted((a, b) => a.tier_meters - b.tier_meters).find(l => getLocationName(l));
+          const displayName = bestLocation ? getLocationName(bestLocation) : null;
 
           return (
             <div

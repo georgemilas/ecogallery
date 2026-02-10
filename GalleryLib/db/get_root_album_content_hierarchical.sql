@@ -40,14 +40,21 @@ locations as (
   from location_cluster lc 
   join location_cluster_item li on lc.id = li.cluster_id
 ),
+target_images as (
+  select ai.id
+  from ra
+  join album_image ai on ai.album_name = ra.album_name
+),
 faces_agg as (
   select album_image_id, json_agg(row_to_json(fe)) as faces
   from faces fe
+  join target_images ti on ti.id = fe.album_image_id
   group by album_image_id
 ),
 locations_agg as (
   select album_image_id, json_agg(row_to_json(loc)) as locations
   from locations loc
+  join target_images ti on ti.id = loc.album_image_id
   group by album_image_id
 )
 SELECT

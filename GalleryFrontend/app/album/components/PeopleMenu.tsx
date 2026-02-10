@@ -170,10 +170,11 @@ export function PeopleMenu({ onPersonClick }: PeopleMenuProps) {
   };
 
   return (
-    <div ref={menuRef} style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle', paddingTop: '4px' }}>
+    <div ref={menuRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="page-button"
+        style={{ width: '100%' }}
         title="Browse People"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '4px'}}>

@@ -10,7 +10,7 @@ interface MenuPanelProps {
 }
 
 export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPanelProps): JSX.Element | null {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   if (!isOpen) return null;
 
@@ -74,23 +74,25 @@ export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPane
           Settings
         </button>
 
-        <button
-          onClick={() => {
-            onClose();
-            router.push('/manage-users');
-          }}
-          style={menuButtonStyle}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          Manage Users
-        </button>
+        {user?.roles?.includes('user_admin') && (
+          <button
+            onClick={() => {
+              onClose();
+              router.push('/manage-users');
+            }}
+            style={menuButtonStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Manage Users
+          </button>
+        )}
 
         <button
           onClick={() => {

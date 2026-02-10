@@ -225,14 +225,25 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                             from location_cluster lc 
                             join location_cluster_item li on lc.id = li.cluster_id
                         ),
+                        target_images as (
+                            select ai.id
+                            from album_image ai
+                            join album a on ai.album_id = a.id
+                            left join image_metadata exif on ai.id = exif.album_image_id
+                            left join video_metadata vm on ai.id = vm.album_image_id
+                            left join image_people ip on ai.id = ip.album_image_id
+                            where {where}
+                        ),
                         faces_agg as (
                             select album_image_id, json_agg(row_to_json(fe)) as faces
                             from faces fe
+                            join target_images ti on ti.id = fe.album_image_id
                             group by album_image_id
                         ),
                         locations_agg as (
                             select album_image_id, json_agg(row_to_json(loc)) as locations
                             from locations loc
+                            join target_images ti on ti.id = loc.album_image_id
                             group by album_image_id
                         )"; 
         var sql = $@"{faces} 
@@ -265,7 +276,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 LEFT JOIN faces_agg fa ON ai.id = fa.album_image_id
                 LEFT JOIN image_people ip ON ai.id = ip.album_image_id
                 LEFT JOIN locations_agg la ON ai.id = la.album_image_id
-                WHERE {where}
+                JOIN target_images ti ON ai.id = ti.id
                 {orderby}
                 {limitOffset2};";
         Console.WriteLine($"Debug: AlbumContentByExpression SQL: {sql}");
@@ -279,12 +290,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                     select count(*) FROM ( 
                         SELECT count(*) as count{select}
                         FROM album_image ai
-                        LEFT JOIN image_metadata exif ON ai.id = exif.album_image_id
-                        LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
-                        LEFT JOIN image_people ip ON ai.id = ip.album_image_id
-                        LEFT JOIN faces_agg fa ON ai.id = fa.album_image_id
-                        LEFT JOIN locations_agg la ON ai.id = la.album_image_id
-                        WHERE {where}
+                        JOIN target_images ti ON ai.id = ti.id
                         {groupBy}
                     )";
             Console.WriteLine($"Debug: AlbumContentByExpression Count SQL: {sql}");
@@ -311,14 +317,19 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 from location_cluster lc 
                 join location_cluster_item li on lc.id = li.cluster_id
             ),
+            target_images as (
+                select unnest(@image_ids) as id
+            ),
             faces_agg as (
                 select album_image_id, json_agg(row_to_json(fe)) as faces
                 from faces fe
+                join target_images ti on ti.id = fe.album_image_id
                 group by album_image_id
             ),
             locations_agg as (
                 select album_image_id, json_agg(row_to_json(loc)) as locations
                 from locations loc
+                join target_images ti on ti.id = loc.album_image_id
                 group by album_image_id
             )
             SELECT DISTINCT ON (COALESCE(ai.image_sha256, ai.image_path))
@@ -348,7 +359,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
             LEFT JOIN video_metadata vm ON ai.id = vm.album_image_id
             LEFT JOIN faces_agg fa ON ai.id = fa.album_image_id
             LEFT JOIN locations_agg la ON ai.id = la.album_image_id
-            WHERE ai.id = ANY(@image_ids)
+            JOIN target_images ti ON ai.id = ti.id
             ORDER BY COALESCE(ai.image_sha256, ai.image_path), ai.image_timestamp_utc DESC";
 
         var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader), new { image_ids = imageIds.ToArray() });

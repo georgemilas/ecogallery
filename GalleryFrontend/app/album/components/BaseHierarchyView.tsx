@@ -50,6 +50,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
     const { user } = useAuth();
+  const hasPrivateRole = user?.roles?.includes('private') ?? false;
   const { settings: gallerySettings, setShowFaceBoxes } = useGallerySettings();
   const { settings, onSortChange, config } = props;
 
@@ -61,14 +62,14 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
         return;
       }
 
-      // 's' or ',' (comma) to toggle settings modal
-      if (e.key === 's' || e.key === 'S' || e.key === ',') {
+      // 's' or ',' (comma) to toggle settings modal (private role only)
+      if (hasPrivateRole && (e.key === 's' || e.key === 'S' || e.key === ',')) {
         setShowSettingsModal(prev => !prev);
         return;
       }
 
-      // 'm' to toggle menu panel
-      if (e.key === 'm' || e.key === 'M') {
+      // 'm' to toggle menu panel (private role only)
+      if (hasPrivateRole && (e.key === 'm' || e.key === 'M')) {
         setShowMenuPanel(prev => !prev);
         return;
       }
@@ -85,15 +86,15 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
         }
       }
 
-      // 'f' to toggle face boxes (only for authenticated users)
-      if (user && (e.key === 'f' || e.key === 'F')) {
+      // 'f' to toggle face boxes (private role only)
+      if (hasPrivateRole && (e.key === 'f' || e.key === 'F')) {
         setShowFaceBoxes(!gallerySettings.showFaceBoxes);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [user, gallerySettings.showFaceBoxes, setShowFaceBoxes, showSettingsModal, showMenuPanel]);
+  }, [hasPrivateRole, gallerySettings.showFaceBoxes, setShowFaceBoxes, showSettingsModal, showMenuPanel]);
 
   const saveSettings = async (settings: any) => {
     if (user) {
@@ -269,7 +270,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
       />
       <div className="gallery-banner-menubar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
-          {user && renderMenuButton()}
+          {hasPrivateRole && renderMenuButton()}
           {renderBreadcrumbs()}
         </div>
         {config.renderNavMenu(props)}
@@ -281,13 +282,17 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           />
         )}
       </div>
-      <MenuPanel
-        isOpen={showMenuPanel}
-        onClose={() => setShowMenuPanel(false)}
-        onSettingsClick={() => setShowSettingsModal(true)}
-        router={props.router}
-      />
-      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      {hasPrivateRole && (
+        <>
+          <MenuPanel
+            isOpen={showMenuPanel}
+            onClose={() => setShowMenuPanel(false)}
+            onSettingsClick={() => setShowSettingsModal(true)}
+            router={props.router}
+          />
+          <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+        </>
+      )}
 
       {localAlbums.length > 0 && (
         <div className='albums'>
@@ -336,16 +341,42 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           onImageClick={props.onImageClick}
           getImageLabel={getImageLabelForGallery}
           lastViewedImageId={props.lastViewedImage}
-          showFaceBoxes={gallerySettings.showFaceBoxes}
+          showFaceBoxes={hasPrivateRole && gallerySettings.showFaceBoxes}
           onFaceSearch={props.onFaceSearch}
           onFaceDelete={props.onFaceDelete}
           onPersonDelete={props.onPersonDelete}
           onSearchByName={props.onSearchByName}
           onSearchByPersonId={props.onSearchByPersonId}
-          onSearchByClusterId={props.onSearchByClusterId}
-          onSearchByClusterName={props.onSearchByClusterName}
+          onSearchByClusterId={hasPrivateRole ? props.onSearchByClusterId : undefined}
+          onSearchByClusterName={hasPrivateRole ? props.onSearchByClusterName : undefined}
         />
       </div>
+      <button
+        className="scroll-to-top-button"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
+        title="Scroll to Top"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 1000,
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          border: '1px solid #e8f09e',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: '#e8f09e',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 2L4 6h3v8h2V6h3L8 2z"/>
+        </svg>
+      </button>
     </>
   );
 }

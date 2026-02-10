@@ -146,6 +146,33 @@ public class LocationRepository(DatabaseConfiguration dbConfig) : IDisposable, I
         return await _db.QueryAsync(sql, reader => reader.GetInt64(0), new { name });
     }
 
+    public async Task<List<LocationClusterSummary>> GetTopLocationClustersAsync(int tierMeters, int limit = 50)
+    {
+        var sql = @"
+            WITH cluster_counts AS (
+                SELECT
+                    COALESCE(lc.name, CAST(lc.id AS TEXT)) AS display_key,
+                    lc.name,
+                    MIN(lc.id) AS representative_cluster_id,
+                    COUNT(DISTINCT lci.album_image_id) AS image_count
+                FROM public.location_cluster lc
+                JOIN public.location_cluster_item lci ON lci.cluster_id = lc.id
+                WHERE lc.tier_meters = @tier_meters
+                GROUP BY COALESCE(lc.name, CAST(lc.id AS TEXT)), lc.name
+                ORDER BY image_count DESC
+                LIMIT @limit
+            )
+            SELECT representative_cluster_id, name, image_count
+            FROM cluster_counts
+            ORDER BY image_count DESC";
+
+        return await _db.QueryAsync(sql, LocationClusterSummary.CreateFromDataReader, new
+        {
+            tierMeters,
+            limit
+        });
+    }
+
     public async Task UpdateClusterCentroidAsync(long clusterId)
     {
                 var sql = @"
