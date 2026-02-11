@@ -91,7 +91,7 @@ public class AlbumProcessor: EmptyProcessor
         var hashPath = File.Exists(thumbnailPath) ? thumbnailPath : filePath;
         if (File.Exists(hashPath))
         {
-            var hashStream = new FileStream(hashPath, FileMode.Open, FileAccess.Read);
+            using var hashStream = new FileStream(hashPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             albumImage.ImageSha256 = await ImageHash.ComputeSha256Async(hashStream);
             var id = await imageRepository.UpdateImageHash(albumImage);
             if (logIfCreated)

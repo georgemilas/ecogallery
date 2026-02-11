@@ -57,13 +57,13 @@ public class CreateDatabaseService
             executionOrder.Add("clear_database.sql");
             executionOrder.Add("db.sql");
             // All other files except the static files
-            var staticFiles = new[] { "create_db.sql", "clear_database.sql", "db.sql", "create_admin_user.sql" };
+            var staticFiles = new[] { "create_db.sql", "clear_database.sql", "db.sql", "db_initial_data.sql" };
             var middleFiles = allSqlFiles
                 .Where(f => !staticFiles.Contains(f))
                 .OrderBy(f => f)
                 .ToList();
             executionOrder.AddRange(middleFiles);
-            executionOrder.Add("create_admin_user.sql");
+            executionOrder.Add("db_initial_data.sql"); // Ensure initial data is loaded last after schema 
 
             Console.WriteLine($"Total files to execute: {executionOrder.Count}");
             Console.WriteLine();
@@ -110,16 +110,16 @@ public class CreateDatabaseService
                                 
                 if (await ExecuteSqlFileAsync(filePath, targetDatabaseName, dbServiceToUse))
                 {
-                    if (fileName == "create_admin_user.sql")
+                    if (fileName == "db_initial_data.sql")
                     {
-                        Console.WriteLine("Admin user creation completed (LAST)");
+                        Console.WriteLine("User Roles and admin user creation completed");
                         var passwordHash = AuthRepository.HashPassword(password);
                         const string sql = "UPDATE public.users SET password_hash = @password_hash WHERE username = 'admin'";
                         await dbServiceToUse.ExecuteAsync(sql, new { password_hash = passwordHash });                        
                     }
                     else if (fileName == "create_db.sql")
                     {
-                        Console.WriteLine("Database creation completed (FIRST)");
+                        Console.WriteLine("Database creation completed");
                     }
                     else if (fileName == "clear_database.sql")
                     {

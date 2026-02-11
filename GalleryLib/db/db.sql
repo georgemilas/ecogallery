@@ -3,6 +3,8 @@
 -- Enable once per database the pg_trgm extension for trigram indexing and searching
 -- basically enables col ILIKE ANY(ARRAY[...]) to be fast by working against an index on col rather than table scan
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+--make sure PostGIS extension is enabled for geospatial queries (run StackBuilder to enable PostGIS if not already enabled)
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 
@@ -111,43 +113,6 @@ CREATE TABLE public.user_roles (
     PRIMARY KEY (user_id, role_id)
 );
 
-INSERT INTO public.roles (name, description) VALUES
-('public', 'Public access'),
-('private', 'Private album access'),
-('client', 'Client access base'),
-('user_admin', 'Invite users and manage roles'),
-('album_admin', 'Create/modify albums and virtual albums'),
-('admin', 'Full access'),
--- ('ibm', 'IBM client role'),
--- ('microsoft', 'Microsoft client role')
-ON CONFLICT DO NOTHING;
-
--- admin contains user_admin + album_admin
-INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
-SELECT p.id, c.id FROM public.roles p, public.roles c
-WHERE c.name = 'admin' AND p.name IN ('user_admin', 'album_admin')
-ON CONFLICT DO NOTHING;
-
--- user_admin, album_admin include public/private/client
-INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
-SELECT p.id, c.id FROM public.roles p, public.roles c
-WHERE c.name IN ('user_admin','album_admin') AND p.name IN ('public','private','client')
-ON CONFLICT DO NOTHING;
-
--- client includes public
-INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
-SELECT p.id, c.id FROM public.roles p, public.roles c
-WHERE c.name IN ('client', 'private') AND p.name IN ('public')
-ON CONFLICT DO NOTHING;
-
--- -- client roles include client base
--- INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
--- SELECT p.id, c.id FROM public.roles p, public.roles c
--- WHERE c.name IN ('ibm','microsoft') AND p.name = 'client'
--- ON CONFLICT DO NOTHING;
-
-
-
 ------------------------------------------------------------------------------
 ----------------- public.user_tokens -----------------------------------------
 ------------------------------------------------------------------------------
@@ -251,7 +216,7 @@ ALTER TABLE
 ADD
   CONSTRAINT album_settings_pkey PRIMARY KEY (id);
 
--- Unique constraint: either album_id (when search_id is null) or search_id (when album_id is 0)
+-- Unique constraint: either album_id/user_id/is_virtual or unique_data_id when album_id is 0
 CREATE UNIQUE INDEX IF NOT EXISTS ux_album_settings_album_id_user_id
 ON public.album_settings (album_id, user_id, is_virtual, COALESCE(unique_data_id, ''));
 
@@ -536,9 +501,5 @@ ON public.location_cluster_item (cluster_id);
 
 CREATE INDEX idx_location_cluster_item_album_image_id
 ON public.location_cluster_item (album_image_id);
-
-
-
-
 
 

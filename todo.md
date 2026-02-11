@@ -56,19 +56,24 @@ for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
 
 # commands
 ```bash
-docker-compose build         #optional step to pre-build all the containers
-./init-db.bat                #create the database and the admin user for the gallery
-docker-compose run sync      #run once to populate and sync gallery database with picures folder (may take a while depending on the size of you pictures folder)
-                             #on subsequent runs it is incremental so only updated/renamed/deleted/moved files etc. are synced
-docker-compose run valbum    #run to create or update virtual albums (public albums based on "search" expression)
-docker-compose up -d         #run the gallery web app (along with continuous sync and clenup) in the background
+#windows
+./init-db.bat                #initialize database and the admin user for the gallery
+#mac/linux
+chmod +x init-db.sh         #on linux make the script executable
+./init-db.sh                #and then execute (or sudo ./init-db.sh to run as root)
 
-docker-compose run face      #run to discover faces and people  (may take a while depending on the size of you pictures folder)
-docker-compose run geo       #run to generate geolocation clusters based on photos latitude/longitude metadata 
+#windows, mac or linux 
+docker-compose run sync      #run once to populate and sync gallery database with picures folder (may take a while depending on the size of you pictures folder)
+docker-compose run valbum    #run to create or update virtual albums (public albums based on "search" expression)
+docker-compose run face      #Optional: run once to pre-discover faces and people  (may take a while depending on the size of you pictures folder)
+docker-compose run geo       #Optional: run once to pre-generate geolocation clusters based on photos latitude/longitude metadata 
+docker-compose up -d         #run the gallery web app (along with continuous sync, face recognition and geolocation clustering) in the background
+                             #sync is incremental so any updated/renamed/deleted/moved files etc. are synced
 
 
 docker-compose run cleanup   #optional utility to clean orphaned db records and thumbnails (for example you delete pictures and the "sync" service is not running)  
-docker-compose run service cleanup -f /pictures -h 400 1440 -pl yes --log  #run cleanup in plan mode to see what it would do before commiting 
+docker-compose run service cleanup -f /pictures -h 400 800 1440 -pl yes --log  #run cleanup in plan mode to see what it would do before commiting
+docker-compose run service sync -f /pictures -h 400 800 1440 --reprocess       #run sync manualy to reprocess metadata 
 docker-compose down          #stop gallery and associated processes
 
 chmod +x init-db.sh         #on linux make the script executable
