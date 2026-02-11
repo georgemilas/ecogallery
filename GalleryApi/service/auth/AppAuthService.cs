@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using GalleryLib.Model.Auth;
-using GalleryLib.Repository.Auth;
+using GalleryLib.repository.auth;
 
 namespace GalleryApi.service.auth;
 

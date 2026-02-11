@@ -1,5 +1,5 @@
 using GalleryLib.model.configuration;
-using GalleryLib.Repository.Auth;
+using GalleryLib.repository.auth;
 using System;
 using System.Collections.Generic;
 using System.IO;

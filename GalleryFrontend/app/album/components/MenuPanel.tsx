@@ -57,6 +57,10 @@ export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPane
         }}
       >
         <h3 style={{ margin: '0 0 24px 0', padding: '0 20px', color: '#e8f09e' }}>Menu</h3>
+
+        {user && (
+        <h6 style={{ margin: '0 0 24px 0', padding: '0 20px', color: '#e8f09e' }}> {user.full_name} ({user.username}) </h6>
+        )}
         
         {user?.roles?.includes('private') && (
           <button

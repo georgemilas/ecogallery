@@ -3,6 +3,7 @@ using System.Text;
 using GalleryApi.model;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
+using GalleryLib.repository.auth;
 
 namespace GalleryApi.service;  
 public class ServiceBase
@@ -11,10 +12,12 @@ public class ServiceBase
     protected readonly AlbumRepository _albumRepository;
     protected readonly PicturesDataConfiguration _picturesConfig;
     protected readonly IHttpContextAccessor _httpContextAccessor;   
-
-    public ServiceBase(AlbumRepository albumRepository, PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
+    protected readonly AuthRepository _authRepository;
+    
+    public ServiceBase(AlbumRepository albumRepository, AuthRepository authRepository,  PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
     {
         _albumRepository = albumRepository;
+        _authRepository = authRepository;
         _picturesConfig = picturesConfig;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -22,7 +25,7 @@ public class ServiceBase
     /// <summary>
     /// Access the authenticated user (if any) 
     /// </summary>
-    protected GalleryLib.Model.Auth.UserInfo? AuthenticatedUser
+    public GalleryLib.Model.Auth.UserInfo? AuthenticatedUser
     {
         get
         {

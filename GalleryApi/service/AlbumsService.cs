@@ -1,13 +1,14 @@
 using GalleryApi.model;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
+using GalleryLib.repository.auth;
 
 namespace GalleryApi.service;
 public class AlbumsService: ServiceBase
 {
 
-    public AlbumsService(AlbumRepository albumRepository, PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
-        : base(albumRepository, picturesConfig, httpContextAccessor)
+    public AlbumsService(AlbumRepository albumRepository, AuthRepository authRepository, PicturesDataConfiguration picturesConfig, IHttpContextAccessor httpContextAccessor)
+        : base(albumRepository, authRepository, picturesConfig, httpContextAccessor)
     {
 
     }  

@@ -2,7 +2,7 @@ using System.Text.Json;
 using GalleryApi.Middleware;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
-using GalleryLib.Repository.Auth;
+using GalleryLib.repository.auth;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);

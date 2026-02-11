@@ -26,6 +26,7 @@ public class VirtualAlbumsController : ControllerBase
         try
         {
             var albumContent = await _albumsService.GetRootVirtualAlbumsContentAsync();
+            albumContent = await _albumsService.FilterByRole(albumContent);
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)
@@ -42,6 +43,19 @@ public class VirtualAlbumsController : ControllerBase
         try
         {
             var albumContent = await _albumsService.GetVirtualAlbumContentByIdAsync(albumId);
+
+            bool isLoggedIn = _albumsService.AuthenticatedUser != null;
+            bool isAdmin = _albumsService.AuthenticatedUser != null ? _albumsService.AuthenticatedUser.IsAdmin : false;
+            var userRolesIds = await _albumsService.GetRoleIds();
+            // Console.WriteLine($"Debug: user role ids {string.Join(", ", userRolesIds)}");
+            // Console.WriteLine($"Debug: Checking virtual album '{albumContent.Name}' for access. RoleId={albumContent.RoleId}");
+        
+            if (!isLoggedIn && albumContent.RoleId != 1) //not logged in can only see public
+                return StatusCode(403, new { error = "You must be logged in to access albums" });
+            if (!isAdmin && !userRolesIds.Contains(albumContent.RoleId)) //non admin must have role to see
+                return StatusCode(403, new { error = "You do not have permission to access this album" });
+
+            albumContent = await _albumsService.FilterByRole(albumContent);
             return Ok(albumContent);
         }
         catch(AlbumNotFoundException ex)

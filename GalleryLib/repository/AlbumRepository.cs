@@ -195,7 +195,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         var parser =  new KeywordsExpressionParser(expression, new SQLSemantic(te));
 
         string where = (string)parser.Evaluate(null);        
-        Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
+        //Console.WriteLine($"Debug: AlbumContentByExpression SQL WHERE: {where}");
         
         // Group by SHA-256 (text) with image_path fallback (stable natural key)
         var select = albumSearch.GroupByPHash ? "SELECT DISTINCT ON (COALESCE(ai.image_sha256, ai.image_path))" : "SELECT";
@@ -279,7 +279,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                 JOIN target_images ti ON ai.id = ti.id
                 {orderby}
                 {limitOffset2};";
-        Console.WriteLine($"Debug: AlbumContentByExpression SQL: {sql}");
+        //Console.WriteLine($"Debug: AlbumContentByExpression SQL: {sql}");
         var content = await _db.QueryAsync(sql, reader => AlbumContentHierarchical.CreateFromDataReader(reader));
         if (albumSearch.Limit > 0)
         {
@@ -293,7 +293,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
                         JOIN target_images ti ON ai.id = ti.id
                         {groupBy}
                     )";
-            Console.WriteLine($"Debug: AlbumContentByExpression Count SQL: {sql}");
+            //Console.WriteLine($"Debug: AlbumContentByExpression Count SQL: {sql}");
             albumSearch.Count = await _db.ExecuteScalarAsync<long>(sql);
         }
         return (content, albumSearch);

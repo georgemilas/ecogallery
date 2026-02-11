@@ -25,7 +25,7 @@ public record VirtualAlbum
     
 
 
-    public static VirtualAlbum CreateFromYaml(string albumName, VirtualAlbumYml yml)
+    public static VirtualAlbum CreateFromYaml(string albumName, VirtualAlbumYml yml, long roleId)
     {
         return new VirtualAlbum
         {
@@ -39,7 +39,8 @@ public record VirtualAlbum
             LastUpdatedUtc = DateTimeOffset.UtcNow,            
             CreatedTimestampUtc = DateTimeOffset.UtcNow,
             AlbumFolder = yml.Folder,
-            ParentAlbum = yml.Parent
+            ParentAlbum = yml.Parent,
+            RoleId = roleId
         };
     }
     public static VirtualAlbum CreateFromDataReader(DbDataReader reader)

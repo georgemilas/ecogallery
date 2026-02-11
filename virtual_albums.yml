@@ -139,7 +139,12 @@ Us:
     and not (2011 and wm)
   feature: \2024\Andrew selected\_MG_9729-Enhanced-NR.jpg
 
-
+Lulu & Nicoleta:
+  parent: Pictures Gallery
+  description: Pictures of Lulu and Nicoleta
+  expression: ({ai:lulu} {ai:nicoleta}) and not (3036)
+  role: test_client
+  feature: \2008\bahamas2\lulu si nicoleta\IMG_7203.JPG
 
 
 # ({ai:mimi} and {ai:Iani}) and not ({ai:box} {ai:nidi} {ai:andrew} {ai:anthony} {ai:tutu} {ai:Babi} {ai:Mami Buni} {ai:Razvan} {ai:Moni} {ai:Diana} {ai:Bogdi} {ai:Tati} {ai:Piri} {ai:Jana} {ai:Angel} {ai:Petru} {ai:Romica} {ai:Mirela} {ai:Dani} {ai:Liliana} {ai:Baba Nedusa})

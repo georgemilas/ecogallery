@@ -5,7 +5,7 @@ using System.Net.Mail;
 using GalleryApi.model;
 using GalleryApi.service.email;
 using GalleryLib.Model.Auth;
-using GalleryLib.Repository.Auth;
+using GalleryLib.repository.auth;
 
 namespace GalleryApi.service.auth;  
 

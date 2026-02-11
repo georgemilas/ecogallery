@@ -4,7 +4,7 @@ using GalleryLib.Model.Auth;
 using GalleryLib.model.configuration;
 using GalleryLib.service.database;
 
-namespace GalleryLib.Repository.Auth
+namespace GalleryLib.repository.auth
 {
     public class UserTokenRepository: IDisposable, IAsyncDisposable
     {

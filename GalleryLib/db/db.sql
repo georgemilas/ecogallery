@@ -137,7 +137,7 @@ ON CONFLICT DO NOTHING;
 -- client includes public
 INSERT INTO public.role_hierarchy (parent_role_id, child_role_id)
 SELECT p.id, c.id FROM public.roles p, public.roles c
-WHERE c.name IN ('client') AND p.name IN ('public')
+WHERE c.name IN ('client', 'private') AND p.name IN ('public')
 ON CONFLICT DO NOTHING;
 
 -- -- client roles include client base

@@ -1,6 +1,6 @@
 using GalleryLib.model.configuration;
 using GalleryApi.service;
-using GalleryLib.Repository.Auth;
+using GalleryLib.repository.auth;
 using GalleryApi.service.auth;
 
 namespace GalleryApi.Middleware;
