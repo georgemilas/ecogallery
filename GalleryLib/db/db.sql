@@ -253,7 +253,7 @@ ADD
 
 -- Unique constraint: either album_id (when search_id is null) or search_id (when album_id is 0)
 CREATE UNIQUE INDEX IF NOT EXISTS ux_album_settings_album_id_user_id
-ON public.album_settings (album_id, user_id, is_virtual, COALESCE(search_id, ''));
+ON public.album_settings (album_id, user_id, is_virtual, COALESCE(unique_data_id, ''));
 
 
 
