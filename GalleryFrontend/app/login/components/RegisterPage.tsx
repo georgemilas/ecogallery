@@ -163,6 +163,14 @@ export function RegisterPage(): JSX.Element {
             {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
+        <div style={{ textAlign: 'center', marginTop: '1em' }}>
+          <a href="#" className="forgot-password-link" onClick={e => { e.preventDefault(); router.push('/login'); }}
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Go to Login
+          </a><br/>
+          <a href="#" className="public-site-link" onClick={e => { e.preventDefault(); router.push('/valbum'); }}
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Go to public site
+          </a>
+        </div>
       </div>
     </div>
   );

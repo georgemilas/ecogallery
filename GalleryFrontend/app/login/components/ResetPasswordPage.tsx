@@ -63,9 +63,14 @@ export function ResetPasswordPage(): JSX.Element {
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
-        <button className="login-button" style={{marginTop: '1em'}} onClick={() => router.push('/login')} disabled={loading}>
-          Back to Login
-        </button>
+        <div style={{ textAlign: 'center', marginTop: '1em' }}>
+          <a href="#" className="forgot-password-link" onClick={e => { e.preventDefault(); router.push('/login'); }}
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Back to Login
+          </a><br/>
+          <a href="#" className="public-site-link" onClick={e => { e.preventDefault(); router.push('/valbum'); }}
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Go to public site
+          </a>
+        </div>
       </div>
     </div>
   );

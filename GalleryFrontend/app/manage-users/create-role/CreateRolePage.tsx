@@ -163,7 +163,11 @@ export function CreateRolePage(): JSX.Element {
         </form>
         <div style={{ textAlign: 'center', marginTop: '1em' }}>
           <a href="#" onClick={e => { e.preventDefault(); router.push('/manage-users'); }}
-            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Back to Invite User</a>
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Back to Invite User
+          </a><br/>  
+          <a href="#" onClick={e => { e.preventDefault(); router.push('/album'); }}
+            style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Back to Gallery
+          </a>
         </div>
       </div>
     </div>
