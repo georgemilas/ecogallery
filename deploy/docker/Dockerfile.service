@@ -32,8 +32,9 @@ COPY --from=publish /app/publish .
 # Copy database SQL files (required for create-db command)
 COPY GalleryLib/db /app/GalleryLib/db
 
-# Copy ONNX models for face detection (required for face command)
-COPY data/models /app/data/models
+#ONNX models for face detection are mounted as a volume at runtime
+#(Git LFS pointer files would be copied instead of actual binaries during build so can't use COPY for them)
+#COPY data/models /app/data/models
 
 # This container is meant to run commands, not as a service
 # Use docker-compose run or docker exec to execute commands

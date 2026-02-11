@@ -229,6 +229,7 @@ services:
       MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       - ${PICTURES_PATH:-./pictures}:/pictures:ro
+      - ${ONNX_MODELS_PATH:-../../data/models}:/app/data/models:ro
     networks:
       - ecogallery-network
     command: ["face", "-f", "/pictures", "-pl", "no"]
