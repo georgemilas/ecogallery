@@ -32,6 +32,9 @@ COPY --from=publish /app/publish .
 # Copy database SQL files (required for create-db command)
 COPY GalleryLib/db /app/GalleryLib/db
 
+# Copy ONNX models for face detection (required for face command)
+COPY data/models /app/data/models
+
 # This container is meant to run commands, not as a service
 # Use docker-compose run or docker exec to execute commands
 ENTRYPOINT ["dotnet", "GalleryService.dll"]
