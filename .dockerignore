@@ -35,8 +35,9 @@
 **/.env.*
 !**/.env.example
 
-# Data directories
+# Data directories (keep ONNX models for face detection)
 data/
+!data/models/
 terraform/
 
 # Docker
