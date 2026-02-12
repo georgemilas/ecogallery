@@ -42,9 +42,10 @@ public class ImageMetadataProcessor: AlbumProcessor
     /// <summary>
     /// create image record and ensure album record exists, extract EXIF and compute thumbnail perceptual hash
     /// </summary>
-    protected override async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath, bool logIfCreated)
+    protected override async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(FileData fileData, bool logIfCreated)
     {
-        var (albumImage, count) = await base.CreateImageAndAlbumRecords(filePath, logIfCreated);                       
+        var filePath = fileData.FilePath;
+        var (albumImage, count) = await base.CreateImageAndAlbumRecords(fileData, logIfCreated);
 
         if (_configuration.IsMovieFile(filePath))
         {
@@ -72,12 +73,12 @@ public class ImageMetadataProcessor: AlbumProcessor
             }
             return Tuple.Create(albumImage, count);
             //TODO: movie hash?
-        }                        
+        }
 
         var dbExif = await imageRepository.GetImageMetadataAsync(albumImage);
         if (dbExif == null || _reprocessMetadata)
         {
-            ImageMetadata? exif = await ExtractImageMetadata(filePath);
+            ImageMetadata? exif = await ExtractImageMetadata(fileData);
             if (exif != null)
             {
                 exif.AlbumImageId = albumImage.Id;
@@ -223,8 +224,9 @@ public class ImageMetadataProcessor: AlbumProcessor
     }
 
 
-    public async Task<ImageMetadata?> ExtractImageMetadata(string filePath)
+    public async Task<ImageMetadata?> ExtractImageMetadata(FileData fileData)
     {
+        var filePath = fileData.FilePath;
         if (!File.Exists(filePath))
         {
             return null;
@@ -262,10 +264,20 @@ public class ImageMetadataProcessor: AlbumProcessor
                 dimensionsFromExif = imageWidth != null && imageHeight != null && imageWidth.Value > 0 && imageHeight.Value > 0;
                 if (!dimensionsFromExif)
                 {
-                    // Fallback to loading the image if dimensions are not in EXIF                    
-                    using var image = await Image.LoadAsync(filePath);
-                    exif.ImageWidth = image.Width;
-                    exif.ImageHeight = image.Height;
+                    if (fileData.ImageWidth.HasValue && fileData.ImageHeight.HasValue)
+                    {
+                        // Use dimensions cached by MultipleThumbnailsProcessor (already in display orientation)
+                        exif.ImageWidth = fileData.ImageWidth.Value;
+                        exif.ImageHeight = fileData.ImageHeight.Value;
+                    }
+                    else
+                    {
+                        // Fallback to loading the image if dimensions are not in EXIF or cached
+                        Console.WriteLine($"Warning: Loading image for dimension {filePath}.");
+                        using var image = await Image.LoadAsync(filePath);
+                        exif.ImageWidth = image.Width;
+                        exif.ImageHeight = image.Height;
+                    }
                 }
                 else
                 {

@@ -63,6 +63,7 @@ public abstract class PeriodicScanService : BackgroundService
             Console.WriteLine($"{_processor.GetType().Name} Enumerated files to process ... {newFiles.Count} files in {elapsed:hh\\:mm\\:ss}.");
             
             long actualNew = 0;
+            long totalProcessed = 0;
             await Parallel.ForEachAsync(newFiles, options, async (file, ct) =>
             {
                 //if (ct.IsCancellationRequested) break;
@@ -73,19 +74,19 @@ public abstract class PeriodicScanService : BackgroundService
                 }, $"created (scan): {file}");
                 if (!created) { lock (_setLock) { currentFiles.Remove(file); } }   //did nor run so we add it back for next time             
 
-                
-                if (actualNew % 10 == 0) 
+                Interlocked.Add(ref totalProcessed, 1);
+                if (totalProcessed % 10 == 0) 
                 {
                     var elapsed = sw.Elapsed;
-                    var rate = actualNew / elapsed.TotalSeconds;
+                    var rate = totalProcessed / elapsed.TotalSeconds;
                     if (rate != 0  ) 
                     {                            
-                        var eta = TimeSpan.FromSeconds((newFiles.Count - actualNew) / rate);
-                        Console.Write($"\r New: {actualNew}/{newFiles.Count} files ({actualNew * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        var eta = TimeSpan.FromSeconds((newFiles.Count - totalProcessed) / rate);
+                        Console.Write($"\r New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                     else 
                     {
-                        Console.Write($"\r New: {actualNew}/{newFiles.Count} files ({actualNew * 100 / newFiles.Count}%) - calculating rate... - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        Console.Write($"\r New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - calculating rate... - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }                    
                 }
                 
@@ -99,6 +100,7 @@ public abstract class PeriodicScanService : BackgroundService
             ///////////////////////////////////////////////////////////////////////////////////////////////////////
             var deletedFiles = previousFiles.Except(currentFiles).ToList();
             long actualDeleted = 0;
+            var totalDelProcessed = 0;
             await Parallel.ForEachAsync(deletedFiles, options, async (file, ct) =>
             {
                 //if (ct.IsCancellationRequested) break;
@@ -108,15 +110,15 @@ public abstract class PeriodicScanService : BackgroundService
                     Interlocked.Add(ref actualDeleted, delta);                    
                 }, $"deleted (scan): {file}");
 
-                
-                if (actualDeleted % 10 == 0) 
+                Interlocked.Add(ref totalDelProcessed, 1);
+                if (totalProcessed % 10 == 0) 
                 {   
                     var elapsed = sw.Elapsed;
-                    var rate = actualDeleted / elapsed.TotalSeconds;
+                    var rate = totalDelProcessed / elapsed.TotalSeconds;
                     if (rate != 0 && deletedFiles.Count > 0 ) 
                     {
-                        var eta = TimeSpan.FromSeconds((deletedFiles.Count - actualDeleted) / rate);
-                        Console.Write($"\r Deleted: {actualDeleted}/{deletedFiles.Count} files ({actualDeleted * 100 / deletedFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        var eta = TimeSpan.FromSeconds((deletedFiles.Count - totalDelProcessed) / rate);
+                        Console.Write($"\r Deleted: {actualDeleted} Processed: {totalDelProcessed}/{deletedFiles.Count} files ({totalDelProcessed * 100 / deletedFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
@@ -144,6 +146,7 @@ public abstract class PeriodicScanService : BackgroundService
             Console.WriteLine($"{_processor.GetType().Name} Enumerated possible candidate files to clean ... {newFilesCleanup.Count()} files");
             
             long actualCleanup = 0;
+            var totalCleanupProcessed = 0;
             await Parallel.ForEachAsync(newFilesCleanup, options, async (file, ct) =>
             {
                 //if (ct.IsCancellationRequested) break;
@@ -153,17 +156,17 @@ public abstract class PeriodicScanService : BackgroundService
                     Interlocked.Add(ref actualCleanup, cleaned);                    
                 }, $"cleanup (scan): {file}"); 
                 if (!created) { lock (_setLock) { currentFilesToClenup.Remove(file); } }   //did nor run so we add it back for next time             
-
                 
-                if (actualCleanup % 10 == 0) 
+                Interlocked.Add(ref totalCleanupProcessed, 1);                
+                if (totalCleanupProcessed % 10 == 0) 
                 {
                     var elapsed = sw.Elapsed;
-                    var rate = actualCleanup / elapsed.TotalSeconds;
+                    var rate = totalCleanupProcessed / elapsed.TotalSeconds;
                     var cntSkipFiles = currentFilesToClenup.Count();
                     if (rate != 0 && cntSkipFiles > 0 ) 
                     {
-                        var eta = TimeSpan.FromSeconds((cntSkipFiles - actualCleanup) / rate);
-                        Console.Write($"\r {_processor.GetType().Name} Cleanup: {actualCleanup}/{cntSkipFiles} files ({actualCleanup * 100 / cntSkipFiles}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
+                        var eta = TimeSpan.FromSeconds((cntSkipFiles - totalCleanupProcessed) / rate);
+                        Console.Write($"\r {_processor.GetType().Name} Cleanup: {actualCleanup} Processed: {totalCleanupProcessed}/{cntSkipFiles} files ({totalCleanupProcessed * 100 / cntSkipFiles}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 

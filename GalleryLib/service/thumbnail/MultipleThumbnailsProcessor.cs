@@ -307,7 +307,10 @@ public class MultipleThumbnailsProcessor : EmptyProcessor
         {
             // Load original image once
             using var originalImage = await Image.LoadAsync(filePath.FilePath);
-            
+            //add image dimensions to FileData for DBSyncProcessor to use
+            filePath.ImageWidth = originalImage.Width;
+            filePath.ImageHeight = originalImage.Height;
+
             foreach (var height in heights)
             {
                 string thumbPath = GetThumbnailPath(filePath.FilePath, height);

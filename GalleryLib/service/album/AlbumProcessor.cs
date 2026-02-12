@@ -49,8 +49,9 @@ public class AlbumProcessor: EmptyProcessor
     /// <summary>
     /// create image record and ensure album record exists
     /// </summary>
-    protected virtual async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(string filePath, bool logIfCreated )
+    protected virtual async Task<Tuple<AlbumImage, int>> CreateImageAndAlbumRecords(FileData fileData, bool logIfCreated )
     {
+        var filePath = fileData.FilePath;
         AlbumImage? albumImage = await imageRepository.GetAlbumImageAsync(filePath);
         if (albumImage == null)
         {
@@ -122,13 +123,13 @@ public class AlbumProcessor: EmptyProcessor
     public override async Task<int> OnFileCreated(FileData filePath, bool logIfCreated = false)
     {
         //don't log creation here during the main PeriodicScanService, only for main FileObserverService methods
-        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath.FilePath, logIfCreated);
+        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath, logIfCreated);
         return count;  //number of records created (0 or 1)
     }
 
     public override async Task OnFileChanged(FileData filePath)
     {
-        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath.FilePath, true);           
+        var (albumImage, count) = await CreateImageAndAlbumRecords(filePath, true);
     }
 
     public override async Task<int> OnFileDeleted(FileData filePath, bool logIfDeleted = false)
@@ -141,7 +142,7 @@ public class AlbumProcessor: EmptyProcessor
         await CleanupImageAndAlbumRecords(oldPath.FilePath);
         if (newValid)
         {
-            var (albumImage, count) = await CreateImageAndAlbumRecords(newPath.FilePath, true);                
+            var (albumImage, count) = await CreateImageAndAlbumRecords(newPath, true);
         }
     }
 

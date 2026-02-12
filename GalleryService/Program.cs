@@ -12,6 +12,7 @@ using GalleryLib.service.thumbnail;
 using GalleryLib.service.album;
 using GalleryLib.service.fileProcessor;
 using GalleryLib.service.database;
+using ExtParser.Extensions;
 
 var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
 var basePath = AppContext.BaseDirectory;
@@ -219,14 +220,58 @@ syncCommand.SetHandler(async (string folder, int parallelDegree, string database
     var host = Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
-            //could add these as 2 separate services.AddSingleton() but because of the possible of console feadback overlap
-            //we are combining them into a single processor
-            var processors = new List<IFileProcessor> { 
-                new DbSyncProcessor(picturesConfig, dbConfig, reprocess), 
-                new MultipleThumbnailsProcessor(picturesConfig, heights)  //{ 400, 800, 1080, 1440 }
-            };
+            // // Check if 400px is in the heights array (optimal for SHA256 computation)
+            // bool has400 = heights.Contains(400);
+            // var otherHeights = heights.Where(h => h != 400).ToArray();
 
-            services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(processors, picturesConfig, parallelDegree));                        
+            // if (has400)
+            // {
+            //     // 400px exists - generate it first so DbSync can use it for SHA256 hash
+            //     var sequentialProcessors = new List<IFileProcessor> { 
+            //         new MultipleThumbnailsProcessor(picturesConfig, new int[] { 400 }),
+            //         new DbSyncProcessor(picturesConfig, dbConfig, reprocess)
+            //     };
+                
+            //     if (otherHeights.Length > 0)
+            //     {
+            //         // Other heights exist - generate them in parallel with 400px+DbSync chain
+            //         var parallelProcessors = new List<IFileProcessor> { 
+            //             new MultipleThumbnailsProcessor(picturesConfig, otherHeights),
+            //             new CombinedProcessor(sequentialProcessors, picturesConfig)
+            //         };
+            //         services.AddSingleton<IHostedService>(sp => CombinedParallelProcessor.CreateProcessor(parallelProcessors, picturesConfig, parallelDegree));
+            //         Console.WriteLine("400px thumbnail will be generated first and used for SHA256 hash in DbSync, other thumbnails will be generated in parallel.");
+            //     }
+            //     else
+            //     {
+            //         // Only 400px requested - use sequential processing
+            //         services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(sequentialProcessors, picturesConfig, parallelDegree));
+            //         Console.WriteLine("Only 400px thumbnail requested, it will be generated first and used for SHA256 hash in DbSync.");
+            //     }
+            // }
+            // else
+            // {
+            //     // No 400px - run thumbnails and DB sync in parallel (SHA256 will use original file)
+            //     var parallelProcessors = new List<IFileProcessor> { 
+            //         new MultipleThumbnailsProcessor(picturesConfig, heights),
+            //         new DbSyncProcessor(picturesConfig, dbConfig, reprocess)
+            //     };
+            //     services.AddSingleton<IHostedService>(sp => CombinedParallelProcessor.CreateProcessor(parallelProcessors, picturesConfig, parallelDegree));
+            //     Console.WriteLine("No 400px thumbnail requested, thumbnails and DB sync will run in parallel using original files for SHA256 hash.");
+            // }
+
+            // var parallelProcessors = new List<IFileProcessor> { 
+            //     new MultipleThumbnailsProcessor(picturesConfig, heights),
+            //     new DbSyncProcessor(picturesConfig, dbConfig, reprocess)
+            // };
+            // services.AddSingleton<IHostedService>(sp => CombinedParallelProcessor.CreateProcessor(parallelProcessors, picturesConfig, parallelDegree));
+
+            var sequentialProcessors = new List<IFileProcessor> { 
+                new MultipleThumbnailsProcessor(picturesConfig, heights),
+                new DbSyncProcessor(picturesConfig, dbConfig, reprocess)
+            };
+            services.AddSingleton<IHostedService>(sp => CombinedProcessor.CreateProcessor(sequentialProcessors, picturesConfig, parallelDegree));
+
         })
         .Build();
 

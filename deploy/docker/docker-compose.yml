@@ -233,8 +233,8 @@ services:
     networks:
       - ecogallery-network
     command: ["face", "-f", "/pictures", "-pl", "no"]
-    profiles:
-      - face  # Only start when explicitly requested
+    #profiles:
+    #  - face  # Only start when explicitly requested
 
   # Geospatial Location Clustering Service (clusters photos by GPS coordinates)
   geo:
@@ -264,8 +264,8 @@ services:
     networks:
       - ecogallery-network
     command: ["geo", "-f", "/pictures", "-pl", "no"]
-    profiles:
-      - geo  # Only start when explicitly requested
+    #profiles:
+    #  - geo  # Only start when explicitly requested
 
   # Virtual Albums Loader (run on-demand to load/update virtual albums from YAML)
   valbum:

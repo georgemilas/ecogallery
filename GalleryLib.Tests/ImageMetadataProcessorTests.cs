@@ -400,8 +400,13 @@ public class TestableImageMetadataProcessor : ImageMetadataProcessor
     }
 
     // Expose protected method for testing
-    public new Task<ImageMetadata?> ExtractImageMetadata(string filePath)
+    public new Task<ImageMetadata?> ExtractImageMetadata(FileData fileData)
     {
-        return base.ExtractImageMetadata(filePath);
+        return base.ExtractImageMetadata(fileData);
+    }
+
+    public Task<ImageMetadata?> ExtractImageMetadata(string filePath)
+    {
+        return base.ExtractImageMetadata(new FileData(filePath, filePath));
     }
 }
