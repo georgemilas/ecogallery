@@ -104,6 +104,12 @@ public class FaceDetectionProcessor : EmptyProcessor
         }
     }
 
+    public static PeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1, bool planMode = false, bool logIfProcessed = false)
+    {
+        IFileProcessor processor = new FaceDetectionProcessor(configuration, dbConfig);
+        return new DbPeriodicScanService(processor, configuration, dbConfig, intervalMinutes: 5, degreeOfParallelism: degreeOfParallelism, logIfProcessed);
+    }
+
     /// <summary>
     /// Creates SessionOptions with GPU acceleration if available, falling back to CPU.
     /// Tries DirectML first (works with any GPU on Windows), then CUDA for NVIDIA GPUs.
@@ -182,12 +188,6 @@ public class FaceDetectionProcessor : EmptyProcessor
         }
         
         return null;
-    }
-
-    public static PeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1, bool planMode = false, bool logIfProcessed = false)
-    {
-        IFileProcessor processor = new FaceDetectionProcessor(configuration, dbConfig);
-        return new DbPeriodicScanService(processor, configuration, dbConfig, intervalMinutes: 5, degreeOfParallelism: degreeOfParallelism, logIfProcessed);
     }
 
     public override bool ShouldCleanFile(FileData dbPath, bool logIfProcess = false)
@@ -335,7 +335,7 @@ public class FaceDetectionProcessor : EmptyProcessor
             }
         }
 
-        return facesProcessed;
+        return facesProcessed > 0 ? 1 : 0; // count if image has faces not how many faces 
     }
 
     #region Face Detection (UltraFace)

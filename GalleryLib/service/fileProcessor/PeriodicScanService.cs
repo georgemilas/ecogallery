@@ -78,11 +78,15 @@ public abstract class PeriodicScanService : BackgroundService
                 {
                     var elapsed = sw.Elapsed;
                     var rate = actualNew / elapsed.TotalSeconds;
-                    if (rate != 0 && newFiles.Count > 0 ) 
+                    if (rate != 0  ) 
                     {                            
                         var eta = TimeSpan.FromSeconds((newFiles.Count - actualNew) / rate);
                         Console.Write($"\r New: {actualNew}/{newFiles.Count} files ({actualNew * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
+                    else 
+                    {
+                        Console.Write($"\r New: {actualNew}/{newFiles.Count} files ({actualNew * 100 / newFiles.Count}%) - calculating rate... - elapsed: {elapsed:hh\\:mm\\:ss}");
+                    }                    
                 }
                 
             });

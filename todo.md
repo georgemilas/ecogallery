@@ -70,6 +70,15 @@ docker-compose run geo       #Optional: run once to pre-generate geolocation clu
 docker-compose up -d         #run the gallery web app (along with continuous sync, face recognition and geolocation clustering) in the background
                              #sync is incremental so any updated/renamed/deleted/moved files etc. are synced
 
+#for face models on linux we need to pull the actual models using git lfs pull
+#from the main ecogallery folder
+sudo apt install git-lfs    #windows download and run from  https://git-lfs.github.com/ (or choco install git-lfs)
+git lfs install
+git lfs pull
+
+#ls -la data/models/ will show 132kb size file for ultraface for example if not doing the git lfs pull as the files would be just pointers
+#but after lfs pull it should be 1270727 for ultraface for example
+
 
 docker-compose run cleanup   #optional utility to clean orphaned db records and thumbnails (for example you delete pictures and the "sync" service is not running)  
 docker-compose run service cleanup -f /pictures -h 400 800 1440 -pl yes --log  #run cleanup in plan mode to see what it would do before commiting
