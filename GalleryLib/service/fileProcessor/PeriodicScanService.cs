@@ -82,11 +82,11 @@ public abstract class PeriodicScanService : BackgroundService
                     if (rate != 0  ) 
                     {                            
                         var eta = TimeSpan.FromSeconds((newFiles.Count - totalProcessed) / rate);
-                        Console.Write($"\r New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        WriteProgress($" New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
-                    else 
+                    else
                     {
-                        Console.Write($"\r New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - calculating rate... - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        WriteProgress($" New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - calculating rate... - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }                    
                 }
                 
@@ -118,7 +118,7 @@ public abstract class PeriodicScanService : BackgroundService
                     if (rate != 0 && deletedFiles.Count > 0 ) 
                     {
                         var eta = TimeSpan.FromSeconds((deletedFiles.Count - totalDelProcessed) / rate);
-                        Console.Write($"\r Deleted: {actualDeleted} Processed: {totalDelProcessed}/{deletedFiles.Count} files ({totalDelProcessed * 100 / deletedFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        WriteProgress($" Deleted: {actualDeleted} Processed: {totalDelProcessed}/{deletedFiles.Count} files ({totalDelProcessed * 100 / deletedFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
@@ -167,7 +167,7 @@ public abstract class PeriodicScanService : BackgroundService
                     if (rate != 0 && cntSkipFiles > 0 ) 
                     {
                         var eta = TimeSpan.FromSeconds((cntSkipFiles - totalCleanupProcessed) / rate);
-                        Console.Write($"\r {_processor.GetType().Name} Cleanup: {actualCleanup} Processed: {totalCleanupProcessed}/{cntSkipFiles} files ({totalCleanupProcessed * 100 / cntSkipFiles}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
+                        WriteProgress($" {_processor.GetType().Name} Cleanup: {actualCleanup} Processed: {totalCleanupProcessed}/{cntSkipFiles} files ({totalCleanupProcessed * 100 / cntSkipFiles}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
@@ -201,6 +201,15 @@ public abstract class PeriodicScanService : BackgroundService
             Console.WriteLine($"{_processor.GetType().Name} Error handling file event [{context}]: {ex}");
             return false;
         }
+    }
+
+    protected static void WriteProgress(string message)
+    {
+        //for docker logs we want new lines, for console we want to overwrite the line
+        if (Console.IsOutputRedirected)   
+            Console.WriteLine(message);
+        else
+            Console.Write($"\r{message}");
     }
 
     protected abstract Task<IEnumerable<FileData>> GetFilesToProcess();

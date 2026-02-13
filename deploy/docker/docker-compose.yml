@@ -78,7 +78,7 @@ services:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.frontend
       args:
-        NEXT_PUBLIC_API_KEY: ${API_KEY}
+        NEXT_PUBLIC_API_KEY: __API_KEY_PLACEHOLDER__
         NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-}
     container_name: ecogallery-frontend
     restart: unless-stopped
