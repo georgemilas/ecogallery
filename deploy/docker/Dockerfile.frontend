@@ -13,7 +13,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Accept build arguments for Next.js public environment variables
-ARG NEXT_PUBLIC_API_KEY
+# Use placeholders so pre-built images can have the values replaced at runtime
+ARG NEXT_PUBLIC_API_KEY=__API_KEY_PLACEHOLDER__
 ARG NEXT_PUBLIC_API_BASE
 
 # Set them as environment variables for the build
@@ -45,6 +46,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy entrypoint script that replaces API key placeholder at runtime
+COPY --chown=nextjs:nodejs deploy/docker/docker-entrypoint-frontend.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -52,4 +57,5 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

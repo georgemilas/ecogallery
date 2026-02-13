@@ -57,18 +57,31 @@ for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
 # commands
 ```bash
 #windows
-./init-db.bat                #initialize database and the admin user for the gallery
+./setup.bat                #initialize database and the admin user for the gallery
+                           #runs sync once to build gallery database from the picures folder (may take a while depending on the size of you pictures folder)
 #mac/linux
-chmod +x init-db.sh         #on linux make the script executable
-./init-db.sh                #and then execute (or sudo ./init-db.sh to run as root)
+chmod +x setup.sh         #on linux make the script executable
+./setup.sh                #and then execute (or sudo ./setup.sh to run as root)
 
-#windows, mac or linux 
-docker-compose run sync      #run once to populate and sync gallery database with picures folder (may take a while depending on the size of you pictures folder)
-docker-compose run valbum    #run to create or update virtual albums (public albums based on "search" expression)
-docker-compose run face      #Optional: run once to pre-discover faces and people  (may take a while depending on the size of you pictures folder)
-docker-compose run geo       #Optional: run once to pre-generate geolocation clusters based on photos latitude/longitude metadata 
-docker-compose up -d         #run the gallery web app (along with continuous sync, face recognition and geolocation clustering) in the background
-                             #sync is incremental so any updated/renamed/deleted/moved files etc. are synced
+docker compose run valbum  #Optional: run to create virtual albums (public albums based on "search" expression)
+
+#windows
+./start.bat                #run the gallery
+                           #aka web app along with continuous sync, face recognition and geolocation clustering in the background
+                           #sync is incremental so any new/updated/renamed/deleted/moved files etc. are synced
+
+#mac/linux
+chmod +x start.sh         #on linux make the script executable
+./start.sh                #and then execute (or sudo ./start.sh to run as root)
+
+
+#windows, mac or linux  manual comands
+docker compose run valbum    #run to create or update virtual albums (public albums based on "search" expression)
+docker compose run sync      #Optional: run to sync gallery database with picures folder. Note: start script runs it authomaticaly
+docker compose run face      #Optional: run to discover faces and people (may take a while depending on the size of you pictures folder). Note: start script runs this authomaticaly
+docker compose run geo       #Optional: run to generate geolocation clusters based on photos latitude/longitude metadata. Note: start script runs this authomaticaly 
+docker compose up -d         #same as the start script 
+                             
 
 #for face models on linux we need to pull the actual models using git lfs pull
 #from the main ecogallery folder
@@ -104,10 +117,49 @@ docker-compose exec nginx ls -l '/pictures/2024/botanical garden/_MG_3507.jpg'
 docker-compose exec nginx tail -n 30 /var/log/nginx/error.log
 
 docker-compose exec postgres psql -U ecogallery -d ecogallery5 -c "SELECT image_path FROM album_image WHERE image_path LIKE '%2021%' LIMIT 5;"
+docker compose exec postgres psql -U ecogallery -d ecogallery5 -c "SELECT count(*) FROM face_person;"
 docker-compose exec postgres psql -U ecogallery -d ecogallery5 -c "\d virtual_album"
 docker-compose exec postgres psql -U ecogallery -d ecogallery5 -c "SELECT id, album_name, album_expression, album_type FROM virtual_album WHERE id IN (12, 13);"
 
 docker-compose build --no-cache frontend; docker-compose up -d
 docker-compose exec frontend printenv | Select-String -Pattern "API"
+
+
+
+#Prod setup flow.
+#Step 1: Rebuild :
+cd deploy/docker
+docker compose down
+docker compose build
+
+#Step 2: Tag the locally built images to match what prod compose expects (aka DOCKER_IMAGE_PREFIX and IMAGE_TAG from .env):
+docker login  #my gmail oauth -> user gmilas 
+docker tag ecogallery-api gmilas/ecogallery-api:latest
+docker tag ecogallery-frontend gmilas/ecogallery-frontend:latest  
+docker tag ecogallery-nginx gmilas/ecogallery-nginx:latest
+docker tag ecogallery-postgres gmilas/ecogallery-postgres:latest
+docker tag ecogallery-service gmilas/ecogallery-service:latest
+docker tag ecogallery-sync gmilas/ecogallery-sync:latest
+docker tag ecogallery-face gmilas/ecogallery-face:latest
+docker tag ecogallery-geo gmilas/ecogallery-geo:latest
+docker tag ecogallery-valbum gmilas/ecogallery-valbum:latest
+docker tag ecogallery-cleanup gmilas/ecogallery-cleanup:latest
+
+#Step 3: Push to docker hub:
+docker push gmilas/ecogallery-api:latest
+docker push gmilas/ecogallery-frontend:latest  
+docker push gmilas/ecogallery-nginx:latest
+docker push gmilas/ecogallery-postgres:latest
+docker push gmilas/ecogallery-service:latest
+docker push gmilas/ecogallery-sync:latest
+docker push gmilas/ecogallery-face:latest
+docker push gmilas/ecogallery-geo:latest
+docker push gmilas/ecogallery-valbum:latest
+docker push gmilas/ecogallery-cleanup:latest
+
+#Step 4: Test the prod flow:
+# set DOCKER_IMAGE_PREFIX=local and IMAGE_TAG=latest in .env
+setup-prod.bat
+start-prod.bat
 
 ```

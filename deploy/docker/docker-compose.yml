@@ -1,3 +1,5 @@
+name: ecogallery
+
 services:
   # PostgreSQL Database
   postgres:
@@ -135,6 +137,9 @@ services:
     volumes:
       # Mount pictures directory for sync operations
       - ${PICTURES_PATH:-./pictures}:/pictures
+      # ONNX models are baked into the image at build time
+      # To override with newer models, set ONNX_MODELS_PATH in .env and uncomment:
+      # - ${ONNX_MODELS_PATH}:/app/data/models:ro
     networks:
       - ecogallery-network
     profiles:
@@ -229,7 +234,9 @@ services:
       MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       - ${PICTURES_PATH:-./pictures}:/pictures:ro
-      - ${ONNX_MODELS_PATH:-../../data/models}:/app/data/models:ro
+      # ONNX models are baked into the image at build time
+      # To override with newer models, set ONNX_MODELS_PATH in .env and uncomment:
+      # - ${ONNX_MODELS_PATH}:/app/data/models:ro
     networks:
       - ecogallery-network
     command: ["face", "-f", "/pictures", "-pl", "no"]

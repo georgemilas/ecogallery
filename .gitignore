@@ -377,4 +377,5 @@ FodyWeavers.xsd
 tmpclaude*
 
 deploy/docker/.env
+deploy/docker/prod/.env
 *.tsbuildinfo

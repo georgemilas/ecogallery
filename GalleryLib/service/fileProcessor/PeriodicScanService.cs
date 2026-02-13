@@ -91,7 +91,7 @@ public abstract class PeriodicScanService : BackgroundService
                 }
                 
             });
-            if (actualNew > 0) Console.WriteLine(); // New line after progress output
+            if (totalProcessed >= 10) Console.WriteLine(); // New line after progress output
 
             
 
@@ -111,7 +111,7 @@ public abstract class PeriodicScanService : BackgroundService
                 }, $"deleted (scan): {file}");
 
                 Interlocked.Add(ref totalDelProcessed, 1);
-                if (totalProcessed % 10 == 0) 
+                if (totalDelProcessed % 10 == 0) 
                 {   
                     var elapsed = sw.Elapsed;
                     var rate = totalDelProcessed / elapsed.TotalSeconds;
@@ -123,7 +123,8 @@ public abstract class PeriodicScanService : BackgroundService
                 }
                 
             });
-            if (actualDeleted > 0) Console.WriteLine(); // New line after progress output
+            if (totalDelProcessed >= 10) Console.WriteLine(); // New line after progress output
+            
             lock (_setLock)
             {
                 _currentSourceFiles = currentFiles;
@@ -171,7 +172,7 @@ public abstract class PeriodicScanService : BackgroundService
                 }
                 
             });
-            if (actualCleanup > 0) Console.WriteLine(); // New line after progress output
+            if (totalCleanupProcessed >= 10) Console.WriteLine(); // New line after progress output
             lock (_setLock)
             {
                 _currentSourceFilesCleanup = currentFilesToClenup;

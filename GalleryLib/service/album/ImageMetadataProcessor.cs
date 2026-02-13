@@ -273,7 +273,7 @@ public class ImageMetadataProcessor: AlbumProcessor
                     else
                     {
                         // Fallback to loading the image if dimensions are not in EXIF or cached
-                        Console.WriteLine($"Warning: Loading image for dimension {filePath}.");
+                        //Console.WriteLine($"Warning: Loading image for dimension {filePath}.");
                         using var image = await Image.LoadAsync(filePath);
                         exif.ImageWidth = image.Width;
                         exif.ImageHeight = image.Height;

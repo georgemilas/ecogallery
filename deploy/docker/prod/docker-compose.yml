@@ -2,6 +2,8 @@
 # Users don't need to clone the repository or build from source
 # Just download this file + .env.example, configure, and run!
 
+name: ecogallery
+
 services:
   # PostgreSQL Database
   postgres:
@@ -124,6 +126,9 @@ services:
     volumes:
       # Mount pictures directory for sync operations
       - ${PICTURES_PATH:-./pictures}:/pictures
+      # ONNX models are baked into the image at build time
+      # To override with newer models, set ONNX_MODELS_PATH in .env and uncomment:
+      # - ${ONNX_MODELS_PATH}:/app/data/models:ro
     networks:
       - ecogallery-network
     profiles:
@@ -212,12 +217,14 @@ services:
       MOVIE_EXTENSIONS: ${MOVIE_EXTENSIONS:-}
     volumes:
       - ${PICTURES_PATH:-./pictures}:/pictures:ro
-      - ${ONNX_MODELS_PATH:-./models}:/app/data/models:ro
+      # ONNX models are baked into the image at build time
+      # To override with newer models, set ONNX_MODELS_PATH in .env and uncomment:
+      # - ${ONNX_MODELS_PATH}:/app/data/models:ro
     networks:
       - ecogallery-network
     command: ["face", "-f", "/pictures", "-pl", "no"]
-    profiles:
-      - face  # Only start when explicitly requested
+    #profiles:
+    #  - face  # Only start when explicitly requested
 
   # Geospatial Location Clustering Service (clusters photos by GPS coordinates)
   geo:
@@ -245,8 +252,8 @@ services:
     networks:
       - ecogallery-network
     command: ["geo", "-f", "/pictures", "-pl", "no"]
-    profiles:
-      - geo  # Only start when explicitly requested
+    #profiles:
+    #  - geo  # Only start when explicitly requested
 
   # Virtual Albums Loader (run on-demand to load/update virtual albums from YAML)
   valbum:
