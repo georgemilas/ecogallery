@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>readme.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="ecogallery">EcoGallery</h1>
+<p><strong>Privacy-focused, self-hosted photo &amp; video gallery for managing massive media collections locally.</strong></p>
+<p>EcoGallery is a self-hosted gallery application designed for photographers and families with large photo/video collections who want full control over their media without relying on cloud services.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+<li><strong>Privacy-First</strong> - No cloud dependency, no third-party AI training on your data</li>
+<li><strong>Folder-Based Albums</strong> - Automatic album organization from your directory structure</li>
+<li><strong>Powerful Search</strong> - Boolean expression queries with many features including face recognition searh, geolocation search, date, tags etc.</li>
+<li><strong>Virtual Albums</strong> - Dynamic collections based on search expressions and more</li>
+<li><strong>Handles Scale</strong> - Proven with 50K+ images (500GB non raw files)</li>
+<li><strong>8K Display Support</strong> - Full-resolution viewing</li>
+<li><strong>Auto-Sync</strong> - Continuous synchronization</li>
+</ul>
+<h2 id="quick-overview-of-how-it-works">Quick Overview of how it works</h2>
+<ul>
+<li>
+<h3 id="what">What</h3>
+<ul>
+<li>each folder is an album so the way you organize the pictures on your hard drive becomes your raw albums data
+<ul>
+<li>each album (a folder) may contains sub albums (sub folders) and all images and movies on disk represents its content</li>
+<li>quicly browse and search trough huge folders with thousands of files</li>
+<li>view detailed information like metadata, geolocation, people etc.</li>
+<li>keyboard navigation shortcuts</li>
+</ul>
+</li>
+<li>use the search feature to build virtual albums or just to browse and dicover pictures you forgot you have</li>
+<li>user management, public vs private vs client designated catalogs</li>
+<li>local face recognition and geolocation integration to enhance the search capability and virtual albums</li>
+</ul>
+</li>
+<li>
+<h3 id="how">How</h3>
+Point the application at the folder containing pictures
+<ul>
+<li>let it run once to creates thumbnails, discover faces etc. and build its local database</li>
+<li>start the sync background process to continuosly sync the database with changes in the hard drive content (new files, moved files, renamed, deleted etc.)</li>
+</ul>
+</li>
+<li>
+<h3 id="limitaions">Limitaions</h3>
+<ul>
+<li>Its local so you need to run a server to make it available on the internet</li>
+</ul>
+</li>
+</ul>
+<hr>
+<table>
+<tr>
+<td width="50%">
+<h3 id="gallery-view">Gallery View</h3>
+<p><img src="data/gallery.png" alt="Gallery">
+Browse albums and sub-albums, create/edit virtual albums, sort, search, keyboard shortcuts etc.</p>
+</td>
+<td width="50%">
+<h3 id="image-viewer">Image Viewer</h3>
+<p><img src="data/gallery-image.png" alt="Viewer">
+Full-screen slideshow, zoom, metadata display, keyboard navigation etc.</p>
+</td>
+</tr>
+</table>
+<hr>
+<h1 id="ecogallery-installation-guide">EcoGallery Installation Guide</h1>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><strong>Docker Desktop</strong> installed (<a href="https://www.docker.com/products/docker-desktop/">Download</a>)
+<ul>
+<li>Windows: Docker Desktop for Windows</li>
+<li>Mac: Docker Desktop for Mac</li>
+<li>Linux: Docker Engine + Docker Compose</li>
+</ul>
+</li>
+</ul>
+<h3 id="1-download-the-application">1. Download the Application</h3>
+<pre class="hljs"><code><div>git <span class="hljs-built_in">clone</span> --recursive https://github.com/georgemilas/ecogallery.git
+<span class="hljs-built_in">cd</span> ecogallery/deploy/docker/prod
+</div></code></pre>
+<h3 id="2-setup--configuration">2. Setup &amp; Configuration</h3>
+<p>Run the setup to initialize the database and to start building the gallery.
+Feel free to stop the syncronization process early  if you want to login into the app and start seeing what it is about while the gallery is building in the backreound.
+To do that Stop the initializeation Ctrl+C and start the app (see bellow).</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Windows (Command Prompt)</span>
+setup.bat
+
+<span class="hljs-comment"># Linux/Mac</span>
+chmod +x setup.sh
+setup.sh
+</div></code></pre>
+<h3 id="3-start-the-gallery">3. Start the gallery</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Windows (Command Prompt)</span>
+start.bat
+
+<span class="hljs-comment"># Linux/Mac</span>
+chmod +x setup.sh
+start.sh
+</div></code></pre>
+<h3 id="manual-configuration">Manual Configuration</h3>
+<p><strong>Manual Changes in <code>.env</code> file:</strong></p>
+<p><strong>The setup script above will help you set the admin password and pictures folder but you can also manualy change them before starting!</strong></p>
+<pre class="hljs"><code><div>ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD    #this is the initial admin user password for the gallery
+                                                     #you set this only for the initial login after which you can chage it in the app 
+
+PICTURES_PATH=/path/to/your/pictures                 # Use forward slash to separate folders and quotes if the path contains spaces &quot;C:/Path With Spaces/Pictures&quot;
+                                                     # Windows: Use forward slashes e.g., C:/Users/YourName/Pictures
+                                                     # Linux/Mac: Use absolute path e.g., /home/yourname/pictures
+
+</div></code></pre>
+<p><strong>Email Configuration (this settings are needed for user management to work)</strong></p>
+<p>To manage and invite additional users configure email settings:</p>
+<pre class="hljs"><code><div># Basic Authentication (most common)
+SMTP_AUTH_TYPE=Basic
+SMTP_HOST=smtp.gmail.com          
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password       
+SMTP_FROM=your-email@gmail.com
+</div></code></pre>
+<p><strong>Gmail Setup:</strong></p>
+<ol>
+<li>Go to https://myaccount.google.com/security</li>
+<li>Enable 2-Step Verification</li>
+<li>Go to https://myaccount.google.com/apppasswords</li>
+<li>Create App Password for &quot;Mail&quot;</li>
+<li>Use the generated 16-character password as <code>SMTP_PASS</code></li>
+</ol>
+<p><strong>Additional Info:</strong></p>
+<ul>
+<li><strong>Outlook/Office365</strong>: <code>SMTP_HOST=smtp.office365.com</code></li>
+<li><strong>Yahoo</strong>: <code>SMTP_HOST=smtp.mail.yahoo.com</code></li>
+</ul>
+<h3 id="manually-controll-the-application-components">Manually controll the application components</h3>
+<pre class="hljs"><code><div>docker compose run sync      <span class="hljs-comment">#run to manually sync the pictures folder into the database. Runs in the foreground to see the progress (may take a while for large folders)</span>
+                             <span class="hljs-comment">#sync is incremental so after initial full sync any new/updated/renamed/deleted/moved files are also synced</span>
+docker compose run valbum    <span class="hljs-comment">#run to create (or update) virtual albums (see below)</span>
+docker compose run face      <span class="hljs-comment">#run to manually discover peoples faces. Runs in the foreground to see the progress (may take a while for large folders)</span>
+docker compose run geo       <span class="hljs-comment">#run to manually generate geolocation clusters  </span>
+
+docker compose up -d         <span class="hljs-comment">#run all components (the web app along with continuous sync, face recognition and geolocation clustering in the background)</span>
+                             <span class="hljs-comment">#this is equivalent to what the start script does </span>
+
+docker compose logs sync --tail=10  <span class="hljs-comment">#see how much is left for sync to finish when running in the backround</span>
+docker compose logs face --tail=10  <span class="hljs-comment">#see how much is left for face detection process to finish when running in the backround</span>
+</div></code></pre>
+<h3 id="virtual-albums">Virtual Albums</h3>
+<p>Virtual albums represent public albums (no login required) generated based on a search expression or a designated folder.</p>
+<p>Virtual albums can be pre-defined in a YAML file for a quick setup (e.g. <code>virtual_albums.yml</code>)
+Additionaly you will also be able to use the gallery itself to manage (create/edit) virtual albums.</p>
+<p>Virtual albums have the following properties:</p>
+<ul>
+<li>yml root keys are the actual album names</li>
+<li>album yml sub keys:
+<ul>
+<li><strong>expression</strong>: A query expression to find pictures from within your folders structure (see examples bellow)</li>
+<li><strong>folder</strong>: relative path to an album folder</li>
+<li>one of either 'folder' or 'expression' is required but you only specify one, so either an expression or a folder, not both</li>
+<li><strong>description</strong>: Album description (optional)</li>
+<li><strong>feature</strong>: Featured (album cover) image path (optional)</li>
+<li><strong>parent</strong>: Parent album name for hierarchical organization (optional)</li>
+</ul>
+</li>
+</ul>
+<p>Example <code>virtual_albums.yml</code>:</p>
+<pre class="hljs"><code><div><span class="hljs-attr">Pictures Gallery:</span>
+  <span class="hljs-attr">description:</span> <span class="hljs-string">Welcome</span> <span class="hljs-string">to</span> <span class="hljs-string">my</span> <span class="hljs-string">gallery</span>
+  <span class="hljs-attr">folder:</span> <span class="hljs-string">/public</span>       <span class="hljs-comment">#designate the /public folder and all images it cotains (excluding subfolders) as a public virtual album  </span>
+  <span class="hljs-attr">feature:</span> <span class="hljs-string">/public/IMG_8337.jpg</span>
+
+<span class="hljs-attr">Barcelona:</span>
+  <span class="hljs-attr">parent:</span> <span class="hljs-string">Pictures</span> <span class="hljs-string">Gallery</span>
+  <span class="hljs-attr">description:</span> <span class="hljs-string">From</span> <span class="hljs-string">the</span> <span class="hljs-number">2023</span> <span class="hljs-string">trip</span> <span class="hljs-string">to</span> <span class="hljs-string">Barcelona</span>
+  <span class="hljs-comment">#hand picking images based on their name and folder path </span>
+  <span class="hljs-attr">expression:</span> <span class="hljs-string">barcelona</span> <span class="hljs-string">and</span> <span class="hljs-string">(7939</span> <span class="hljs-number">8024</span> <span class="hljs-number">8004</span> <span class="hljs-number">981</span> <span class="hljs-number">939</span> <span class="hljs-number">883</span> <span class="hljs-number">818</span> <span class="hljs-number">787</span> <span class="hljs-number">781</span><span class="hljs-string">)</span>   
+  <span class="hljs-attr">feature:</span> <span class="hljs-string">/2023/Barcelona/_IMG_7939.jpg</span>
+
+<span class="hljs-attr">2024:</span>
+  <span class="hljs-attr">parent:</span> <span class="hljs-string">Pictures</span> <span class="hljs-string">Gallery</span>
+  <span class="hljs-attr">description:</span> <span class="hljs-string">Selections</span> <span class="hljs-string">from</span> <span class="hljs-number">2024</span> <span class="hljs-string">trips</span>
+  <span class="hljs-comment">#all pictures from 2024 and all subfolders except colorado, eclipse and a few hand picked images to exclude </span>
+  <span class="hljs-attr">expression:</span> <span class="hljs-number">2024</span><span class="hljs-string">/</span> <span class="hljs-string">and</span> <span class="hljs-string">not</span> <span class="hljs-string">(colorado</span> <span class="hljs-string">eclipse</span> <span class="hljs-string">_8940</span> <span class="hljs-string">_8881)</span>
+  <span class="hljs-attr">feature:</span> <span class="hljs-string">/2024/best/_MG_2981.jpg</span>
+
+<span class="hljs-attr">Colorado:</span>
+  <span class="hljs-attr">parent:</span> <span class="hljs-number">2024</span>   <span class="hljs-comment">#Colorado will show up as a sub gallery inside 2024</span>
+  <span class="hljs-attr">description:</span> <span class="hljs-string">Selections</span> <span class="hljs-string">from</span> <span class="hljs-string">Colorado</span> <span class="hljs-string">trip</span>
+  <span class="hljs-comment">#all pictures from colorado from 2024 (for example 2024/colorado or 2024/select/best/colorado etc.)</span>
+  <span class="hljs-attr">expression:</span> <span class="hljs-number">2024</span><span class="hljs-string">/</span> <span class="hljs-string">and</span> <span class="hljs-string">colorado</span>
+  <span class="hljs-attr">feature:</span> <span class="hljs-string">/2024/Colorado/_MG_2981-Pano.jpg</span>
+
+<span class="hljs-attr">Us:</span>
+  <span class="hljs-attr">parent:</span> <span class="hljs-string">Pictures</span> <span class="hljs-string">Gallery</span>
+  <span class="hljs-attr">description:</span> <span class="hljs-string">the</span> <span class="hljs-string">two</span> <span class="hljs-string">of</span> <span class="hljs-string">us</span> 
+  <span class="hljs-comment">#pictures with both George and Maria since 2010 </span>
+  <span class="hljs-comment">#allow face detection process to find some faces then login as admin and name a few clusters of similar faces</span>
+  <span class="hljs-comment">#this expression say to find pictures that include both george and maria but not joe or any other unnamed face  </span>
+  <span class="hljs-attr">expression:</span> <span class="hljs-string">{ai:george}</span> <span class="hljs-string">and</span> <span class="hljs-string">{ai:maria}</span> <span class="hljs-string">and</span> <span class="hljs-string">not</span> <span class="hljs-string">({ai:box}</span> <span class="hljs-string">{ai:joe})</span> <span class="hljs-string">and</span> <span class="hljs-string">{d&gt;=:Jan</span> <span class="hljs-number">2010</span><span class="hljs-string">}</span>
+  <span class="hljs-attr">feature:</span> <span class="hljs-string">/2022/Us/_MG_2983.jpg</span>
+</div></code></pre>
+<p><strong>Expression syntax:</strong></p>
+<ul>
+<li><code>AND</code>, <code>OR</code>, <code>NOT</code> - Logical operators</li>
+<li>searches any part of the full image path or use {regex} {ai:person name} {d&gt;:date} {l:named location} etc.</li>
+<li>space is equivalent to using a logical OR so the expression 'colorado barcelona' is equivalent to 'colorado or barcelona'</li>
+<li>Use parentheses for grouping</li>
+<li>Use quotes to include spaces for example &quot;img 23.jpg&quot; or &quot;img 23&quot;</li>
+</ul>
+<p><strong>Set the path in <code>.env</code>:</strong></p>
+<pre class="hljs"><code><div>VALBUM_YAML=./virtual_albums.yml
+</div></code></pre>
+<p><strong>Load virtual albums from configured YML file:</strong></p>
+<pre class="hljs"><code><div>docker-compose run valbum
+</div></code></pre>
+
+</body>
+</html>

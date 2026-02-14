@@ -5,19 +5,19 @@
 EcoGallery is a self-hosted gallery application designed for photographers and families with large photo/video collections who want full control over their media without relying on cloud services.
 
 **Key Features:**
-- 🔒 **Privacy-First** - No cloud dependency, no third-party AI training on your data
-- 📁 **Folder-Based Albums** - Automatic album organization from your directory structure
-- 🔍 **Powerful Search** - Boolean expression queries with many features including face recognition searh, geolocation search, date, tags etc.  
-- 🎨 **Virtual Albums** - Dynamic collections based on search expressions powered by the search mechanism
-- ⚡ **Handles Scale** - Proven with 50K+ images (500GB files) 
-- 🖼️ **8K Display Support** - Full-resolution viewing 
-- 🔄 **Auto-Sync** - Continuous synchronization 
+- **Privacy-First** - No cloud dependency, no third-party AI training on your data
+- **Folder-Based Albums** - Automatic album organization from your directory structure
+- **Powerful Search** - Boolean expression queries with many features including face recognition searh, geolocation search, date, tags etc.  
+- **Virtual Albums** - Dynamic collections based on search expressions and more
+- **Handles Scale** - Proven with 50K+ images (500GB non raw files) 
+- **8K Display Support** - Full-resolution viewing 
+- **Auto-Sync** - Continuous synchronization 
 
 ## Quick Overview of how it works 
 * ### What
-    * each folder is an album so the way you organize the pictures on your harddrive becomes you raw albums data 
-        * each album (folder) contains sub albums (sub folders) and images and movies that are directly stored in the folder as its content
-        * quicly browse huge folders with thousands of files 
+    * each folder is an album so the way you organize the pictures on your hard drive becomes your raw albums data 
+        * each album (a folder) may contains sub albums (sub folders) and all images and movies on disk represents its content
+        * quicly browse and search trough huge folders with thousands of files 
         * view detailed information like metadata, geolocation, people etc.
         * keyboard navigation shortcuts 
     * use the search feature to build virtual albums or just to browse and dicover pictures you forgot you have  
@@ -28,12 +28,8 @@ EcoGallery is a self-hosted gallery application designed for photographers and f
     * let it run once to creates thumbnails, discover faces etc. and build its local database
     * start the sync background process to continuosly sync the database with changes in the hard drive content (new files, moved files, renamed, deleted etc.)  
 * ### Limitaions
-    * Its local so you need to run a server to make it available on the internet 
-    * Contact me for help    
-        
+    * Its local so you need to run a server to make it available on the internet         
 ---
-
-## Screenshots
 
 <table>
 <tr>
@@ -56,7 +52,7 @@ Full-screen slideshow, zoom, metadata display, keyboard navigation etc.
 
 ---
 
-# EcoGallery Docker Deployment Guide
+# EcoGallery Installation Guide
 
 ## Prerequisites
 
@@ -105,10 +101,9 @@ start.sh
 
 ```env
 ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD    #this is the initial admin user password for the gallery
-                                                     #you set this only for the initial login after which you can chage it in the app 
+                                                     #you set this only for the initial login after which you can change it in the app 
 
-PICTURES_PATH=/path/to/your/pictures                 # Use forward slash to separate folders and quotes if the path contains spaces "C:/Path With Spaces/Pictures"
-                                                     # Windows: Use forward slashes e.g., C:/Users/YourName/Pictures
+PICTURES_PATH=/path/to/your/pictures                 # Windows: Use forward slashes e.g., C:/Users/YourName/Pictures
                                                      # Linux/Mac: Use absolute path e.g., /home/yourname/pictures
 
 ```
