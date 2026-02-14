@@ -63,16 +63,20 @@ Full-screen slideshow, zoom, metadata display, keyboard navigation etc.
 
 ### 1. Download the Application
 
-```bash
-git clone --recursive https://github.com/georgemilas/ecogallery.git
-cd ecogallery/deploy/docker/prod
-```
+  * Windows: Download and extract this zip file [ecogallery_windows.zip](https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/deploy/docker/prod/ecogallery_windows.zip)
+  * Mac/Linux: Download and extract this zip file [ecogallery_mac_linux.zip](https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/deploy/docker/prod/ecogallery_mac_linux.zip)
+
+  * Or if you want you can also get the source code
+    ```bash
+    git clone --recursive https://github.com/georgemilas/ecogallery.git
+    cd ecogallery/deploy/docker/prod
+    ```
 
 ### 2. Setup & Configuration
 
-Run the setup to initialize the database and to start building the gallery.
-Feel free to stop the syncronization process early  if you want to login into the app and start seeing what it is about while the gallery is building in the backreound.
-To do that Stop the initializeation Ctrl+C and start the app (see bellow). 
+Run the setup script provided in the download to initialize the database and to start building the gallery.
+Once the database is initialized and the synchronization process begins, feel free to stop the process at any time before it finishes (which may take a long time for large folders)  if you want to login into the app and start seeing what it is about while the gallery is building in the backreound.
+To do that, stop the sync process (Ctrl+C) and start the app by using the start script provided. 
 
 ```bash
 # Windows (Command Prompt)

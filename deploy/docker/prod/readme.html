@@ -439,13 +439,24 @@ Full-screen slideshow, zoom, metadata display, keyboard navigation etc.</p>
 </li>
 </ul>
 <h3 id="1-download-the-application">1. Download the Application</h3>
+<ul>
+<li>
+<p>Windows: Download and extract this zip file <a href="https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/deploy/docker/prod/ecogallery_windows.zip">ecogallery_windows.zip</a></p>
+</li>
+<li>
+<p>Mac/Linux: Download and extract this zip file <a href="https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/deploy/docker/prod/ecogallery_mac_linux.zip">ecogallery_mac_linux.zip</a></p>
+</li>
+<li>
+<p>Or if you want you can also get the source code</p>
 <pre class="hljs"><code><div>git <span class="hljs-built_in">clone</span> --recursive https://github.com/georgemilas/ecogallery.git
 <span class="hljs-built_in">cd</span> ecogallery/deploy/docker/prod
 </div></code></pre>
+</li>
+</ul>
 <h3 id="2-setup--configuration">2. Setup &amp; Configuration</h3>
-<p>Run the setup to initialize the database and to start building the gallery.
-Feel free to stop the syncronization process early  if you want to login into the app and start seeing what it is about while the gallery is building in the backreound.
-To do that Stop the initializeation Ctrl+C and start the app (see bellow).</p>
+<p>Run the setup script provided in the download to initialize the database and to start building the gallery.
+Once the database is initialized and the synchronization process begins, feel free to stop the process at any time before it finishes (which may take a long time for large folders)  if you want to login into the app and start seeing what it is about while the gallery is building in the backreound.
+To do that, stop the sync process (Ctrl+C) and start the app by using the start script provided.</p>
 <pre class="hljs"><code><div><span class="hljs-comment"># Windows (Command Prompt)</span>
 setup.bat
 
@@ -465,10 +476,9 @@ start.sh
 <p><strong>Manual Changes in <code>.env</code> file:</strong></p>
 <p><strong>The setup script above will help you set the admin password and pictures folder but you can also manualy change them before starting!</strong></p>
 <pre class="hljs"><code><div>ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD    #this is the initial admin user password for the gallery
-                                                     #you set this only for the initial login after which you can chage it in the app 
+                                                     #you set this only for the initial login after which you can change it in the app 
 
-PICTURES_PATH=/path/to/your/pictures                 # Use forward slash to separate folders and quotes if the path contains spaces &quot;C:/Path With Spaces/Pictures&quot;
-                                                     # Windows: Use forward slashes e.g., C:/Users/YourName/Pictures
+PICTURES_PATH=/path/to/your/pictures                 # Windows: Use forward slashes e.g., C:/Users/YourName/Pictures
                                                      # Linux/Mac: Use absolute path e.g., /home/yourname/pictures
 
 </div></code></pre>
