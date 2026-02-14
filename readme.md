@@ -69,36 +69,51 @@ Full-screen slideshow, zoom, metadata display, keyboard navigation etc.
 
 ```bash
 git clone --recursive https://github.com/georgemilas/ecogallery.git
-cd ecogallery/deploy/docker
+cd ecogallery/deploy/docker/prod
 ```
 
-### 2. Configuration
+### 2. Setup & Configuration
 
-Copy the example environment file and edit it:
+Run the setup to initialize the database and to start building the gallery.
+Feel free to stop the syncronization process early  if you want to login into the app and start seeing what it is about while the gallery is building in the backreound.
+To do that Stop the initializeation Ctrl+C and start the app (see bellow). 
 
 ```bash
 # Windows (Command Prompt)
-copy .env.example .env
-notepad .env
+setup.bat
 
 # Linux/Mac
-cp .env.example .env
-nano .env
+chmod +x setup.sh
+setup.sh
 ```
 
-**Required Changes in `.env`:**
+### 3. Start the gallery
+```bash
+# Windows (Command Prompt)
+start.bat
 
-**⚠️ You MUST change these values before starting!**
+# Linux/Mac
+chmod +x setup.sh
+start.sh
+```
+
+### Manual Configuration
+
+**Manual Changes in `.env` file:**
+
+**The setup script above will help you set the admin password and pictures folder but you can also manualy change them before starting!**
 
 ```env
-ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD    #this is the initial admin user for the gallery 
+ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD    #this is the initial admin user password for the gallery
+                                                     #you set this only for the initial login after which you can chage it in the app 
+
 PICTURES_PATH=/path/to/your/pictures                 # Use forward slash to separate folders and quotes if the path contains spaces "C:/Path With Spaces/Pictures"
                                                      # Windows: Use forward slashes e.g., C:/Users/YourName/Pictures
                                                      # Linux/Mac: Use absolute path e.g., /home/yourname/pictures
 
 ```
 
-**Optional: Email Configuration (for user management)**
+**Email Configuration (this settings are needed for user management to work)**
 
 To manage and invite additional users configure email settings:
 
@@ -122,37 +137,38 @@ SMTP_FROM=your-email@gmail.com
 **Additional Info:**
 - **Outlook/Office365**: `SMTP_HOST=smtp.office365.com`
 - **Yahoo**: `SMTP_HOST=smtp.mail.yahoo.com`
-- See more [here](/deploy/docker/DOCKER-SETUP.md)
 
 
-### 3. Build and run the application
+### Manually controll the application components
 
 ```bash
-./init-db.bat               #Windows Only: initialize database and the admin user for the gallery
-chmod +x init-db.sh         #Mac/Linux Only: make the script executable
-./init-db.sh                #                and then execute 
+docker compose run sync      #run to manually sync the pictures folder into the database. Runs in the foreground to see the progress (may take a while for large folders)
+                             #sync is incremental so after initial full sync any new/updated/renamed/deleted/moved files are also synced
+docker compose run valbum    #run to create (or update) virtual albums (see below)
+docker compose run face      #run to manually discover peoples faces. Runs in the foreground to see the progress (may take a while for large folders)
+docker compose run geo       #run to manually generate geolocation clusters  
 
-docker-compose run sync      #run once to sync the database with the pictures folder (may take a while for large folders)
-docker-compose run valbum    #run to create (or update) virtual albums (see below)
-docker-compose run face      #Optional: run once to pre-discover faces and people (may take a while for large folders)
-docker-compose run geo       #Optional: run once to pre-generate geolocation clusters  
-docker-compose up -d         #run web app along with continuous sync, face recognition and geolocation clustering in the background
-                             #sync is incremental so any new/updated/renamed/deleted/moved files etc. are synced
+docker compose up -d         #run all components (the web app along with continuous sync, face recognition and geolocation clustering in the background)
+                             #this is equivalent to what the start script does 
+
+docker compose logs sync --tail=10  #see how much is left for sync to finish when running in the backround
+docker compose logs face --tail=10  #see how much is left for face detection process to finish when running in the backround
 ```
 
 
 ### Virtual Albums 
 
-Virtual albums represent public albums (no login required) generated based on a search expression or a designated folder to be visible publicly.
+Virtual albums represent public albums (no login required) generated based on a search expression or a designated folder.
 
-Virtual albums can be pre-defined in a YAML file and loaded for a quick setup (e.g. `virtual_albums.yml`)
+Virtual albums can be pre-defined in a YAML file for a quick setup (e.g. `virtual_albums.yml`)
 Additionaly you will also be able to use the gallery itself to manage (create/edit) virtual albums.   
 
 Virtual albums have the following properties:
-- uses album names as keys
-- album keys:
-    - **expression**: Query expression to match pictures 
+- yml root keys are the actual album names
+- album yml sub keys:
+    - **expression**: A query expression to find pictures from within your folders structure (see examples bellow) 
     - **folder**: relative path to an album folder
+    - one of either 'folder' or 'expression' is required but you only specify one, so either an expression or a folder, not both 
     - **description**: Album description (optional)
     - **feature**: Featured (album cover) image path (optional)
     - **parent**: Parent album name for hierarchical organization (optional)
@@ -162,31 +178,43 @@ Example `virtual_albums.yml`:
 ```yaml
 Pictures Gallery:
   description: Welcome to my gallery
-  folder: /public
+  folder: /public       #designate the /public folder and all images it cotains (excluding subfolders) as a public virtual album  
   feature: /public/IMG_8337.jpg
 
 Barcelona:
   parent: Pictures Gallery
   description: From the 2023 trip to Barcelona
-  expression: barcelona and (7939 8024 8004 981 939 883 818 787 781)
+  #hand picking images based on their name and folder path 
+  expression: barcelona and (7939 8024 8004 981 939 883 818 787 781)   
   feature: /2023/Barcelona/_IMG_7939.jpg
 
 2024:
   parent: Pictures Gallery
   description: Selections from 2024 trips
+  #all pictures from 2024 and all subfolders except colorado, eclipse and a few hand picked images to exclude 
   expression: 2024/ and not (colorado eclipse _8940 _8881)
   feature: /2024/best/_MG_2981.jpg
 
 Colorado:
-  parent: 2024
+  parent: 2024   #Colorado will show up as a sub gallery inside 2024
   description: Selections from Colorado trip
+  #all pictures from colorado from 2024 (for example 2024/colorado or 2024/select/best/colorado etc.)
   expression: 2024/ and colorado
   feature: /2024/Colorado/_MG_2981-Pano.jpg
+
+Us:
+  parent: Pictures Gallery
+  description: the two of us 
+  #pictures with both George and Maria since 2010 
+  #allow face detection process to find some faces then login as admin and name a few clusters of similar faces
+  #this expression say to find pictures that include both george and maria but not joe or any other unnamed face  
+  expression: {ai:george} and {ai:maria} and not ({ai:box} {ai:joe}) and {d>=:Jan 2010}
+  feature: /2022/Us/_MG_2983.jpg
 ```
 
 **Expression syntax:**
 - `AND`, `OR`, `NOT` - Logical operators
-- searches any part of the full image path or use {regex} {ai:person name} {d>:date} {l:geo location} 
+- searches any part of the full image path or use {regex} {ai:person name} {d>:date} {l:named location} etc.
 - space is equivalent to using a logical OR so the expression 'colorado barcelona' is equivalent to 'colorado or barcelona' 
 - Use parentheses for grouping
 - Use quotes to include spaces for example "img 23.jpg" or "img 23"
@@ -196,7 +224,7 @@ Colorado:
 VALBUM_YAML=./virtual_albums.yml
 ```
 
-**Load virtual albums:**
+**Load virtual albums from configured YML file:**
 ```bash
 docker-compose run valbum
 ```

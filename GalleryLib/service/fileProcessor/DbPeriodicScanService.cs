@@ -29,7 +29,7 @@ public class DbPeriodicScanService : PeriodicScanService
     protected override async Task<IEnumerable<FileData>> GetFilesToProcess()
     {
         var allImages = (await imageRepository.GetAllAlbumImagesAsync()).Select(f => new FileData(f.ImagePath, f));
-        return allImages.Where(f => _processor.ShouldProcessFile(f));
+        return allImages.Where(f => _processor.ShouldProcessFile(f));   //check if file rules have changed
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class DbPeriodicScanService : PeriodicScanService
     protected override async Task<IEnumerable<FileData>> GetFilesToClean()
     {
         var allImages = (await imageRepository.GetAllAlbumImagesAsync()).Select(f => new FileData(f.ImagePath, f));
-        return allImages.Where(f => _processor.ShouldCleanFile(f));
+        return allImages.Where(f => _processor.ShouldCleanFile(f));   //check if file rules have changed
     }
 }
 

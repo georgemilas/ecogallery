@@ -5,7 +5,8 @@
    * going back to album on large albums (wait for gallery to render before setting to last image - show loading - pagination?)
    * movie hash ?
    * {s:} fuzzy search, {loc:}
-   * TODO: AlbumProcessor UpdateImageHash what if the thumbnail does not exist yet?
+   * create a DbPeriodicFaceScanService to scan only images that don't have face_embeding processed yet not all images 
+     and also create a separate table to store images that just don't have faces so we don't keep reprocessing them
       
 
 ### Changes
@@ -20,6 +21,7 @@
    * random 100, recent 100
    * not doing: convert .mov to .mp4 during thumbnail processor for reliable viewing (converted as a separate process)
    * {d=:} {d!=:} {d>:} {d>=:} {d<:} {d<=:} date, {ai:} {face:}
+   * AlbumProcessor UpdateImageHash what if the thumbnail does not exist yet?
 
 ### ffmpeg
 To convert an .mts (or .api or .mov etc) file to .mp4 using FFmpeg, use:

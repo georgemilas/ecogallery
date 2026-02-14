@@ -78,15 +78,18 @@ public abstract class PeriodicScanService : BackgroundService
                 if (totalProcessed % 10 == 0) 
                 {
                     var elapsed = sw.Elapsed;
-                    var rate = totalProcessed / elapsed.TotalSeconds;
-                    if (rate != 0  ) 
+                    //rate using actualNew (not totalProcessed) for accuracy of ETA (alternative? add second sw2 to do sw2.Restart() every N files)
+                    var actualRate = actualNew / elapsed.TotalSeconds;
+                    if (actualRate != 0)   //we have actualNew 
                     {                            
-                        var eta = TimeSpan.FromSeconds((newFiles.Count - totalProcessed) / rate);
-                        WriteProgress($" New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        var eta = TimeSpan.FromSeconds((newFiles.Count - totalProcessed) / actualRate);
+                        WriteProgress($" {_processor.GetType().Name} New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - {actualRate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                     else
                     {
-                        WriteProgress($" New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - calculating rate... - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        var rateTotal = totalProcessed / elapsed.TotalSeconds;
+                        var eta = TimeSpan.FromSeconds((newFiles.Count - totalProcessed) / rateTotal);
+                        WriteProgress($" {_processor.GetType().Name} New: {actualNew} Processed:{totalProcessed}/{newFiles.Count} files ({totalProcessed * 100 / newFiles.Count}%) - {rateTotal:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }                    
                 }
                 
@@ -114,11 +117,17 @@ public abstract class PeriodicScanService : BackgroundService
                 if (totalDelProcessed % 10 == 0) 
                 {   
                     var elapsed = sw.Elapsed;
-                    var rate = totalDelProcessed / elapsed.TotalSeconds;
-                    if (rate != 0 && deletedFiles.Count > 0 ) 
+                    var actualRate = actualDeleted / elapsed.TotalSeconds; 
+                    if (actualRate != 0) 
                     {
-                        var eta = TimeSpan.FromSeconds((deletedFiles.Count - totalDelProcessed) / rate);
-                        WriteProgress($" Deleted: {actualDeleted} Processed: {totalDelProcessed}/{deletedFiles.Count} files ({totalDelProcessed * 100 / deletedFiles.Count}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                        var eta = TimeSpan.FromSeconds((deletedFiles.Count - totalDelProcessed) / actualRate);
+                        WriteProgress($" {_processor.GetType().Name} Deleted: {actualDeleted} Processed: {totalDelProcessed}/{deletedFiles.Count} files ({totalDelProcessed * 100 / deletedFiles.Count}%) - {actualRate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
+                    }
+                    else
+                    {
+                        var rateTotal = totalDelProcessed / elapsed.TotalSeconds;
+                        var eta = TimeSpan.FromSeconds((deletedFiles.Count - totalDelProcessed) / rateTotal);
+                        WriteProgress($" {_processor.GetType().Name} Deleted: {actualDeleted} Processed: {totalDelProcessed}/{deletedFiles.Count} files ({totalDelProcessed * 100 / deletedFiles.Count}%) - {rateTotal:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
@@ -162,12 +171,17 @@ public abstract class PeriodicScanService : BackgroundService
                 if (totalCleanupProcessed % 10 == 0) 
                 {
                     var elapsed = sw.Elapsed;
-                    var rate = totalCleanupProcessed / elapsed.TotalSeconds;
-                    var cntSkipFiles = currentFilesToClenup.Count();
-                    if (rate != 0 && cntSkipFiles > 0 ) 
+                    var actualRate = actualCleanup / elapsed.TotalSeconds;
+                    if (actualRate != 0) 
                     {
-                        var eta = TimeSpan.FromSeconds((cntSkipFiles - totalCleanupProcessed) / rate);
-                        WriteProgress($" {_processor.GetType().Name} Cleanup: {actualCleanup} Processed: {totalCleanupProcessed}/{cntSkipFiles} files ({totalCleanupProcessed * 100 / cntSkipFiles}%) - {rate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
+                        var eta = TimeSpan.FromSeconds((newFilesCleanup.Count - totalCleanupProcessed) / actualRate);
+                        WriteProgress($" {_processor.GetType().Name} Cleanup: {actualCleanup} Processed: {totalCleanupProcessed}/{newFilesCleanup.Count} files ({totalCleanupProcessed * 100 / newFilesCleanup.Count}%) - {actualRate:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed:{elapsed:hh\\:mm\\:ss}");
+                    }
+                    else
+                    {
+                        var rateTotal = totalCleanupProcessed / elapsed.TotalSeconds;
+                        var eta = TimeSpan.FromSeconds((newFilesCleanup.Count - totalCleanupProcessed) / rateTotal);
+                        WriteProgress($" {_processor.GetType().Name} Cleanup: {actualCleanup} Processed: {totalCleanupProcessed}/{newFilesCleanup.Count} files ({totalCleanupProcessed * 100 / newFilesCleanup.Count}%) - {rateTotal:F1}/s - ETA: {eta:hh\\:mm\\:ss} - elapsed: {elapsed:hh\\:mm\\:ss}");
                     }
                 }
                 
