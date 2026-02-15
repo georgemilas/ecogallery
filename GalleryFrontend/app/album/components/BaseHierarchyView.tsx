@@ -305,7 +305,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
             initialSort={settings.album_sort}
             onSortUpdate={(sort) => handleSortUpdate(sort, 'album')}
           />
-          <ul className='albums-container'>
+          <ul className='albums-container' style={{ display: 'grid', gap: `8px` }}>
             {localAlbums.map(r => (
               <li className='albums-item' key={r.id}>
                 <a href="#" onClick={(e) => {e.preventDefault(); props.onAlbumClick(r.id);}}>

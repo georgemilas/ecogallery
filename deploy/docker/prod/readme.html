@@ -416,13 +416,13 @@ Point the application at the folder containing pictures
 <tr>
 <td width="50%">
 <h3 id="gallery-view">Gallery View</h3>
-<p><img src="data/gallery.png" alt="Gallery">
+<p><img src="https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/data/gallery.png" alt="Gallery">
 Browse albums and sub-albums, create/edit virtual albums, sort, search, keyboard shortcuts etc.</p>
 </td>
 <td width="50%">
 <h3 id="image-viewer">Image Viewer</h3>
-<p><img src="data/gallery-image.png" alt="Viewer">
-Full-screen slideshow, zoom, metadata display, keyboard navigation etc.</p>
+<p><img src="https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/data/gallery-image.png" alt="Viewer">
+Full-screen, slideshow, 1:1 zoom, metadata display, keyboard navigation etc.</p>
 </td>
 </tr>
 </table>
@@ -472,9 +472,12 @@ start.bat
 chmod +x setup.sh
 start.sh
 </div></code></pre>
-<h3 id="manual-configuration">Manual Configuration</h3>
-<p><strong>Manual Changes in <code>.env</code> file:</strong></p>
-<p><strong>The setup script above will help you set the admin password and pictures folder but you can also manualy change them before starting!</strong></p>
+<h1 id="manual-configuration">Manual Configuration</h1>
+<p><strong>Manual Changes in <code>.env</code> file:</strong>
+If you didn't run the setup script and don't yet have a .env file, first create one by copying .env.example</p>
+<pre class="hljs"><code><div>cp .env.exampl .env
+</div></code></pre>
+<p>The setup script above will help you set the admin password and pictures folder but you can also manualy change them before starting!**</p>
 <pre class="hljs"><code><div>ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD    #this is the initial admin user password for the gallery
                                                      #you set this only for the initial login after which you can change it in the app 
 
@@ -482,7 +485,7 @@ PICTURES_PATH=/path/to/your/pictures                 # Windows: Use forward slas
                                                      # Linux/Mac: Use absolute path e.g., /home/yourname/pictures
 
 </div></code></pre>
-<p><strong>Email Configuration (this settings are needed for user management to work)</strong></p>
+<h2 id="email-configuration-this-settings-are-needed-for-user-management-to-work">Email Configuration (this settings are needed for user management to work)</h2>
 <p>To manage and invite additional users configure email settings:</p>
 <pre class="hljs"><code><div># Basic Authentication (most common)
 SMTP_AUTH_TYPE=Basic
@@ -505,7 +508,7 @@ SMTP_FROM=your-email@gmail.com
 <li><strong>Outlook/Office365</strong>: <code>SMTP_HOST=smtp.office365.com</code></li>
 <li><strong>Yahoo</strong>: <code>SMTP_HOST=smtp.mail.yahoo.com</code></li>
 </ul>
-<h3 id="manually-controll-the-application-components">Manually controll the application components</h3>
+<h2 id="manually-controll-the-application-components">Manually controll the application components</h2>
 <pre class="hljs"><code><div>docker compose run sync      <span class="hljs-comment">#run to manually sync the pictures folder into the database. Runs in the foreground to see the progress (may take a while for large folders)</span>
                              <span class="hljs-comment">#sync is incremental so after initial full sync any new/updated/renamed/deleted/moved files are also synced</span>
 docker compose run valbum    <span class="hljs-comment">#run to create (or update) virtual albums (see below)</span>
@@ -518,11 +521,11 @@ docker compose up -d         <span class="hljs-comment">#run all components (the
 docker compose logs sync --tail=10  <span class="hljs-comment">#see how much is left for sync to finish when running in the backround</span>
 docker compose logs face --tail=10  <span class="hljs-comment">#see how much is left for face detection process to finish when running in the backround</span>
 </div></code></pre>
-<h3 id="virtual-albums">Virtual Albums</h3>
+<h1 id="virtual-albums">Virtual Albums</h1>
 <p>Virtual albums represent public albums (no login required) generated based on a search expression or a designated folder.</p>
 <p>Virtual albums can be pre-defined in a YAML file for a quick setup (e.g. <code>virtual_albums.yml</code>)
 Additionaly you will also be able to use the gallery itself to manage (create/edit) virtual albums.</p>
-<p>Virtual albums have the following properties:</p>
+<p>Virtual albums in the YML files have the following properties:</p>
 <ul>
 <li>yml root keys are the actual album names</li>
 <li>album yml sub keys:

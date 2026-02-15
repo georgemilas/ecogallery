@@ -15,9 +15,9 @@ interface LocationsMenuProps {
 }
 
 const TIER_OPTIONS = [
-  { label: 'Location', tierMeters: 300 },
-  { label: 'Neighborhood', tierMeters: 2000 },
   { label: 'Area', tierMeters: 25000 },
+  { label: 'Place', tierMeters: 300 },
+  { label: 'Neighborhood', tierMeters: 2000 },  
 ];
 
 export function LocationsMenu({ onSearchByClusterId, onSearchByClusterName }: LocationsMenuProps) {
@@ -25,7 +25,7 @@ export function LocationsMenu({ onSearchByClusterId, onSearchByClusterName }: Lo
   const [locations, setLocations] = useState<LocationClusterSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTier, setSelectedTier] = useState(300);
+  const [selectedTier, setSelectedTier] = useState(25000);
   const menuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});

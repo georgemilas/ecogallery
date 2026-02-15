@@ -56,7 +56,7 @@ public record ImageLocationCluster
         get {
             if (TierMeters <= 300)
             {
-                return "Location";
+                return "Place";
             }
             else if (TierMeters <= 2000)
             {

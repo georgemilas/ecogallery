@@ -1,4 +1,4 @@
-# EcoGallery
+# ecogallery
 
 **Privacy-focused, self-hosted photo & video gallery for managing massive media collections locally.**
 
@@ -36,15 +36,15 @@ EcoGallery is a self-hosted gallery application designed for photographers and f
 <td width="50%">
 
 ### Gallery View
-![Gallery](data/gallery.png)
+![Gallery](https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/data/gallery.png)
 Browse albums and sub-albums, create/edit virtual albums, sort, search, keyboard shortcuts etc.
 
 </td>
 <td width="50%">
 
 ### Image Viewer
-![Viewer](data/gallery-image.png)
-Full-screen slideshow, zoom, metadata display, keyboard navigation etc.
+![Viewer](https://raw.githubusercontent.com/georgemilas/ecogallery/refs/heads/master/data/gallery-image.png)
+Full-screen, slideshow, 1:1 zoom, metadata display, keyboard navigation etc.
 
 </td>
 </tr>
@@ -52,7 +52,7 @@ Full-screen slideshow, zoom, metadata display, keyboard navigation etc.
 
 ---
 
-# EcoGallery Installation Guide
+# ecogallery Installation Guide
 
 ## Prerequisites
 
@@ -97,11 +97,15 @@ chmod +x setup.sh
 start.sh
 ```
 
-### Manual Configuration
+# Manual Configuration
 
 **Manual Changes in `.env` file:**
+If you didn't run the setup script and don't yet have a .env file, first create one by copying .env.example
+```bash
+cp .env.exampl .env
+```
 
-**The setup script above will help you set the admin password and pictures folder but you can also manualy change them before starting!**
+The setup script above will help you set the admin password and pictures folder but you can also manualy change them before starting!**
 
 ```env
 ADMIN_PASSWORD=CHANGE_ME_TO_SECURE_ADMIN_PASSWORD    #this is the initial admin user password for the gallery
@@ -112,7 +116,7 @@ PICTURES_PATH=/path/to/your/pictures                 # Windows: Use forward slas
 
 ```
 
-**Email Configuration (this settings are needed for user management to work)**
+## Email Configuration (this settings are needed for user management to work)
 
 To manage and invite additional users configure email settings:
 
@@ -138,7 +142,7 @@ SMTP_FROM=your-email@gmail.com
 - **Yahoo**: `SMTP_HOST=smtp.mail.yahoo.com`
 
 
-### Manually controll the application components
+## Manually controll the application components
 
 ```bash
 docker compose run sync      #run to manually sync the pictures folder into the database. Runs in the foreground to see the progress (may take a while for large folders)
@@ -155,14 +159,14 @@ docker compose logs face --tail=10  #see how much is left for face detection pro
 ```
 
 
-### Virtual Albums 
+# Virtual Albums 
 
 Virtual albums represent public albums (no login required) generated based on a search expression or a designated folder.
 
 Virtual albums can be pre-defined in a YAML file for a quick setup (e.g. `virtual_albums.yml`)
 Additionaly you will also be able to use the gallery itself to manage (create/edit) virtual albums.   
 
-Virtual albums have the following properties:
+Virtual albums in the YML files have the following properties:
 - yml root keys are the actual album names
 - album yml sub keys:
     - **expression**: A query expression to find pictures from within your folders structure (see examples bellow) 

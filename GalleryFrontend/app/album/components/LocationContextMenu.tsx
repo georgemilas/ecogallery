@@ -103,15 +103,15 @@ export function LocationContextMenu({ clusters, position, onClose, locationHandl
         backgroundColor: '#2a2a2a',
         border: '1px solid #e8f09e',
         borderRadius: '8px',
-        padding: '12px',
+        padding: '10px',
         zIndex: 3000,
-        minWidth: '240px',
-        maxWidth: '320px',
+        minWidth: '200px',
+        maxWidth: '280px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <div style={{ color: '#e8f09e', fontWeight: 'bold', fontSize: '12px' }}>
           Location Clusters
         </div>
@@ -137,23 +137,23 @@ export function LocationContextMenu({ clusters, position, onClose, locationHandl
         const lat = sortedClusters[0].centroid_latitude;
         const lng = sortedClusters[0].centroid_longitude;
         return (
-          <div style={{ marginBottom: '10px' }}>
+          <div style={{ marginBottom: '6px' }}>
             <iframe
               width="100%"
-              height="150"
+              height="130"
               style={{ border: 0, borderRadius: '4px' }}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               src={`https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`}
             />
-            <a
+            {/* <a
               href={`https://www.google.com/maps?q=${lat},${lng}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: '#e8f09e', fontSize: '11px', textDecoration: 'none' }}
             >
               Open in Google Maps
-            </a>
+            </a> */}
           </div>
         );
       })()}
@@ -162,16 +162,14 @@ export function LocationContextMenu({ clusters, position, onClose, locationHandl
         <div
           key={cluster.cluster_id}
           style={{
-            marginBottom: '10px',
-            paddingBottom: '10px',
-            borderBottom: '1px solid #444',
+            marginBottom: '4px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0' }}>
             <span style={{ color: '#e8f09e', fontSize: '11px', fontWeight: 'bold' }}>
               {cluster.tier_name}
             </span>
-            <span style={{ color: '#666', fontSize: '10px', marginLeft: '6px' }}>
+            <span style={{ color: '#666', fontSize: '10px', marginLeft: '6px', paddingTop: '2px' }}>
               #{cluster.cluster_id}
             </span>
             {locationHandlers.onSearchByClusterId && (
@@ -182,7 +180,7 @@ export function LocationContextMenu({ clusters, position, onClose, locationHandl
                   border: 'none',
                   color: '#888',
                   cursor: 'pointer',
-                  padding: '2px 4px',
+                  padding: '0 4px',
                 }}
                 title="Search by Cluster ID"
               >
@@ -221,7 +219,7 @@ export function LocationContextMenu({ clusters, position, onClose, locationHandl
                   disabled={!(names[cluster.cluster_id] ?? '').trim()}
                   style={{
                     background: 'none',
-                    border: '1px solid #555',
+                    // border: '1px solid #555',
                     borderRadius: '4px',
                     color: (names[cluster.cluster_id] ?? '').trim() ? '#e8f09e' : '#555',
                     cursor: (names[cluster.cluster_id] ?? '').trim() ? 'pointer' : 'not-allowed',
