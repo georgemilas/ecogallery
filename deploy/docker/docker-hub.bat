@@ -48,7 +48,8 @@ docker login
 docker tag ecogallery-api gmilas/ecogallery-api:latest
 docker tag ecogallery-frontend gmilas/ecogallery-frontend:latest  
 docker tag ecogallery-nginx gmilas/ecogallery-nginx:latest
-docker tag ecogallery-postgres gmilas/ecogallery-postgres:latest
+REM postgres uses postgis/postgis base image directly - no custom build to tag
+REM docker tag ecogallery-postgres gmilas/ecogallery-postgres:latest
 docker tag ecogallery-service gmilas/ecogallery-service:latest
 docker tag ecogallery-sync gmilas/ecogallery-sync:latest
 docker tag ecogallery-face gmilas/ecogallery-face:latest
@@ -68,7 +69,7 @@ echo.
 docker push gmilas/ecogallery-api:latest
 docker push gmilas/ecogallery-frontend:latest  
 docker push gmilas/ecogallery-nginx:latest
-docker push gmilas/ecogallery-postgres:latest
+REM docker push gmilas/ecogallery-postgres:latest
 docker push gmilas/ecogallery-service:latest
 docker push gmilas/ecogallery-sync:latest
 docker push gmilas/ecogallery-face:latest

@@ -49,6 +49,10 @@ You can use the /R flag to recurively process all files in all subfolders:
 ```powershell
 #command prompt (cmd)
 for /R %f in (*.mts) do ffmpeg -i "%f" -c:v libx264 -c:a aac "%~dpnf.mp4"
+
+#encode the mp4 for fast start aka streaming
+ffmpeg -i input.mp4 -movflags +faststart -c copy output.mp4  
+
 ```
  * /R makes the loop recursive.
  * %f is each file found.
@@ -135,6 +139,7 @@ docker compose down
 docker compose build
 
 #Step 2: Tag the locally built images to match what prod compose expects (aka DOCKER_IMAGE_PREFIX and IMAGE_TAG from .env):
+#https://hub.docker.com/repositories/gmilas
 docker login  #my gmail oauth -> user gmilas 
 docker tag ecogallery-api gmilas/ecogallery-api:latest
 docker tag ecogallery-frontend gmilas/ecogallery-frontend:latest  

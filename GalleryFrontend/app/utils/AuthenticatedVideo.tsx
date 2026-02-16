@@ -30,15 +30,17 @@ export const AuthenticatedVideo = React.forwardRef<HTMLVideoElement, Authenticat
       }
     };
 
-    // Route video through API proxy which adds X-API-Key and supports range requests
-    const videoSrc = src ? `/api/media${getPath(src)}` : undefined;
+    // Serve video directly through nginx (bypasses Next.js proxy for streaming performance)
+    // Auth: api key via query param + session cookie (sent automatically as same-origin request)
+    const apiKey = process.env.NEXT_PUBLIC_API_KEY || '';
+    const videoSrc = src ? `${getPath(src)}?q=${apiKey}` : undefined;
 
     return (
       <video
         ref={ref}
         src={videoSrc}
         poster={posterUrl || undefined}
-        crossOrigin="use-credentials"
+        //crossOrigin="use-credentials"  // Not needed since we're using same-origin URLs and cookies are sent automatically
         {...props}
       />
     );

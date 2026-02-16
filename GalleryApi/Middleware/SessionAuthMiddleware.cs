@@ -34,7 +34,8 @@ public class SessionAuthMiddleware
         var pathsToSkip = new[]
         {
             "/api/v1/auth",                 //login, logout, register, validate-picture etc.
-            "/api/v1/pictures/_thumbnails"  //thumbnails are accessible without user authentication
+            "/api/v1/pictures/_thumbnails", //thumbnails are accessible without user authentication
+            "/api/v1/pictures/_validate"    //nginx auth_request validation - API key check is sufficient
         };
         if (pathsToSkip.Any(path => context.Request.Path.StartsWithSegments(path)))
         {

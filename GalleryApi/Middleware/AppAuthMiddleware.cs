@@ -42,8 +42,11 @@ public class AppAuthMiddleware
 
     public static bool IsAppAuthenticated(HttpContext context, IConfiguration configuration)
     {
-        var apiKey = context.Request.Headers["X-API-Key"].ToString() 
-                  ?? context.Request.Query["api_key"].ToString();
+        var apiKey = context.Request.Headers["X-API-Key"].ToString();
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            apiKey = context.Request.Query["q"].ToString();  //"q" is the query string param for api key
+        }
 
         var expectedApiKey = configuration["AppAuth:ApiKey"];
         
