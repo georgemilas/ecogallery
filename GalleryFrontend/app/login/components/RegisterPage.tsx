@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/app/utils/apiFetch';
 import './login.css';
-import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
+
 
 export function RegisterPage(): JSX.Element {
   const [username, setUsername] = useState('');
@@ -84,7 +84,7 @@ export function RegisterPage(): JSX.Element {
 
   return (
     <div className="login-container">
-      <AuthenticatedImage src="/pictures/_thumbnails/1440/public/IMG_8337.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />  
+      <img src="/images/logo.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />
       <div className="login-box">
         <h1>Register</h1>
         <form onSubmit={handleSubmit}>

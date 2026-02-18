@@ -20,19 +20,7 @@ public class UserManagementController : ControllerBase
     {
         try
         {
-            var roles = await _authService.GetAllRolesAsync();
-            var result = new List<object>();
-            foreach (var role in roles)
-            {
-                var effectiveRoles = await _authService.GetEffectiveRolesForRoleAsync(role.Id);
-                result.Add(new
-                {
-                    id = role.Id,
-                    name = role.Name,
-                    description = role.Description,
-                    effectiveRoles = effectiveRoles
-                });
-            }
+            var result = await _authService.GetAllRolesWithEffectiveRolesAsync();
             return Ok(result);
         }
         catch (Exception ex)
@@ -47,7 +35,9 @@ public class UserManagementController : ControllerBase
     {
         try
         {
-            var roleId = await _authService.CreateRoleAsync(request.Name, request.Description, request.ParentRoleId);
+            // Support both single ParentRoleId and multiple ParentRoleIds
+            var parentIds = request.ParentRoleIds ?? (request.ParentRoleId.HasValue ? [request.ParentRoleId.Value] : null);
+            var roleId = await _authService.CreateRoleAsync(request.Name, request.Description, parentIds);
             return Ok(new { success = true, id = roleId, message = "Role created successfully." });
         }
         catch (InvalidInputException ex)

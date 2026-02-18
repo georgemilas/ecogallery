@@ -188,6 +188,37 @@ public class AuthRepository : IDisposable, IAsyncDisposable
         return result.ToList();
     }
 
+    /// <summary>
+    /// Returns all roles with their effective (inherited) role names in a single query.
+    /// Each row: role_id, role_name, description, effective_role (one row per effective role per role).
+    /// </summary>
+    public async Task<List<(long Id, string Name, string? Description, string EffectiveRole)>> GetAllRolesWithEffectiveRolesAsync()
+    {
+        const string sql = @"
+            WITH RECURSIVE role_tree AS (
+                SELECT r.id AS root_id, r.id, r.name
+                FROM public.roles r
+
+                UNION
+
+                SELECT rt.root_id, r2.id, r2.name
+                FROM role_tree rt
+                JOIN public.role_hierarchy rh ON rh.child_role_id = rt.id
+                JOIN public.roles r2 ON r2.id = rh.parent_role_id
+            )
+            SELECT r.id AS role_id, r.name AS role_name, r.description, rt.name AS effective_role
+            FROM public.roles r
+            JOIN role_tree rt ON rt.root_id = r.id
+            ORDER BY r.name, rt.name;";
+
+        return (await _db.QueryAsync(sql, reader => (
+            reader.GetInt64(0),
+            reader.GetString(1),
+            reader.IsDBNull(2) ? null : reader.GetString(2),
+            reader.GetString(3)
+        ))).ToList();
+    }
+
     public async Task<IReadOnlyList<string>> GetEffectiveRolesForRoleAsync(long roleId)
     {
         const string sql = @"
@@ -221,9 +252,14 @@ public class AuthRepository : IDisposable, IAsyncDisposable
         return await _db.ExecuteScalarAsync<long>(sql, parameters: new { name, description });
     }
 
-    public async Task AddRoleHierarchyAsync(long parentRoleId, long childRoleId)
+    public async Task<long> CreateRoleWithParentsAsync(string name, string? description, List<long> parentRoleIds)
     {
-        const string sql = "INSERT INTO public.role_hierarchy (parent_role_id, child_role_id) VALUES (@parent_role_id, @child_role_id) ON CONFLICT DO NOTHING";
-        await _db.ExecuteAsync(sql, new { parent_role_id = parentRoleId, child_role_id = childRoleId });
+        var roleId = await CreateRoleAsync(name, description);
+
+        var values = string.Join(", ", parentRoleIds.Select(pid => $"({pid}, {roleId})"));
+        var sql = $"INSERT INTO public.role_hierarchy (parent_role_id, child_role_id) VALUES {values} ON CONFLICT DO NOTHING";
+        await _db.ExecuteAsync(sql);
+
+        return roleId;
     }
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/app/utils/apiFetch';
 import '../login/components/login.css';
-import { AuthenticatedImage } from '@/app/utils/AuthenticatedImage';
+
 
 interface RoleInfo {
   id: number;
@@ -40,10 +40,10 @@ export function ManageUsersPage(): JSX.Element {
 
   const selectedRole = roles.find(r => r.id === roleId);
 
-  const excludedNames = ['public', 'client'];
-  const isClientRole = (r: RoleInfo) => r.effective_roles.includes('client') && !r.effective_roles.includes('private');
-  const clientRoles = roles.filter(r => !excludedNames.includes(r.name) && isClientRole(r));
-  const baseRoles = roles.filter(r => !excludedNames.includes(r.name) && !isClientRole(r));
+  const systemRoles = ['public', 'private', 'client', 'admin', 'user_admin', 'album_admin'];
+  const isClientRole = (r: RoleInfo) => !systemRoles.includes(r.name) && r.effective_roles.includes('client');
+  const baseRoles = roles.filter(r => r.name !== 'public' && r.name !== 'client' && !isClientRole(r));
+  const clientRoles = roles.filter(r => isClientRole(r));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +84,7 @@ export function ManageUsersPage(): JSX.Element {
 
   return (
     <div className="login-container">
-      <AuthenticatedImage src="/pictures/_thumbnails/1440/public/IMG_8337.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />
+      <img src="/images/logo.jpg" alt="Gallery Logo" style={{width: '90%', marginBottom: '1em'}} />
       <div className="login-box">
         <h1>Invite User</h1>
         <form onSubmit={handleSubmit}>

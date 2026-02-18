@@ -219,22 +219,36 @@ public class UserAuthService : AppAuthService, IDisposable, IAsyncDisposable
         return await _authRepository.GetAllRolesAsync();
     }
 
+    public async Task<List<object>> GetAllRolesWithEffectiveRolesAsync()
+    {
+        var rows = await _authRepository.GetAllRolesWithEffectiveRolesAsync();
+        return rows
+            .GroupBy(r => new { r.Id, r.Name, r.Description })
+            .Select(g => (object)new
+            {
+                id = g.Key.Id,
+                name = g.Key.Name,
+                description = g.Key.Description,
+                effective_roles = g.Select(r => r.EffectiveRole).Distinct().OrderBy(n => n).ToList()
+            })
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<string>> GetEffectiveRolesForRoleAsync(long roleId)
     {
         return await _authRepository.GetEffectiveRolesForRoleAsync(roleId);
     }
 
-    public async Task<long> CreateRoleAsync(string name, string? description, long? parentRoleId)
+    public async Task<long> CreateRoleAsync(string name, string? description, IEnumerable<long>? parentRoleIds)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new InvalidInputException("Role name is required.");
 
-        var roleId = await _authRepository.CreateRoleAsync(name, description);
-        if (parentRoleId.HasValue)
-        {
-            await _authRepository.AddRoleHierarchyAsync(parentRoleId.Value, roleId);
-        }
-        return roleId;
+        var parentIds = parentRoleIds?.ToList();
+        if (parentIds is { Count: > 0 })
+            return await _authRepository.CreateRoleWithParentsAsync(name, description, parentIds);
+
+        return await _authRepository.CreateRoleAsync(name, description);
     }
 
     public async Task UpdateUserPasswordAsync(SetPasswordRequest request)

@@ -326,10 +326,11 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
 
   const renderEditView = () => {
     const isNew = formData.id === 0;
+    const systemRoles = ['public', 'private', 'client', 'admin', 'user_admin', 'album_admin'];
     const excludedNames = ['client', 'user_admin', 'album_admin'];
-    const isClientRole = (r: RoleInfo) => r.effective_roles.includes('client') && !r.effective_roles.includes('private');
-    const clientRoles = roles.filter(r => !excludedNames.includes(r.name) && isClientRole(r));
+    const isClientRole = (r: RoleInfo) => !systemRoles.includes(r.name) && r.effective_roles.includes('client');
     const baseRoles = roles.filter(r => !excludedNames.includes(r.name) && !isClientRole(r));
+    const clientRoles = roles.filter(r => !excludedNames.includes(r.name) && isClientRole(r));
 
     return (
       <>
@@ -391,14 +392,14 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
               {baseRoles.length > 0 && (
                 <optgroup label="Base Roles">
                   {baseRoles.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}{r.description ? ` - ${r.description}` : ''}</option>
+                    <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </optgroup>
               )}
               {clientRoles.length > 0 && (
                 <optgroup label="Client Roles">
                   {clientRoles.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}{r.description ? ` - ${r.description}` : ''}</option>
+                    <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </optgroup>
               )}
