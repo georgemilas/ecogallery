@@ -14,7 +14,6 @@ export function VirtualAlbumPage({ initialView }: VirtualAlbumPageProps = {}): J
     requireAuth: false,
     useOriginalImage: false,
     initialView,
-    onSearchSubmit: () => {}, // VirtualAlbums don't support search
     renderHierarchyView: (props: BaseAlbumPageProps) => (
       <VirtualAlbumHierarchyView
         key={props.router.query?.album}
@@ -25,7 +24,7 @@ export function VirtualAlbumPage({ initialView }: VirtualAlbumPageProps = {}): J
         settings={props.currentSettings}
         router={props.router}
         onSortChange={props.onSortChange}
-        onSearchSubmit={() => {}}
+        onSearchSubmit={props.onSearchSubmit!}
         onGetApiUrl={props.onGetApiUrl}
         clearLastViewedImage={() => props.setLastViewedImage(null)}
         onFaceSearch={props.onFaceSearch}
@@ -37,6 +36,8 @@ export function VirtualAlbumPage({ initialView }: VirtualAlbumPageProps = {}): J
         onSearchByClusterName={props.onSearchByClusterName}
         onSortedImagesChange={props.onSortedImagesChange}
         searchEditor={props.searchEditor}
+        showAlbumManager={props.showAlbumManager}
+        setShowAlbumManager={props.setShowAlbumManager}
       />
     )
   };

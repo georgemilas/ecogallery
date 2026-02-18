@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from '../album/components/AlbumHierarchyProps';
 import { ImageView } from '../album/components/ImageView';
+import { VirtualAlbumManager } from '../album/components/VirtualAlbumManager';
 import { apiFetch } from '@/app/utils/apiFetch';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
@@ -52,6 +53,8 @@ export interface BaseAlbumPageProps {
   onSearchByClusterName?: (name: string) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
   searchEditor: SearchEditorState;
+  showAlbumManager: boolean;
+  setShowAlbumManager: (show: boolean) => void;
   config: BaseAlbumConfig;
 }
 
@@ -71,6 +74,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const viewParam = searchParams.get('view'); // 'random' or 'recent'
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
   const [sortedImages, setSortedImages] = useState<ImageItemContent[]>([]);
+  const [showAlbumManager, setShowAlbumManager] = useState(false);
   const [searchEditorOpen, setSearchEditorOpen] = useState(false);
   const [searchEditorText, setSearchEditorText] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -162,7 +166,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     setLoading(true);
     setSearchError(null); // Clear previous error
     try {
-      const url = `${config.apiBaseUrl}/search`;
+      const url = '/api/v1/albums/search';
       console.log('Searching albums:', { expression, url });
       var searchInfo = album != null && album.search_info ? { ...album.search_info, expression: expression, offset: offset, limit: gallerySettings.searchPageSize } : { expression: expression, limit: gallerySettings.searchPageSize, offset: offset, count: 0, group_by_p_hash: true };
       console.log('Using search info:', searchInfo);
@@ -454,6 +458,8 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     onSearchByClusterName: navigateToSearchByClusterName,
     onSortedImagesChange: setSortedImages,
     searchEditor,
+    showAlbumManager,
+    setShowAlbumManager,
     config
   };
 
@@ -491,6 +497,14 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
             style={{ color: '#667eea', textDecoration: 'underline', fontSize: '15px' }}>Home
           </a>
         </>
+      )}
+      {user?.roles?.includes('album_admin') && (
+        <VirtualAlbumManager
+          isOpen={showAlbumManager}
+          onClose={() => setShowAlbumManager(false)}
+          searchEditor={searchEditor}
+          onSearchSubmit={config.onSearchSubmit || postSearchAlbum}
+        />
       )}
     </main>
   );

@@ -501,6 +501,18 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         return album; 
     }
 
+    public async Task DeleteVirtualAlbumAsync(long id)
+    {
+        var sql = "DELETE FROM virtual_album WHERE id = @id";
+        await _db.ExecuteAsync(sql, new { id });
+    }
+
+    public async Task<int> GetVirtualAlbumChildrenCountAsync(long parentId)
+    {
+        var sql = "SELECT COUNT(*) FROM virtual_album WHERE parent_album_id = @parentId";
+        return await _db.ExecuteScalarAsync<int>(sql, new { parentId });
+    }
+
     public async Task<List<AlbumParents>> GetVirtualAlbumParentsAsync(long id)
     {
         var sql = @"WITH RECURSIVE ancestors AS (
@@ -521,7 +533,30 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         return albumContent;
     }
 
+    public async Task<List<AlbumTree>> GetVirtualAlbumsTreeAsync()
+    {
+        var sql = @"WITH RECURSIVE ancestors AS (
+                        SELECT id, album_name, album_type, album_description, feature_image_path,
+                               last_updated_utc, created_timestamp_utc AS album_timestamp_utc,
+                               parent_album, parent_album_id, role_id,
+                               album_expression, album_folder, 0 as depth
+                        FROM virtual_album a
+                        WHERE parent_album_id = 0
 
+                        UNION ALL
+
+                        SELECT t.id, t.album_name, t.album_type, t.album_description, t.feature_image_path,
+                               t.last_updated_utc, t.created_timestamp_utc AS album_timestamp_utc,
+                               t.parent_album, t.parent_album_id, t.role_id,
+                               t.album_expression, t.album_folder, a.depth + 1
+                        FROM virtual_album t
+                        JOIN ancestors a ON a.album_name = t.parent_album
+                        WHERE a.depth < 100  -- safety limit
+                    )
+                    SELECT * FROM ancestors ORDER BY depth, album_timestamp_utc;";
+        var albumTree = await _db.QueryAsync(sql, reader => AlbumTree.CreateFromDataReader(reader));
+        return albumTree;
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// AlbumSettings Methods

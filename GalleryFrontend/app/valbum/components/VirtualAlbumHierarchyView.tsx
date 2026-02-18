@@ -9,7 +9,7 @@ export interface VirtualAlbumHierarchyProps {
   album: AlbumItemHierarchy;
   onAlbumClick: (albumId: number | null) => void;
   onImageClick: (image: ImageItemContent) => void;
-  onSearchSubmit: (expression: string) => void;
+  onSearchSubmit: (expression: string, offset: number) => void;
   onGetApiUrl: (apiUrl: string) => void;
   lastViewedImage?: number | null;
   settings: AlbumSettings;
@@ -34,6 +34,8 @@ export interface VirtualAlbumHierarchyProps {
     panelWidth: number;
     setPanelWidth: (width: number) => void;
   };
+  showAlbumManager?: boolean;
+  setShowAlbumManager?: (show: boolean) => void;
 }
 
 export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {
@@ -41,7 +43,7 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
 
   const config: BaseHierarchyConfig = {
     settingsApiEndpoint: '/api/v1/valbums/settings',
-    showSearch: false,
+    showSearch: user?.roles?.includes('album_admin') ?? false,
     getImageLabel: (album, imageName) => imageName,
     renderNavMenu: (baseProps) => {
       const navigateOrRefresh = (path: string, apiEndpoint: string) => {
@@ -92,10 +94,6 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
   // Convert VirtualAlbumHierarchyProps to BaseHierarchyProps
   const baseProps: BaseHierarchyProps = {
     ...props,
-    onSearchSubmit: (expression: string, offset: number) => {
-      // VirtualAlbumHierarchyView doesn't use offset, so we ignore it
-      props.onSearchSubmit(expression);
-    },
     config
   };
 

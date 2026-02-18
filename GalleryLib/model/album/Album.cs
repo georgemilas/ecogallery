@@ -3,6 +3,22 @@ using System.IO;
 
 namespace GalleryLib.model.album;
 
+public record AlbumTree: Album
+{
+    public int Depth { get; set; }
+    public string AlbumExpression { get; set; } = string.Empty;
+    public string AlbumFolder { get; set; } = string.Empty;
+
+    public static new AlbumTree CreateFromDataReader(DbDataReader reader)
+    {
+        var album = Album.CreateFromDataReader<AlbumTree>(reader);
+        album.Depth = reader.GetInt32(reader.GetOrdinal("depth"));
+        album.AlbumExpression = reader.IsDBNull(reader.GetOrdinal("album_expression")) ? string.Empty : reader.GetString(reader.GetOrdinal("album_expression"));
+        album.AlbumFolder = reader.IsDBNull(reader.GetOrdinal("album_folder")) ? string.Empty : reader.GetString(reader.GetOrdinal("album_folder"));
+        return album;
+    }
+}
+
 public record Album
 {
     public long Id { get; set; }   //Int64
@@ -55,10 +71,14 @@ public record Album
             ParentAlbum = Path.GetDirectoryName(albumName) ?? string.Empty
         };
     }
-
     public static Album CreateFromDataReader(DbDataReader reader)
     {
-        return new Album
+        return CreateFromDataReader<Album>(reader);
+    }
+
+    public static T CreateFromDataReader<T>(DbDataReader reader) where T : Album, new()
+    {
+        return new T
         {
             Id = reader.GetInt64(reader.GetOrdinal("id")),
             AlbumName = reader.GetString(reader.GetOrdinal("album_name")),

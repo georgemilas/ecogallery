@@ -6,10 +6,11 @@ interface MenuPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onSettingsClick: () => void;
+  onManageAlbumsClick?: () => void;
   router: AppRouterInstance;
 }
 
-export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPanelProps): JSX.Element | null {
+export function MenuPanel({ isOpen, onClose, onSettingsClick, onManageAlbumsClick, router }: MenuPanelProps): JSX.Element | null {
   const { user, logout, login } = useAuth();
 
   if (!isOpen) return null;
@@ -80,6 +81,25 @@ export function MenuPanel({ isOpen, onClose, onSettingsClick, router }: MenuPane
           </button>
         )}
         
+        {user?.roles?.includes('album_admin') && onManageAlbumsClick && (
+          <button
+            onClick={() => {
+              onClose();
+              onManageAlbumsClick();
+            }}
+            style={menuButtonStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3a3a3a')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="1.5">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              <line x1="12" y1="11" x2="12" y2="17"/>
+              <line x1="9" y1="14" x2="15" y2="14"/>
+            </svg>
+            Manage Albums
+          </button>
+        )}
+
         {user?.roles?.includes('user_admin') && (
           <button
             onClick={() => {

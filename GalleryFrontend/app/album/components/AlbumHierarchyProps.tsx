@@ -207,6 +207,8 @@ export interface AlbumHierarchyProps {
     panelWidth: number;
     setPanelWidth: (width: number) => void;
   };
+  showAlbumManager?: boolean;
+  setShowAlbumManager?: (show: boolean) => void;
 }
 
 

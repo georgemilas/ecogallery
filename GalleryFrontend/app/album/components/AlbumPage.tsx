@@ -45,6 +45,8 @@ export function AlbumPage({ initialView }: AlbumPageProps = {}): JSX.Element {
         onSearchByClusterName={props.onSearchByClusterName}
         onSortedImagesChange={props.onSortedImagesChange}
         searchEditor={props.searchEditor}
+        showAlbumManager={props.showAlbumManager}
+        setShowAlbumManager={props.setShowAlbumManager}
       />
     )
   };

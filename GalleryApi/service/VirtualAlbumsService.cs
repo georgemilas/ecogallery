@@ -155,7 +155,46 @@ public class VirtualAlbumsService: ServiceBase
         return albumContent;
     }
 
+    public async Task<List<AlbumTree>> GetVirtualAlbumsTreeAsync()
+    {
+        var albumTree = await _albumRepository.GetVirtualAlbumsTreeAsync(); //get all virtual albums in a tree structure
+        return albumTree;
+    }
 
+    public async Task<VirtualAlbum> SaveVirtualAlbumAsync(VirtualAlbum album)
+    {
+        album.LastUpdatedUtc = DateTimeOffset.UtcNow;
+        if (album.Id == 0)
+        {
+            album.CreatedTimestampUtc = DateTimeOffset.UtcNow;
+        }
+
+        // Resolve parent album name from parent album id
+        if (album.ParentAlbumId > 0)
+        {
+            var parent = await _albumRepository.GetVirtualAlbumByIdAsync(album.ParentAlbumId);
+            if (parent != null)
+            {
+                album.ParentAlbum = parent.AlbumName;
+            }
+        }
+        else
+        {
+            album.ParentAlbum = string.Empty;
+        }
+
+        return await _albumRepository.UpsertVirtualAlbumAsync(album);
+    }
+
+    public async Task DeleteVirtualAlbumAsync(long albumId)
+    {
+        var childrenCount = await _albumRepository.GetVirtualAlbumChildrenCountAsync(albumId);
+        if (childrenCount > 0)
+        {
+            throw new InvalidOperationException($"Cannot delete album with {childrenCount} child album(s). Delete children first.");
+        }
+        await _albumRepository.DeleteVirtualAlbumAsync(albumId);
+    }
 
     private async Task<VirtualAlbumContent> GetFromVirtualAlbum(GalleryLib.model.album.VirtualAlbum valbum, string uniqueDataId)
     {
@@ -187,9 +226,10 @@ public class VirtualAlbumsService: ServiceBase
         album.Albums = new List<AlbumItemContent>();
         album.Images = new List<ImageItemContent>();
         Console.WriteLine($"Debug: Loading virtual album '{valbum.AlbumName}' with expression '{valbum.AlbumExpression}' and folder '{valbum.AlbumFolder}'");         
-        var (content, _) =  !String.IsNullOrWhiteSpace(album.Expression) ?
-                       await _albumRepository.GetAlbumContentHierarchicalByExpression(new AlbumSearch() { Limit = 0, Expression = valbum.AlbumExpression }) :   //no limit for virtual albums
-                       (await _albumRepository.GetAlbumContentHierarchicalByName(valbum.AlbumFolder), null);       
+        var (content, _) =  (valbum.AlbumType == "expression" && !String.IsNullOrWhiteSpace(album.Expression)) 
+                       ? await _albumRepository.GetAlbumContentHierarchicalByExpression(new AlbumSearch() { Limit = 0, Expression = valbum.AlbumExpression })    //no limit for virtual albums
+                       : (await _albumRepository.GetAlbumContentHierarchicalByName(valbum.AlbumFolder), null);       
+
         Console.WriteLine($"Debug: Virtual album '{valbum.AlbumName}' returned {content.Count} items.");
         foreach (var image in content.Where(i => !i.ItemType.Equals("folder", StringComparison.OrdinalIgnoreCase)))
         {

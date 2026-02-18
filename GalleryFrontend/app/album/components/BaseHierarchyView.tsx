@@ -14,6 +14,7 @@ import { SearchEditor, SearchEditorState } from './SearchEditor';
 import { SettingsModal } from './SettingsModal';
 import { MenuPanel } from './MenuPanel';
 
+
 export interface BaseHierarchyConfig {
   settingsApiEndpoint: string; // '/api/v1/albums/settings' or '/api/v1/valbums/settings'
   showSearch: boolean;
@@ -41,6 +42,8 @@ export interface BaseHierarchyProps {
   onSearchByClusterName?: (name: string) => void;
   onSortedImagesChange?: (images: ImageItemContent[]) => void;
   searchEditor?: SearchEditorState;
+  showAlbumManager?: boolean;
+  setShowAlbumManager?: (show: boolean) => void;
   config: BaseHierarchyConfig;
 }
 
@@ -51,6 +54,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
   const [showMenuPanel, setShowMenuPanel] = useState(false);
     const { user } = useAuth();
   const hasPrivateRole = user?.roles?.includes('private') ?? false;
+  const hasAlbumAdminRole = user?.roles?.includes('album_admin') ?? false;
   const { settings: gallerySettings, setShowFaceBoxes } = useGallerySettings();
   const { settings, onSortChange, config } = props;
 
@@ -86,6 +90,12 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
         }
       }
 
+      // 'a' to toggle album manager (album_admin role only)
+      if (hasAlbumAdminRole && props.setShowAlbumManager && (e.key === 'a' || e.key === 'A')) {
+        props.setShowAlbumManager(!props.showAlbumManager);
+        return;
+      }
+
       // 'f' to toggle face boxes (private role only)
       if (hasPrivateRole && (e.key === 'f' || e.key === 'F')) {
         setShowFaceBoxes(!gallerySettings.showFaceBoxes);
@@ -94,7 +104,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [hasPrivateRole, gallerySettings.showFaceBoxes, setShowFaceBoxes, showSettingsModal, showMenuPanel]);
+  }, [hasPrivateRole, hasAlbumAdminRole, gallerySettings.showFaceBoxes, setShowFaceBoxes, showSettingsModal, showMenuPanel, props.showAlbumManager, props.setShowAlbumManager]);
 
   const saveSettings = async (settings: any) => {
     if (user) {
@@ -288,6 +298,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
             isOpen={showMenuPanel}
             onClose={() => setShowMenuPanel(false)}
             onSettingsClick={hasPrivateRole ? () => setShowSettingsModal(true) : ()=>{}}
+            onManageAlbumsClick={hasAlbumAdminRole && props.setShowAlbumManager ? () => props.setShowAlbumManager!(true) : undefined}
             router={props.router}
           />
           {hasPrivateRole && (

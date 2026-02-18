@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using GalleryApi.model;
 using GalleryApi.service;
+using GalleryLib.model.album;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
 
@@ -35,6 +36,53 @@ public class VirtualAlbumsController : ControllerBase
         }
     }
    
+
+    // GET: /api/v1/valbums/tree
+    [HttpGet("tree")]
+    public async Task<ActionResult<List<AlbumTree>>> GetVirtualAlbumsTree()
+    {
+        if (_albumsService.AuthenticatedUser == null || !_albumsService.AuthenticatedUser.Roles.Contains("album_admin"))
+            return StatusCode(403, new { error = "You must have the album_admin role to access this resource" });
+
+        var tree = await _albumsService.GetVirtualAlbumsTreeAsync();
+        return Ok(tree);
+    }
+
+    // POST: /api/v1/valbums/save
+    [HttpPost("save")]
+    public async Task<ActionResult<VirtualAlbum>> SaveVirtualAlbum([FromBody] VirtualAlbum album)
+    {
+        if (_albumsService.AuthenticatedUser == null || !_albumsService.AuthenticatedUser.Roles.Contains("album_admin"))
+            return StatusCode(403, new { error = "You must have the album_admin role to manage albums" });
+
+        try
+        {
+            var saved = await _albumsService.SaveVirtualAlbumAsync(album);
+            return Ok(saved);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // DELETE: /api/v1/valbums/{albumId}
+    [HttpDelete("{albumId:long}")]
+    public async Task<ActionResult> DeleteVirtualAlbum(long albumId)
+    {
+        if (_albumsService.AuthenticatedUser == null || !_albumsService.AuthenticatedUser.Roles.Contains("album_admin"))
+            return StatusCode(403, new { error = "You must have the album_admin role to manage albums" });
+
+        try
+        {
+            await _albumsService.DeleteVirtualAlbumAsync(albumId);
+            return Ok(new { success = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 
     // GET: /api/v1/valbums/{albumId}
     [HttpGet("{albumId:long}")]
