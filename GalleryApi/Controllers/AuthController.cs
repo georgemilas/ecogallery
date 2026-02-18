@@ -56,8 +56,14 @@ public class AuthController : ControllerBase
         {
             return Ok(new { success = true, message = "Already logged out" });
         }        
-        await _authService.LogoutAsync(sessionToken);        
-        Response.Cookies.Delete("session_token");        
+        await _authService.LogoutAsync(sessionToken);
+        var isHttps = HttpContext.Request.IsHttps;
+        Response.Cookies.Delete("session_token", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax
+        });
         return Ok(new { success = true, message = "Logged out successfully" });
     }
 
@@ -84,7 +90,13 @@ public class AuthController : ControllerBase
         var user = await _authService.ValidateSessionAsync(sessionToken);        
         if (user == null)
         {
-            Response.Cookies.Delete("session_token");
+            var isHttps2 = HttpContext.Request.IsHttps;
+            Response.Cookies.Delete("session_token", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isHttps2,
+                SameSite = isHttps2 ? SameSiteMode.None : SameSiteMode.Lax
+            });
             return Unauthorized(new { success = false, message = "Invalid or expired session" });
         }
         

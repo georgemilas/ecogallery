@@ -114,7 +114,13 @@ public class SessionAuthMiddleware
         if (user == null)
         {
             Console.WriteLine($"User authentication failed for path: {context.Request.Path}, invalid or expired session");
-            context.Response.Cookies.Delete("session_token");
+            var isHttps2 = context.Request.IsHttps;
+            context.Response.Cookies.Delete("session_token", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isHttps2,
+                SameSite = isHttps2 ? SameSiteMode.None : SameSiteMode.Lax
+            });
             context.Response.StatusCode = 401;
             await context.Response.WriteAsJsonAsync(new
             {

@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const url = `/api/v1/auth/logout`;
       
-      await fetch(url, {
+      await apiFetch(url, {
         method: 'POST',
         credentials: 'include',
       });
@@ -118,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null);
       localStorage.removeItem('user');
+      localStorage.removeItem('sessionToken');
       router.push('/login');
     }
   };
