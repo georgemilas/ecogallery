@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiFetch } from '@/app/utils/apiFetch';
 import { SearchEditorState } from './SearchEditor';
 import { DraggablePanel } from './DraggablePanel';
 import { TreeView, TreeNode } from './TreeView';
+import { GalleryPickerState } from './GalleryPicker';
 
 interface AlbumTreeNode {
   id: number;
@@ -43,6 +44,7 @@ interface VirtualAlbumManagerProps {
   onClose: () => void;
   searchEditor?: SearchEditorState;
   onSearchSubmit?: (expression: string, offset: number) => void;
+  galleryPicker?: GalleryPickerState;
 }
 
 const ALBUM_TYPES = [
@@ -51,10 +53,84 @@ const ALBUM_TYPES = [
   { value: 'pick_images', label: 'Pick Images' },
 ];
 
+/** Detect server path separator from existing album folder paths in tree data */
+function detectPathSep(treeData: AlbumTreeNode[]): string {
+  for (const node of treeData) {
+    if (node.album_folder) {
+      if (node.album_folder.includes('\\')) return '\\';
+      if (node.album_folder.includes('/')) return '/';
+    }
+  }
+  return '/'; // default to forward slash
+}
+
+/** Quote a path segment if it contains spaces */
+function quoteIfSpaces(s: string): string {
+  return s.includes(' ') ? `"${s}"` : s;
+}
+
+/** Parsed group from a pick_images expression line */
+interface PickExprGroup {
+  folder: string;
+  files: string[];
+  /** Extra text after the files, e.g. " and not subfolder" — preserved on rebuild */
+  extra: string;
+}
+
+/** Build expression from selected image paths, grouped by folder, preserving extras */
+function buildPickImagesExpression(paths: string[], sep: string, extras?: Map<string, string>): string {
+  if (paths.length === 0) return '';
+  const groups = new Map<string, string[]>();
+  // Maintain insertion order
+  const folderOrder: string[] = [];
+  for (const p of paths) {
+    const lastSep = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
+    const folder = lastSep > 0 ? p.substring(0, lastSep) : sep;
+    const filename = lastSep >= 0 ? p.substring(lastSep + 1) : p;
+    if (!groups.has(folder)) {
+      groups.set(folder, []);
+      folderOrder.push(folder);
+    }
+    groups.get(folder)!.push(filename);
+  }
+  const lines: string[] = [];
+  for (const folder of folderOrder) {
+    const files = groups.get(folder)!;
+    const quotedFiles = files.map(f => quoteIfSpaces(f)).join(' ');
+    const extra = extras?.get(folder) ?? '';
+    lines.push(`(${quoteIfSpaces(folder)} and (${quotedFiles})${extra})`);
+  }
+  return lines.join('\n');
+}
+
+/** Parse pick_images expression, extracting paths and preserving extras per folder */
+function parsePickImagesExpression(expression: string, sep: string): { paths: string[]; extras: Map<string, string> } {
+  if (!expression.trim()) return { paths: [], extras: new Map() };
+  const paths: string[] = [];
+  const extras = new Map<string, string>();
+  // Match: (folder and (files)optional_extra)
+  // folder may be quoted, extra is everything between the files closing ) and the outer )
+  const groupRegex = /\(("(?:[^"]+)"|[^\s]+)\s+and\s+\((.+?)\)(.*?)\)/g;
+  let match;
+  while ((match = groupRegex.exec(expression)) !== null) {
+    const folder = match[1].replace(/^"|"$/g, '').trim();
+    const filesStr = match[2].trim();
+    const extra = match[3]; // may be empty string or " and not something"
+    if (extra) extras.set(folder, extra);
+    const fileRegex = /"([^"]+)"|(\S+)/g;
+    let fileMatch;
+    while ((fileMatch = fileRegex.exec(filesStr)) !== null) {
+      const filename = fileMatch[1] || fileMatch[2];
+      paths.push(`${folder}${sep}${filename}`);
+    }
+  }
+  return { paths, extras };
+}
+
 const getAlbumId = (item: AlbumTreeNode) => item.id;
 const getAlbumParentId = (item: AlbumTreeNode) => item.parent_album_id;
 
-export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSubmit }: VirtualAlbumManagerProps): JSX.Element | null {
+export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSubmit, galleryPicker }: VirtualAlbumManagerProps): JSX.Element | null {
   const [view, setView] = useState<'tree' | 'edit'>('tree');
   const [treeData, setTreeData] = useState<AlbumTreeNode[]>([]);
   const [roles, setRoles] = useState<RoleInfo[]>([]);
@@ -62,6 +138,8 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pickExprExtras, setPickExprExtras] = useState<Map<string, string>>(new Map());
+  const exprSyncSkip = useRef(false); // skip useEffect sync when textarea onChange already set expression
 
   const [formData, setFormData] = useState<AlbumFormData>({
     id: 0,
@@ -87,6 +165,9 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
       }
       const data: AlbumTreeNode[] = await res.json();
       setTreeData(data);
+      // Detect server path separator from existing folder paths
+      const sep = detectPathSep(data);
+      galleryPicker?.setPathSep(sep);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -113,6 +194,31 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
     }
   }, [isOpen, fetchTree, fetchRoles]);
 
+  // Sync picked image into cover image field
+  useEffect(() => {
+    if (galleryPicker?.mode === 'single_image' && galleryPicker.selectedPaths.length > 0) {
+      setFormData(prev => ({ ...prev, feature_image_path: galleryPicker.selectedPaths[0] }));
+    }
+  }, [galleryPicker?.mode, galleryPicker?.selectedPaths]);
+
+  // Sync multi_image picker paths into album expression, preserving manual extras
+  useEffect(() => {
+    if (exprSyncSkip.current) {
+      exprSyncSkip.current = false;
+      return;
+    }
+    if (galleryPicker?.mode === 'multi_image') {
+      const expr = buildPickImagesExpression(galleryPicker.selectedPaths, galleryPicker.pathSep, pickExprExtras);
+      setFormData(prev => ({ ...prev, album_expression: expr }));
+    }
+  }, [galleryPicker?.mode, galleryPicker?.selectedPaths, pickExprExtras]);
+
+  const goToTreeView = () => {
+    setView('tree');
+    setError(null);
+    setConfirmDelete(false);
+    galleryPicker?.setMode(null);
+  };
 
   const handleEditAlbum = (node: TreeNode<AlbumTreeNode>) => {
     const d = node.data;
@@ -129,6 +235,14 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
       role_id: d.role_id,
     });
     setConfirmDelete(false);
+    setPickExprExtras(new Map());
+    // For pick_images albums, parse the expression back into selected paths
+    if (d.album_type === 'pick_images' && galleryPicker) {
+      const { paths, extras } = parsePickImagesExpression(d.album_expression, galleryPicker.pathSep);
+      galleryPicker.setSelectedPaths(paths);
+      setPickExprExtras(extras);
+      galleryPicker.setMode('multi_image');
+    }
     setView('edit');
   };
 
@@ -146,6 +260,7 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
       role_id: 1,
     });
     setConfirmDelete(false);
+    setPickExprExtras(new Map());
     setView('edit');
   };
 
@@ -180,7 +295,7 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
         throw new Error(data.error || 'Failed to save album');
       }
       await fetchTree();
-      setView('tree');
+      goToTreeView();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -202,7 +317,7 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
         throw new Error(data.error || 'Failed to delete album');
       }
       await fetchTree();
-      setView('tree');
+      goToTreeView();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -290,7 +405,7 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
   ) : (
     <>
       <button
-        onClick={() => { setView('tree'); setError(null); setConfirmDelete(false); }}
+        onClick={goToTreeView}
         style={{
           background: 'none', border: '1px solid #888', borderRadius: '4px',
           cursor: 'pointer', padding: '2px 8px', color: '#ddd', fontSize: '12px',
@@ -379,6 +494,57 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
               style={{ ...inputStyle, fontFamily: 'monospace', flex: 1 }}
               placeholder="\2024\vacation\cover.jpg"
             />
+            <button
+              type="button"
+              onClick={() => {
+                if (galleryPicker) {
+                  if (galleryPicker.mode === 'single_image') {
+                    // Deactivate cover image picking; restore pick_images paths if applicable
+                    if (formData.album_type === 'pick_images' && formData.album_expression) {
+                      const { paths, extras } = parsePickImagesExpression(formData.album_expression, galleryPicker.pathSep);
+                      galleryPicker.setSelectedPaths(paths);
+                      setPickExprExtras(extras);
+                      galleryPicker.setMode('multi_image');
+                    } else {
+                      galleryPicker.setMode(null);
+                      galleryPicker.setSelectedPaths([]);
+                    }
+                  } else {
+                    galleryPicker.setMode('single_image');
+                    // If there's already a cover image path, initialize the picker with it
+                    const currentPath = formData.feature_image_path.trim();
+                    if (currentPath) {
+                      galleryPicker.setSelectedPaths([currentPath]);
+                      // Construct HD thumbnail URL for banner preview
+                      const hdPath = `/pictures/_thumbnails/1440${currentPath.startsWith('/') ? '' : '/'}${currentPath}`;
+                      galleryPicker.setSelectedHdPath(hdPath);
+                    } else {
+                      galleryPicker.setSelectedPaths([]);
+                    }
+                  }
+                }
+              }}
+              title="Pick from gallery"
+              style={{
+                background: galleryPicker?.mode === 'single_image' ? '#e8f09e' : 'transparent',
+                border: galleryPicker?.mode === 'single_image' ? '1px solid #c0c860' : '1px solid #555',
+                borderRadius: '4px',
+                padding: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke={galleryPicker?.mode === 'single_image' ? '#333' : '#888'}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="6" />
+                <circle cx="12" cy="12" r="2" />
+              </svg>
+            </button>
           </div>
 
           {/* Role */}
@@ -414,7 +580,17 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
             <label style={{ ...labelStyle, marginBottom: 0, flexShrink: 0, minWidth: '70px' }}>Type</label>
             <select
               value={formData.album_type}
-              onChange={(e) => setFormData(prev => ({ ...prev, album_type: e.target.value }))}
+              onChange={(e) => {
+                const newType = e.target.value;
+                setFormData(prev => ({ ...prev, album_type: newType }));
+                if (galleryPicker) {
+                  if (newType === 'pick_images') {
+                    galleryPicker.setMode('multi_image');
+                  } else if (galleryPicker.mode === 'multi_image') {
+                    galleryPicker.setMode(null);
+                  }
+                }
+              }}
               style={{ ...inputStyle, cursor: 'pointer', flex: 1 }}
             >
               {ALBUM_TYPES.map(t => (
@@ -479,8 +655,96 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
           )}
 
           {formData.album_type === 'pick_images' && (
-            <div style={{ color: '#888', fontSize: '12px', fontStyle: 'italic', padding: '8px 0' }}>
-              TODO - Pick Images functionality coming soon
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (galleryPicker) {
+                      if (galleryPicker.mode === 'multi_image') {
+                        galleryPicker.setMode(null);
+                      } else {
+                        // Restore paths from expression if available
+                        if (formData.album_expression && galleryPicker.selectedPaths.length === 0) {
+                          const { paths, extras } = parsePickImagesExpression(formData.album_expression, galleryPicker.pathSep);
+                          galleryPicker.setSelectedPaths(paths);
+                          setPickExprExtras(extras);
+                        }
+                        galleryPicker.setMode('multi_image');
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '4px 10px',
+                    backgroundColor: galleryPicker?.mode === 'multi_image' ? '#e8f09e' : '#444',
+                    color: galleryPicker?.mode === 'multi_image' ? '#333' : '#ccc',
+                    border: galleryPicker?.mode === 'multi_image' ? '1px solid #c0c860' : '1px solid #555',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                  }}
+                >
+                  {galleryPicker?.mode === 'multi_image' ? 'Picking...' : 'Pick Images'}
+                </button>
+                <span style={{ color: '#aaa', fontSize: '12px' }}>
+                  {galleryPicker?.selectedPaths.length || 0} images selected
+                </span>
+                {(galleryPicker?.selectedPaths.length ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      galleryPicker?.setSelectedPaths([]);
+                      setPickExprExtras(new Map());
+                    }}
+                    style={{
+                      padding: '2px 6px', backgroundColor: 'transparent', color: '#888',
+                      border: '1px solid #555', borderRadius: '4px', cursor: 'pointer', fontSize: '11px',
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {formData.album_expression && (
+                <>
+                  <label style={{ ...labelStyle, fontSize: '11px' }}>
+                    Expression {pickExprExtras.size > 0 ? '(with manual clauses)' : '(auto-generated)'}
+                  </label>
+                  <textarea
+                    value={formData.album_expression}
+                    onChange={(e) => {
+                      const newExpr = e.target.value;
+                      setFormData(prev => ({ ...prev, album_expression: newExpr }));
+                      // Re-parse to extract extras from manual edits; skip useEffect re-sync
+                      if (galleryPicker) {
+                        exprSyncSkip.current = true;
+                        const { paths, extras } = parsePickImagesExpression(newExpr, galleryPicker.pathSep);
+                        setPickExprExtras(extras);
+                        galleryPicker.setSelectedPaths(paths);
+                      }
+                    }}
+                    style={{
+                      ...inputStyle,
+                      fontFamily: 'monospace',
+                      fontSize: '11px',
+                      flex: 1,
+                      minHeight: '40px',
+                      resize: 'none',
+                      overflowY: 'auto',
+                    }}
+                  />
+                  <button
+                    onClick={handleOpenSearchEditor}
+                    style={{
+                      padding: '4px 8px', backgroundColor: '#444', color: '#e8f09e',
+                      border: '1px solid #e8f09e', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                      marginTop: '4px', alignSelf: 'flex-start',
+                    }}
+                  >
+                    Preview Selection
+                  </button>
+                </>
+              )}
             </div>
           )}
           

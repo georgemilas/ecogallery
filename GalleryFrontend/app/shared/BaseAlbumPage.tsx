@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from '../album/components/AlbumHierarchyProps';
 import { ImageView } from '../album/components/ImageView';
 import { VirtualAlbumManager } from '../album/components/VirtualAlbumManager';
+import { GalleryPickerState, PickerMode } from '../album/components/GalleryPicker';
 import { apiFetch } from '@/app/utils/apiFetch';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
@@ -55,6 +56,7 @@ export interface BaseAlbumPageProps {
   searchEditor: SearchEditorState;
   showAlbumManager: boolean;
   setShowAlbumManager: (show: boolean) => void;
+  galleryPicker: GalleryPickerState;
   config: BaseAlbumConfig;
 }
 
@@ -75,6 +77,50 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
   const [currentSettings, setCurrentSettings] = useState<AlbumSettings>(album ? album.settings : {} as AlbumSettings);
   const [sortedImages, setSortedImages] = useState<ImageItemContent[]>([]);
   const [showAlbumManager, setShowAlbumManager] = useState(false);
+  const [pickerMode, setPickerMode] = useState<PickerMode>(null);
+  const [pickerSelectedPaths, setPickerSelectedPaths] = useState<string[]>([]);
+  const [pickerSelectedHdPath, setPickerSelectedHdPath] = useState<string | null>(null);
+  const [pickerPathSep, setPickerPathSep] = useState<string>('/');
+
+  const extractRelativePath = useCallback((url: string): string => {
+    try {
+      const pathname = decodeURIComponent(new URL(url).pathname);
+      const picturesPrefix = '/pictures/';
+      const idx = pathname.indexOf(picturesPrefix);
+      const relativePath = idx !== -1 ? pathname.substring(idx + picturesPrefix.length - 1) : pathname;
+      // Convert to server's native path separator
+      return pickerPathSep === '\\' ? relativePath.replace(/\//g, '\\') : relativePath;
+    } catch {
+      return url;
+    }
+  }, [pickerPathSep]);
+
+  const handlePickerPick = useCallback((image: ImageItemContent) => {
+    const path = extractRelativePath(image.image_original_path);
+    if (pickerMode === 'single_image') {
+      setPickerSelectedPaths([path]);
+      setPickerSelectedHdPath(image.image_hd_path);
+    } else if (pickerMode === 'multi_image') {
+      setPickerSelectedPaths(prev =>
+        prev.includes(path)
+          ? prev.filter(p => p !== path)
+          : [...prev, path]
+      );
+    }
+  }, [pickerMode, extractRelativePath]);
+
+  const galleryPicker: GalleryPickerState = {
+    mode: pickerMode,
+    setMode: setPickerMode,
+    selectedPaths: pickerSelectedPaths,
+    setSelectedPaths: setPickerSelectedPaths,
+    onPick: handlePickerPick,
+    selectedHdPath: pickerSelectedHdPath,
+    setSelectedHdPath: setPickerSelectedHdPath,
+    pathSep: pickerPathSep,
+    setPathSep: setPickerPathSep,
+  };
+
   const [searchEditorOpen, setSearchEditorOpen] = useState(false);
   const [searchEditorText, setSearchEditorText] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -460,6 +506,7 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
     searchEditor,
     showAlbumManager,
     setShowAlbumManager,
+    galleryPicker,
     config
   };
 
@@ -501,9 +548,10 @@ export function BaseAlbumPage({ config }: { config: BaseAlbumConfig }): JSX.Elem
       {user?.roles?.includes('album_admin') && (
         <VirtualAlbumManager
           isOpen={showAlbumManager}
-          onClose={() => setShowAlbumManager(false)}
+          onClose={() => { setShowAlbumManager(false); setPickerMode(null); }}
           searchEditor={searchEditor}
           onSearchSubmit={config.onSearchSubmit || postSearchAlbum}
+          galleryPicker={galleryPicker}
         />
       )}
     </main>

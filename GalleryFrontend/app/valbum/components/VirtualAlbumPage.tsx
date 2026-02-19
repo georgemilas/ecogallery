@@ -38,6 +38,7 @@ export function VirtualAlbumPage({ initialView }: VirtualAlbumPageProps = {}): J
         searchEditor={props.searchEditor}
         showAlbumManager={props.showAlbumManager}
         setShowAlbumManager={props.setShowAlbumManager}
+        galleryPicker={props.galleryPicker!}
       />
     )
   };

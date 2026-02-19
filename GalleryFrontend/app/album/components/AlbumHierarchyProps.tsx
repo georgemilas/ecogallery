@@ -1,4 +1,5 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { GalleryPickerState } from './GalleryPicker';
 
 export interface ImageMetadata extends ItemMetadata {
   camera: string | null;
@@ -209,6 +210,7 @@ export interface AlbumHierarchyProps {
   };
   showAlbumManager?: boolean;
   setShowAlbumManager?: (show: boolean) => void;
+  galleryPicker?: GalleryPickerState;
 }
 
 

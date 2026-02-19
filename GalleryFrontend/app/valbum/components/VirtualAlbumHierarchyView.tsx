@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlbumItemHierarchy, ImageItemContent, AlbumSettings } from '../../album/components/AlbumHierarchyProps';
+import { GalleryPickerState } from '../../album/components/GalleryPicker';
 import { BaseHierarchyView, BaseHierarchyConfig, BaseHierarchyProps } from '../../album/components/BaseHierarchyView';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -36,6 +37,7 @@ export interface VirtualAlbumHierarchyProps {
   };
   showAlbumManager?: boolean;
   setShowAlbumManager?: (show: boolean) => void;
+  galleryPicker?: GalleryPickerState;
 }
 
 export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JSX.Element {
@@ -53,9 +55,12 @@ export function VirtualAlbumHierarchyView(props: VirtualAlbumHierarchyProps): JS
           baseProps.router.push(path);
         }
       };
+      const goHome = () => {
+        baseProps.onAlbumClick(null);
+      };
       return (
         <nav className="menu">
-          <button onClick={() => baseProps.router.push('/valbum')} className="page-button" title="Home">
+          <button onClick={goHome} className="page-button" title="Home">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{verticalAlign: 'middle', marginTop: '0px', marginLeft: '2px', marginBottom: '4px', marginRight: '2px'}}>
               <path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/>
             </svg>Home

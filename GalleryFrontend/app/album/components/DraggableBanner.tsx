@@ -11,9 +11,10 @@ interface DraggableBannerProps {
   onPositionSave: (objectPositionY: number) => Promise<void>;
   objectPositionY?: number;
   label?: React.ReactNode;
+  imageSrcOverride?: string | null;
 }
 
-export function DraggableBanner({ album, isEditMode, onEditModeChange, onPositionSave, objectPositionY: propObjectPositionY, label }: DraggableBannerProps): JSX.Element {
+export function DraggableBanner({ album, isEditMode, onEditModeChange, onPositionSave, objectPositionY: propObjectPositionY, label, imageSrcOverride }: DraggableBannerProps): JSX.Element {
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [objectPositionY, setObjectPositionY] = useState(propObjectPositionY ?? 38);
@@ -89,7 +90,7 @@ export function DraggableBanner({ album, isEditMode, onEditModeChange, onPositio
     >
       <AuthenticatedImage
         ref={imgRef}
-        src={album.image_hd_path}
+        src={imageSrcOverride || album.image_hd_path}
         alt={album.album_name()}
         style={{
           objectPosition: `50% ${objectPositionY}%`,

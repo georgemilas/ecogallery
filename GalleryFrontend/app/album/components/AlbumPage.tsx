@@ -47,6 +47,7 @@ export function AlbumPage({ initialView }: AlbumPageProps = {}): JSX.Element {
         searchEditor={props.searchEditor}
         showAlbumManager={props.showAlbumManager}
         setShowAlbumManager={props.setShowAlbumManager}
+        galleryPicker={props.galleryPicker}
       />
     )
   };

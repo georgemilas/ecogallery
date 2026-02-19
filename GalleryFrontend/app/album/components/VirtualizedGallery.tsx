@@ -4,6 +4,7 @@ import { LocationContextMenu } from './LocationContextMenu';
 import { FaceContextMenu } from './FaceContextMenu';
 import { useVirtualizedGallery, LayoutRow } from './useVirtualizedGallery';
 import { CancellableImage } from './CancellableImage';
+import { GalleryPickerState } from './GalleryPicker';
 
 interface VirtualizedGalleryProps {
   images: ImageItemContent[];
@@ -21,6 +22,7 @@ interface VirtualizedGalleryProps {
   onSearchByPersonId?: (personId: number) => void;
   onSearchByClusterId?: (clusterId: number) => void;
   onSearchByClusterName?: (name: string) => void;
+  galleryPicker?: GalleryPickerState;
 }
 
 interface GalleryRowComponentProps {
@@ -40,9 +42,10 @@ interface GalleryRowComponentProps {
   faceNames: Record<number, string>;
   onFaceNameUpdate: (personId: number, newName: string) => void;
   locationHandlers: LocationHandlers;
+  galleryPicker?: GalleryPickerState;
 }
 
-function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate, locationHandlers }: GalleryRowComponentProps) {
+function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getImageLabel, onRef, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate, locationHandlers, galleryPicker }: GalleryRowComponentProps) {
   return (
     <div
       ref={onRef}
@@ -72,6 +75,7 @@ function GalleryRowComponent({row, rowIndex, isVisible, gap, onImageClick, getIm
           faceNames={faceNames}
           onFaceNameUpdate={onFaceNameUpdate}
           locationHandlers={locationHandlers}
+          galleryPicker={galleryPicker}
         />
       ))}
     </div>
@@ -94,9 +98,10 @@ interface GalleryItemProps {
   faceNames: Record<number, string>;
   onFaceNameUpdate: (personId: number, newName: string) => void;
   locationHandlers: LocationHandlers;
+  galleryPicker?: GalleryPickerState;
 }
 
-function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate, locationHandlers }: GalleryItemProps) {
+function GalleryItem({ image, width, height, isVisible, onClick, label, showFaceBoxes, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, faceNames, onFaceNameUpdate, locationHandlers, galleryPicker }: GalleryItemProps) {
   const [selectedFace, setSelectedFace] = useState<{ face: FaceBox; position: { x: number; y: number } } | null>(null);
   const [showLocationMenu, setShowLocationMenu] = useState<{ position: { x: number; y: number } } | null>(null);
 
@@ -273,12 +278,50 @@ function GalleryItem({ image, width, height, isVisible, onClick, label, showFace
         <span className="gallery-item-label">{label}</span>
         {image.description && <span className="gallery-item-label">{image.description}</span>}
       </a>
+      {galleryPicker?.mode && (() => {
+        // Normalize URL path for comparison: decode %20, convert slashes to match selectedPaths format
+        const decodedUrl = decodeURIComponent(image.image_original_path);
+        const isSelected = galleryPicker.selectedPaths.some(p => {
+          // Normalize separators: compare with both / and \ variants
+          const normalizedP = p.replace(/[\\/]/g, '/');
+          return decodedUrl.replace(/[\\/]/g, '/').endsWith(normalizedP);
+        });
+        const isMulti = galleryPicker.mode === 'multi_image';
+        return (
+        <div
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); galleryPicker.onPick(image); }}
+          style={{
+            position: 'absolute',
+            top: '6px',
+            right: '6px',
+            width: '22px',
+            height: '22px',
+            borderRadius: isMulti ? '4px' : '50%',
+            border: `2px solid ${isSelected ? '#e8f09e' : 'rgba(255,255,255,0.7)'}`,
+            backgroundColor: isSelected ? '#e8f09e' : 'rgba(0,0,0,0.4)',
+            cursor: 'pointer',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+          }}
+          title={isMulti ? 'Toggle image selection' : 'Select as cover image'}
+        >
+          {isSelected && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </div>
+        );
+      })()}
     </div>
     </>
   );
 }
 
-export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, showFaceBoxes = false, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, onSearchByClusterId, onSearchByClusterName }: VirtualizedGalleryProps) {
+export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2, onImageClick, getImageLabel, lastViewedImageId, showFaceBoxes = false, onFaceSearch, onFaceDelete, onPersonDelete, onSearchByName, onSearchByPersonId, onSearchByClusterId, onSearchByClusterName, galleryPicker }: VirtualizedGalleryProps) {
   const { rows, totalHeight, containerRef } = useVirtualizedGallery({images, targetHeight, gap, });
 
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -470,6 +513,7 @@ export function VirtualizedGallery({images, targetHeight, gap = 8, overscan = 2,
           faceNames={faceNames}
           onFaceNameUpdate={handleFaceNameUpdate}
           locationHandlers={locationHandlers}
+          galleryPicker={galleryPicker}
         />
       ))}
     </div>

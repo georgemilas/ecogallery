@@ -11,6 +11,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { apiFetch } from '@/app/utils/apiFetch';
 import { useGallerySettings } from '@/app/contexts/GallerySettingsContext';
 import { SearchEditor, SearchEditorState } from './SearchEditor';
+import { GalleryPickerState } from './GalleryPicker';
 import { SettingsModal } from './SettingsModal';
 import { MenuPanel } from './MenuPanel';
 
@@ -44,6 +45,7 @@ export interface BaseHierarchyProps {
   searchEditor?: SearchEditorState;
   showAlbumManager?: boolean;
   setShowAlbumManager?: (show: boolean) => void;
+  galleryPicker?: GalleryPickerState;
   config: BaseHierarchyConfig;
 }
 
@@ -265,12 +267,13 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
 
   return (
     <>
-      <DraggableBanner 
+      <DraggableBanner
         album={props.album}
         isEditMode={bannerEditMode}
         onEditModeChange={setBannerEditMode}
         onPositionSave={handleBannerPositionSave}
         objectPositionY={settings.banner_position_y}
+        imageSrcOverride={props.galleryPicker?.mode === 'single_image' ? props.galleryPicker.selectedHdPath : null}
         label={
           <>
             <h1>{props.album.album_name()}</h1>
@@ -362,6 +365,7 @@ export function BaseHierarchyView(props: BaseHierarchyProps): JSX.Element {
           onSearchByPersonId={props.onSearchByPersonId}
           onSearchByClusterId={hasPrivateRole ? props.onSearchByClusterId : undefined}
           onSearchByClusterName={hasPrivateRole ? props.onSearchByClusterName : undefined}
+          galleryPicker={props.galleryPicker}
         />
       </div>
       <button
