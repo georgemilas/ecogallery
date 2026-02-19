@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface DraggablePanelProps {
   isOpen: boolean;
+  onClose?: () => void;
   title: React.ReactNode;
   titleActions?: React.ReactNode;
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export interface DraggablePanelProps {
 
 export function DraggablePanel({
   isOpen,
+  onClose,
   title,
   titleActions,
   children,
@@ -38,11 +40,24 @@ export function DraggablePanel({
   type ResizeDir = 'left' | 'right' | 'bottom' | 'bottom-left' | 'bottom-right';
   const [resizeDir, setResizeDir] = useState<ResizeDir | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const savedHeight = useRef<number | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
 
   const panelWidth = controlledWidth ?? internalWidth;
   const setPanelWidth = onWidthChange ?? setInternalWidth;
+
+  const toggleMinimize = useCallback(() => {
+    setIsMinimized(prev => {
+      if (!prev) {
+        savedHeight.current = panelHeight;
+      } else if (savedHeight.current !== null) {
+        setPanelHeight(savedHeight.current);
+      }
+      return !prev;
+    });
+  }, [panelHeight]);
 
   // Resize
   const handleResizeStart = useCallback((dir: ResizeDir) => (e: React.MouseEvent) => {
@@ -129,6 +144,22 @@ export function DraggablePanel({
     onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => { if (!resizeDir) e.currentTarget.style.backgroundColor = 'transparent'; },
   });
 
+  const titleBarButtonStyle: React.CSSProperties = {
+    background: 'none',
+    border: '1px solid #888',
+    borderRadius: '4px',
+    color: '#ddd',
+    cursor: 'pointer',
+    padding: '2px 8px',
+    fontSize: '12px',
+    height: '22px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  };
+
   return (
     <div
       ref={panelRef}
@@ -141,8 +172,8 @@ export function DraggablePanel({
         padding: '16px',
         width: `${panelWidth}px`,
         minWidth: `${minWidth}px`,
-        height: `${panelHeight}px`,
-        maxHeight: 'calc(100vh - 120px)',
+        height: isMinimized ? 'auto' : `${panelHeight}px`,
+        maxHeight: isMinimized ? undefined : 'calc(100vh - 120px)',
         border: '1px solid #e8f09e',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
         zIndex,
@@ -153,20 +184,43 @@ export function DraggablePanel({
     >
       <div onMouseDown={handleResizeStart('left')} style={resizeHandleStyle('left')} {...handleHover('left')} />
       <div onMouseDown={handleResizeStart('right')} style={resizeHandleStyle('right')} {...handleHover('right')} />
-      <div onMouseDown={handleResizeStart('bottom')} style={resizeHandleStyle('bottom')} {...handleHover('bottom')} />
-      <div onMouseDown={handleResizeStart('bottom-left')} style={resizeHandleStyle('bottom-left')} {...handleHover('bottom-left')} />
-      <div onMouseDown={handleResizeStart('bottom-right')} style={resizeHandleStyle('bottom-right')} {...handleHover('bottom-right')} />
+      {!isMinimized && <>
+        <div onMouseDown={handleResizeStart('bottom')} style={resizeHandleStyle('bottom')} {...handleHover('bottom')} />
+        <div onMouseDown={handleResizeStart('bottom-left')} style={resizeHandleStyle('bottom-left')} {...handleHover('bottom-left')} />
+        <div onMouseDown={handleResizeStart('bottom-right')} style={resizeHandleStyle('bottom-right')} {...handleHover('bottom-right')} />
+      </>}
 
       {/* Title bar — drag handle */}
       <div
         onMouseDown={handleDragStart}
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', cursor: 'move', flexShrink: 0 }}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMinimized ? 0 : '10px', cursor: 'move', flexShrink: 0 }}
       >
         <span style={{ color: '#e8f09e', fontWeight: 'bold', fontSize: '14px' }}>{title}</span>
-        {titleActions && <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>{titleActions}</div>}
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          {titleActions}
+          {titleActions && <div style={{ width: '8px' }} />}
+          <button
+            onMouseDown={e => e.stopPropagation()}
+            onClick={toggleMinimize}
+            style={titleBarButtonStyle}
+            title={isMinimized ? 'Restore' : 'Minimize'}
+          >
+            {isMinimized ? '□' : '_'}
+          </button>
+          {onClose && (
+            <button
+              onMouseDown={e => e.stopPropagation()}
+              onClick={onClose}
+              style={titleBarButtonStyle}
+              title="Close"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
-      {children}
+      {!isMinimized && children}
     </div>
   );
 }

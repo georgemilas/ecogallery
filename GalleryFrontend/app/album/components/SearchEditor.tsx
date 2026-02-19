@@ -103,32 +103,11 @@ export function SearchEditor({ searchEditor, onSearchSubmit, showSearch }: Searc
     );
   };
 
-  const closeButton = (
-    <button
-      onClick={() => setIsOpen(false)}
-      style={{
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '2px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      title="Close (Escape)"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
-        <line x1="18" y1="6" x2="6" y2="18"/>
-        <line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-  );
-
   const renderExpandedSearch = () => (
     <DraggablePanel
       isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
       title="Search Expression"
-      titleActions={closeButton}
       defaultPos={defaultPos}
       defaultHeight={400}
       width={panelWidth}

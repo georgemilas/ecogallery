@@ -140,6 +140,7 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pickExprExtras, setPickExprExtras] = useState<Map<string, string>>(new Map());
   const exprSyncSkip = useRef(false); // skip useEffect sync when textarea onChange already set expression
+  const savedExpression = useRef<string | null>(null); // stash original expression when switching to pick_images
 
   const [formData, setFormData] = useState<AlbumFormData>({
     id: 0,
@@ -227,8 +228,8 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
       id: d.id,
       album_name: d.album_name,
       album_description: d.album_description,
-      album_expression: d.album_expression,
-      album_folder: d.album_folder,
+      album_expression: d.album_expression || '',
+      album_folder: d.album_folder || '',
       album_type: d.album_type,
       feature_image_path: d.feature_image_path || '',
       parent_album_id: d.parent_album_id,
@@ -277,7 +278,7 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
         id: formData.id,
         album_name: formData.album_name.trim(),
         album_description: formData.album_description.trim(),
-        album_expression: formData.album_expression.trim(),
+        album_expression: (formData.album_expression || '').trim(),
         album_folder: formData.album_folder.trim(),
         album_type: formData.album_type,
         feature_image_path: formData.feature_image_path.trim(),
@@ -342,6 +343,13 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
     }
   };
 
+  const handlePreview = () => {
+    const expr = (formData.album_expression || '').trim();
+    if (expr && onSearchSubmit) {
+      onSearchSubmit(expr, 0);
+    }
+  };
+
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '6px 8px',
@@ -382,64 +390,36 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
 
   // Title bar content changes based on view
   const title = view === 'tree' ? 'Virtual Albums' : (formData.id === 0 ? 'New Album' : 'Edit Album');
-
-  const titleActions = view === 'tree' ? (
-    <>
-      <button
-        onClick={() => handleCreateAlbum(0, '')}
-        title="Add root album"
-        style={{
-          background: 'none', border: '1px solid #e8f09e', borderRadius: '4px',
-          cursor: 'pointer', padding: '2px 8px', color: '#e8f09e', fontSize: '13px',
-        }}
-      >
-        + New
-      </button>
-      <button
-        onClick={onClose}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-        title="Close (Escape)"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </>
-  ) : (
-    <>
-      <button
-        onClick={goToTreeView}
-        style={{
-          background: 'none', border: '1px solid #888', borderRadius: '4px',
-          cursor: 'pointer', padding: '2px 8px', color: '#ddd', fontSize: '12px',
-        }}
-      >
-        Back
-      </button>
-      <button
-        onClick={onClose}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-        title="Close"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8f09e" strokeWidth="2" strokeLinecap="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </>
-  );
+  const hasRootAlbum = treeData.some(n => n.depth === 0);
 
   const renderTreeView = () => (
-    <TreeView<AlbumTreeNode>
-      items={treeData}
-      getId={getAlbumId}
-      getParentId={getAlbumParentId}
-      renderLabel={renderAlbumLabel}
-      renderActions={renderAlbumActions}
-      onNodeClick={handleEditAlbum}
-      loading={loading}
-      error={error}
-      emptyMessage="No virtual albums found"
-    />
+    <>
+      {!hasRootAlbum && !loading && (
+        <div style={{ marginBottom: '8px' }}>
+          <button
+            onClick={() => handleCreateAlbum(0, '')}
+            title="Add root album"
+            style={{
+              background: 'none', border: '1px solid #888', borderRadius: '4px',
+              cursor: 'pointer', padding: '4px 10px', color: '#ddd', fontSize: '12px',
+            }}
+          >
+            + New Root Album
+          </button>
+        </div>
+      )}
+      <TreeView<AlbumTreeNode>
+        items={treeData}
+        getId={getAlbumId}
+        getParentId={getAlbumParentId}
+        renderLabel={renderAlbumLabel}
+        renderActions={renderAlbumActions}
+        onNodeClick={handleEditAlbum}
+        loading={loading}
+        error={error}
+        emptyMessage="No virtual albums found"
+      />
+    </>
   );
 
   const renderEditView = () => {
@@ -455,13 +435,20 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
         {error && <div style={{ color: '#dc3545', fontSize: '12px' }}>{error}</div>}
 
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {/* Parent */}
-          {formData.parent_album_name && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <label style={{ ...labelStyle, marginBottom: 0, flexShrink: 0, minWidth: '70px' }}>Parent </label>
-              <label style={{ ...labelStyle, marginBottom: 0, flexShrink: 0}}>{formData.parent_album_name}</label>
-            </div>
-          )}
+          {/* Parent + Back */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ ...labelStyle, marginBottom: 0, flexShrink: 0, minWidth: '70px' }}>Parent</label>
+            <label style={{ ...labelStyle, marginBottom: 0, flex: 1 }}>{formData.parent_album_name || '(root)'}</label>
+            <button
+              onClick={goToTreeView}
+              style={{
+                background: 'none', border: '1px solid #888', borderRadius: '4px',
+                cursor: 'pointer', padding: '2px 8px', color: '#ddd', fontSize: '12px', flexShrink: 0,
+              }}
+            >
+              Back
+            </button>
+          </div>
 
           {/* Name */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -585,13 +572,25 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
               value={formData.album_type}
               onChange={(e) => {
                 const newType = e.target.value;
-                setFormData(prev => ({ ...prev, album_type: newType }));
                 if (galleryPicker) {
                   if (newType === 'pick_images') {
+                    // Stash the current expression before pick_images overwrites it
+                    savedExpression.current = formData.album_expression;
+                    setFormData(prev => ({ ...prev, album_type: newType }));
                     galleryPicker.setMode('multi_image');
                   } else if (galleryPicker.mode === 'multi_image') {
+                    // Switching away from pick_images — restore stashed expression
+                    // if picker made no selections
+                    const restoreExpr = savedExpression.current !== null && !galleryPicker.selectedPaths.length
+                      ? savedExpression.current : formData.album_expression;
+                    savedExpression.current = null;
                     galleryPicker.setMode(null);
+                    setFormData(prev => ({ ...prev, album_type: newType, album_expression: restoreExpr }));
+                  } else {
+                    setFormData(prev => ({ ...prev, album_type: newType }));
                   }
+                } else {
+                  setFormData(prev => ({ ...prev, album_type: newType }));
                 }
               }}
               style={{ ...inputStyle, cursor: 'pointer', flex: 1 }}
@@ -646,13 +645,24 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
                   <button
                     onClick={handleCaptureExpression}
                     style={{
-                      padding: '4px 8px', backgroundColor: '#444', color: '#4CAF50',
-                      border: '1px solid #4CAF50', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                      padding: '4px 8px', backgroundColor: '#444', color: '#e8f09e',
+                      border: '1px solid #e8f09e', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
                     }}
                   >
-                    Capture from Editor
+                    Capture from Search Editor
                   </button>
                 )}
+                <button
+                  onClick={handlePreview}
+                  disabled={!formData.album_expression?.trim()}
+                  style={{
+                    padding: '4px 8px', backgroundColor: '#444', color: '#e8f09e',
+                    border: '1px solid #e8f09e', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                    marginLeft: 'auto',
+                  }}
+                >
+                  Preview
+                </button>
               </div>
             </div>
           )}
@@ -736,16 +746,39 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
                       overflowY: 'auto',
                     }}
                   />
-                  <button
-                    onClick={handleOpenSearchEditor}
-                    style={{
-                      padding: '4px 8px', backgroundColor: '#444', color: '#e8f09e',
-                      border: '1px solid #e8f09e', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
-                      marginTop: '4px', alignSelf: 'flex-start',
-                    }}
-                  >
-                    Preview Selection
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                    <button
+                      onClick={handleOpenSearchEditor}
+                      style={{
+                        padding: '4px 8px', backgroundColor: '#444', color: '#e8f09e',
+                        border: '1px solid #e8f09e', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                      }}
+                    >
+                      Open in Search Editor
+                    </button>
+                    {searchEditor?.isOpen && (
+                      <button
+                        onClick={handleCaptureExpression}
+                        style={{
+                          padding: '4px 8px', backgroundColor: '#444', color: '#4CAF50',
+                          border: '1px solid #4CAF50', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                        }}
+                      >
+                        Capture from Search Editor
+                      </button>
+                    )}
+                    <button
+                      onClick={handlePreview}
+                      disabled={!formData.album_expression?.trim()}
+                      style={{
+                        padding: '4px 8px', backgroundColor: '#444', color: '#81d4fa',
+                        border: '1px solid #81d4fa', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                        marginLeft: 'auto',
+                      }}
+                    >
+                      Preview
+                    </button>
+                  </div>
                 </>
               )}
             </div>
@@ -763,7 +796,7 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
                 style={{
                   padding: '6px 12px',
                   backgroundColor: confirmDelete ? '#dc3545' : '#444',
-                  color: confirmDelete ? 'white' : '#dc3545',
+                  color: confirmDelete ? 'white' : '#d46873',
                   border: '1px solid #dc3545',
                   borderRadius: '4px',
                   cursor: saving ? 'not-allowed' : 'pointer',
@@ -793,12 +826,12 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
   return (
     <DraggablePanel
       isOpen={isOpen}
+      onClose={onClose}
       title={title}
-      titleActions={titleActions}
       defaultPos={{ top: 80, left: 20 }}
       defaultWidth={380}
       defaultHeight={600}
-      minHeight={450}
+      minHeight={470}
     >
       {view === 'tree' ? renderTreeView() : renderEditView()}
     </DraggablePanel>
