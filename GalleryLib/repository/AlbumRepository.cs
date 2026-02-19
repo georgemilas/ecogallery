@@ -509,8 +509,8 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
 
     public async Task<int> GetVirtualAlbumChildrenCountAsync(long parentId)
     {
-        var sql = "SELECT COUNT(*) FROM virtual_album WHERE parent_album_id = @parentId";
-        return await _db.ExecuteScalarAsync<int>(sql, new { parentId });
+        var sql = "SELECT COUNT(*) FROM virtual_album WHERE parent_album_id = @parent_id";
+        return await _db.ExecuteScalarAsync<int>(sql, new { parent_id = parentId });
     }
 
     public async Task<List<AlbumParents>> GetVirtualAlbumParentsAsync(long id)

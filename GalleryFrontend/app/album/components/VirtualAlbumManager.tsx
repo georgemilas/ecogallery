@@ -160,8 +160,9 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
     try {
       const res = await apiFetch('/api/v1/valbums/tree');
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to load album tree');
+        const text = await res.text();
+        const msg = text ? (JSON.parse(text).error || 'Failed to load album tree') : `Failed to load album tree (${res.status})`;
+        throw new Error(msg);
       }
       const data: AlbumTreeNode[] = await res.json();
       setTreeData(data);
@@ -291,8 +292,9 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save album');
+        const text = await res.text();
+        const msg = text ? (JSON.parse(text).error || 'Failed to save album') : `Failed to save album (${res.status})`;
+        throw new Error(msg);
       }
       await fetchTree();
       goToTreeView();
@@ -313,8 +315,9 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
     try {
       const res = await apiFetch(`/api/v1/valbums/${formData.id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to delete album');
+        const text = await res.text();
+        const msg = text ? (JSON.parse(text).error || 'Failed to delete album') : `Failed to delete album (${res.status})`;
+        throw new Error(msg);
       }
       await fetchTree();
       goToTreeView();

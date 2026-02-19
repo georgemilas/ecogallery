@@ -82,6 +82,10 @@ public class VirtualAlbumsController : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
 
     // GET: /api/v1/valbums/{albumId}
