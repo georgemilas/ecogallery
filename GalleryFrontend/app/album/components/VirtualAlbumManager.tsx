@@ -527,12 +527,15 @@ export function VirtualAlbumManager({ isOpen, onClose, searchEditor, onSearchSub
                 flexShrink: 0,
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke={galleryPicker?.mode === 'single_image' ? '#333' : '#888'}
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="6" />
-                <circle cx="12" cy="12" r="2" />
+                strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                {/* Picture frame */}
+                <rect x="2" y="3" width="20" height="18" rx="2" />
+                {/* Mountain landscape inside */}
+                <polyline points="2 17 7 12 11 16 15 11 22 17" />
+                {/* Sun */}
+                <circle cx="16" cy="8" r="2" />
               </svg>
             </button>
           </div>
