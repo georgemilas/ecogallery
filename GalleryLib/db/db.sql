@@ -474,7 +474,8 @@ CREATE TABLE public.album_image_attributes (
 ALTER TABLE public.album_image_attributes
 ADD CONSTRAINT album_image_attributes_pkey PRIMARY KEY (id);
 
-CREATE INDEX idx_album_image_attributes_album_image_id ON public.album_image_attributes (album_image_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_album_image_attributes_album_image_id 
+ON public.album_image_attributes (album_image_id);
 
 ALTER TABLE public.album_image_attributes
 ADD CONSTRAINT fk_album_image_attributes_album_image
