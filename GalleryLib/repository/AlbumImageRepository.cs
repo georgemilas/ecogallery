@@ -199,6 +199,32 @@ public class AlbumImageRepository: IAlbumImageRepository, IDisposable, IAsyncDis
         return albumImages;
     }
 
+    public async Task<List<AlbumImage>> GetFromFaceAlbumImageAttributesAsync(bool faceProcessed)
+    {
+        var sql = @"SELECT ai.* FROM album_image ai
+                    left join album_image_attributes aia on aia.album_image_id = ai.id
+                    where coalesce(aia.face_processed, false) = @face_processed
+                    ";
+        var albumImages = await _db.QueryAsync(sql, reader => AlbumImage.CreateFromDataReader(reader), new { face_processed = faceProcessed });
+        return albumImages;
+    }
+    
+    public async Task<AlbumImageAttributes> UpsertAlbumImageAttributesAsync(AlbumImageAttributes albumImageAttributes)
+    {
+        var sql = $@"INSERT INTO album_image_attributes (album_image_id, total_faces, face_processed, face_processed_utc, last_updated_utc)
+                               VALUES (@album_image_id, @total_faces, @face_processed, @face_processed_utc, @last_updated_utc)
+                    ON CONFLICT (album_image_id) DO UPDATE
+                    SET
+                        total_faces = EXCLUDED.total_faces,
+                        face_processed = EXCLUDED.face_processed,
+                        face_processed_utc = EXCLUDED.face_processed_utc,
+                        last_updated_utc = EXCLUDED.last_updated_utc
+                    RETURNING id;";        
+        albumImageAttributes.Id = await _db.ExecuteScalarAsync<long>(sql, albumImageAttributes);    
+        return albumImageAttributes; 
+    }
+
+
 }
 
 

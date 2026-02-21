@@ -205,6 +205,7 @@ SELECT * FROM ancestors ORDER BY depth;
 
 ```powershell
 # Sync file system to database
+ $env:DOTNET_ENVIRONMENT="Development"
 dotnet run --project GalleryService -- db -f "E:\pictures"
 ```
 

@@ -22,7 +22,7 @@ public class DbPeriodicScanService : PeriodicScanService
         imageRepository = new AlbumImageRepository(configuration, dbConfig);
         albumRepository = new AlbumRepository(configuration, dbConfig);
     }
-    private readonly DatabaseConfiguration _dbConfig;
+    protected readonly DatabaseConfiguration _dbConfig;
     protected AlbumImageRepository imageRepository;
     protected AlbumRepository albumRepository;  
 

@@ -457,6 +457,32 @@ ON DELETE SET NULL;
 
 
 ------------------------------------------------------------------------------
+----------------- public.album_image_attributes --------------------------------------
+-- Stores various processing metadata (like face processing status etc.) 
+------------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.album_image_attributes;
+
+CREATE TABLE public.album_image_attributes (
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+    album_image_id bigint NOT NULL,
+    total_faces integer NULL,
+    face_processed boolean NOT NULL,                  
+    face_processed_utc timestamp with time zone NULL, 
+    last_updated_utc timestamp with time zone NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.album_image_attributes
+ADD CONSTRAINT album_image_attributes_pkey PRIMARY KEY (id);
+
+CREATE INDEX idx_album_image_attributes_album_image_id ON public.album_image_attributes (album_image_id);
+
+ALTER TABLE public.album_image_attributes
+ADD CONSTRAINT fk_album_image_attributes_album_image
+FOREIGN KEY (album_image_id)
+REFERENCES public.album_image (id)
+ON DELETE CASCADE;
+
+------------------------------------------------------------------------------
 ----------------- public.location_cluster ------------------------------------
 -- Represents a geospatial cluster for a given distance tier
 ------------------------------------------------------------------------------

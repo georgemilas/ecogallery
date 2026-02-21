@@ -28,7 +28,7 @@ public class FaceDetectionProcessor : EmptyProcessor, IFaceDetectionProcessor
     public static PeriodicScanService CreateProcessor(PicturesDataConfiguration configuration, DatabaseConfiguration dbConfig, int degreeOfParallelism = -1, bool planMode = false, bool logIfProcessed = false)
     {
         IFileProcessor processor = new FaceDetectionProcessor(configuration, dbConfig);
-        return new DbPeriodicScanService(processor, configuration, dbConfig, intervalMinutes: 5, degreeOfParallelism: degreeOfParallelism, logIfProcessed);
+        return new DbFacePeriodicScanService(processor, configuration, dbConfig, intervalMinutes: 5, degreeOfParallelism: degreeOfParallelism, logIfProcessed);
     }
 
     public override bool ShouldCleanFile(FileData dbPath, bool logIfProcess = false)

@@ -57,6 +57,8 @@ public class FaceDetectionService
     private readonly InferenceSession? _faceEmbeddingSession;
     private readonly PicturesDataConfiguration _configuration;
     private readonly FaceRepository _faceRepository;
+    private readonly FaceSimilarityService _similarityService;
+    private readonly AlbumImageRepository _albumImageRepository;
     private readonly bool _modelsAvailable;
 
     // UltraFace model parameters (320x240 version)
@@ -76,6 +78,8 @@ public class FaceDetectionService
     {
         _configuration = configuration;
         _faceRepository = new FaceRepository(dbConfig);
+        _albumImageRepository = new AlbumImageRepository(configuration, dbConfig);
+        _similarityService = new FaceSimilarityService(dbConfig);
 
         // Try to load ONNX models - they should be in the models/ subdirectory
         //var modelsPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".";
@@ -229,10 +233,14 @@ public class FaceDetectionService
     /// </summary>
     private async Task<int> ProcessImageForFaces(string imagePath, long albumImageId, bool log = false)
     {
+        AlbumImageAttributes attributes = new AlbumImageAttributes { AlbumImageId = albumImageId, FaceProcessed = true, FaceProcessedUtc = DateTimeOffset.UtcNow };
+
         // Step 1: Detect faces in the image
         var detections = DetectFaces(imagePath);
         if (detections.Count == 0)
         {
+            attributes.TotalFaces = 0;
+            await _albumImageRepository.UpsertAlbumImageAttributesAsync(attributes);    
             if (log) Console.WriteLine($"No faces detected in {imagePath}");
             return 0;
         }
@@ -263,7 +271,7 @@ public class FaceDetectionService
                 }
 
                 // Step 4: Find matching person or create new one
-                var (matchedPerson, similarity) = await _faceRepository.FindMostSimilarPersonAsync(embedding, SimilarityThreshold);
+                var (matchedPerson, similarity) = await _similarityService.FindMostSimilarPersonAsync(embedding, SimilarityThreshold);
 
                 long? personId = null;
                 if (matchedPerson != null)
@@ -275,8 +283,7 @@ public class FaceDetectionService
                     // Update representative embedding with running average
                     if (matchedPerson.RepresentativeEmbedding != null)
                     {
-                        var updatedEmbedding = FaceRepository.AverageEmbedding(
-                            new[] { matchedPerson.RepresentativeEmbedding, embedding });
+                        var updatedEmbedding = FaceSimilarityService.AverageEmbedding(new[] { matchedPerson.RepresentativeEmbedding, embedding });
                         matchedPerson = matchedPerson with
                         {
                             RepresentativeEmbedding = updatedEmbedding,
@@ -323,6 +330,9 @@ public class FaceDetectionService
                 if (log) Console.WriteLine($"  Error processing face: {ex.Message}");
             }
         }
+
+        attributes.TotalFaces = facesProcessed;
+        await _albumImageRepository.UpsertAlbumImageAttributesAsync(attributes);    
 
         return facesProcessed > 0 ? 1 : 0; // count if image has faces not how many faces 
     }
