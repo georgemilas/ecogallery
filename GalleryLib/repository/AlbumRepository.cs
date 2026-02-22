@@ -562,12 +562,23 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
     /// AlbumSettings Methods
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    
-    public async Task<AlbumSettings?> GetAlbumSettingsByUniqueDataIdAsync(string uniqueDataId)
+    public async Task<AlbumSettings?> GetAlbumSettingsByUniqueDataIdAsync(IUniqueDataId uniqueDataId)
     {
-        var sql = "SELECT * FROM album_settings WHERE unique_data_id = @unique_data_id";
-        var parameters = new { unique_data_id = uniqueDataId };
+        var sql = @"SELECT * FROM album_settings
+                WHERE unique_data_id = @data_id OR unique_data_id = @fallback_data_id
+                ORDER BY CASE WHEN unique_data_id = @data_id THEN 0 ELSE 1 END
+                LIMIT 1";
+        var parameters = new { data_id = uniqueDataId.DataId, fallback_data_id = uniqueDataId.FallbackUserDataId };
         var albumSettings = await _db.QueryAsync(sql, reader => AlbumSettings.CreateFromDataReader(reader), parameters);
-        return albumSettings.FirstOrDefault();
+        var settings = albumSettings.FirstOrDefault();
+        if (settings != null && settings.UniqueDataId != uniqueDataId.DataId)  
+        {
+            //no user settings so copy admin setting to the user
+            settings.UserId = uniqueDataId.UserId;
+            settings.UniqueDataId = uniqueDataId.DataId;
+            await AddOrUpdateAlbumSettingsAsync(settings);
+        }
+        return settings;
     }
 
     public async Task<AlbumSettings> AddOrUpdateAlbumSettingsAsync(AlbumSettings settings)
@@ -576,7 +587,7 @@ public record AlbumRepository: IAlbumRepository, IDisposable, IAsyncDisposable
         // Using explicit check because the unique index uses COALESCE expression which can't be used with ON CONFLICT
         AlbumSettings? existing;
         //Console.WriteLine($"Checking existing album settings for UniqueDataId: {settings.UniqueDataId}");
-        existing = await GetAlbumSettingsByUniqueDataIdAsync(settings.UniqueDataId);
+        existing = await GetAlbumSettingsByUniqueDataIdAsync(UniqueDataId<string>.Parse(settings.UniqueDataId));
         
         if (existing != null)
         {

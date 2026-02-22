@@ -1,4 +1,5 @@
 using GalleryApi.model;
+using GalleryLib.model.album;
 using GalleryLib.model.configuration;
 using GalleryLib.repository;
 using GalleryLib.repository.auth;
@@ -17,7 +18,7 @@ public class AlbumsService: ServiceBase
     {
         var content = await _albumRepository.GetRandomImages();
         var searchId = GenerateSearchId("__random__");
-        string uniqueDataId = $"album/random:{searchId}:{AuthenticatedUser?.Id ?? 1}";
+        var uniqueDataId = UniqueDataId<string>.New(DataIdPrefix.AlbumRandom, searchId, AuthenticatedUser?.Id ?? 1);
 
         var valbum = await GetVirtualContent(content, uniqueDataId);
         valbum.Name = "Random Images";
@@ -30,7 +31,7 @@ public class AlbumsService: ServiceBase
     {
         var content = await _albumRepository.GetRecentImages();
         var searchId = GenerateSearchId("__recent__");
-        string uniqueDataId = $"album/recent:{searchId}:{AuthenticatedUser?.Id ?? 1}";
+        var uniqueDataId = UniqueDataId<string>.New(DataIdPrefix.AlbumRecent, searchId, AuthenticatedUser?.Id ?? 1);
 
         var valbum = await GetVirtualContent(content, uniqueDataId);
         valbum.Name = "Recent Images";
@@ -43,7 +44,7 @@ public class AlbumsService: ServiceBase
     {
         var (content, search) = await _albumRepository.GetAlbumContentHierarchicalByExpression(albumSearch);
         var searchId = GenerateSearchId(albumSearch.Expression);
-        string uniqueDataId = $"album/search:{searchId}:{AuthenticatedUser?.Id ?? 1}";
+        var uniqueDataId = UniqueDataId<string>.New(DataIdPrefix.AlbumSearch, searchId, AuthenticatedUser?.Id ?? 1);
 
         var valbum = await GetVirtualContent(content, uniqueDataId);
         valbum.Name = "Search Result";
@@ -60,7 +61,7 @@ public class AlbumsService: ServiceBase
         return valbum;
     }
 
-    private async Task<VirtualAlbumContent> GetVirtualContent(List<GalleryLib.model.album.AlbumContentHierarchical> content, string uniqueDataId)
+    private async Task<VirtualAlbumContent> GetVirtualContent(List<GalleryLib.model.album.AlbumContentHierarchical> content, IUniqueDataId uniqueDataId)
     {
         var valbum = new VirtualAlbumContent();
         valbum.Id = 0;
@@ -75,14 +76,13 @@ public class AlbumsService: ServiceBase
         valbum.ImageHDPath = item != null ? GetPicturesUrl(_picturesConfig.GetThumbnailPath(path, (int)ThumbnailHeights.HD)) : string.Empty;    //save space, did not create hd 1080 path
 
         // Load or create settings for this search
-        var userId = AuthenticatedUser?.Id ?? 1;
         var settings = await _albumRepository.GetAlbumSettingsByUniqueDataIdAsync(uniqueDataId);
         valbum.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
         {
             AlbumId = 0,
-            UniqueDataId = uniqueDataId,            
+            UniqueDataId = uniqueDataId.DataId,
             IsVirtual = false,
-            UserId = userId
+            UserId = uniqueDataId.UserId
         };
 
         //Console.WriteLine($"Debug: Config Mapping {_picturesConfig.Folder}, {_picturesConfig.RootFolder}, {_picturesConfig.ThumbnailsBase}, {_picturesConfig.ThumbDir(500)}");
@@ -97,21 +97,21 @@ public class AlbumsService: ServiceBase
         return valbum;
     }
 
-    public async Task<AlbumContentHierarchical> GetAlbumContentHierarchicalById(long albumId)
+    public async Task<model.AlbumContentHierarchical> GetAlbumContentHierarchicalById(long albumId)
     {
         var albumContent = await _albumRepository.GetAlbumContentHierarchicalById(albumId);        
-        string uniqueDataId = $"album:{albumId}:{AuthenticatedUser?.Id ?? 1}";
+        var uniqueDataId = UniqueDataId<string>.New(DataIdPrefix.Album, albumId.ToString(), AuthenticatedUser?.Id ?? 1);
         return await GetContent(albumContent.First().ParentAlbumName, albumContent, uniqueDataId);
     }
-    public async Task<AlbumContentHierarchical> GetAlbumContentHierarchicalByName(string? albumName = null)
+    public async Task<model.AlbumContentHierarchical> GetAlbumContentHierarchicalByName(string? albumName = null)
     {
         var albumContent = albumName != null ? await _albumRepository.GetAlbumContentHierarchicalByName(albumName)
                                              : await _albumRepository.GetRootAlbumContentHierarchical();
-        string uniqueDataId = $"album:{albumName ?? albumContent.First().ParentAlbumName}:{AuthenticatedUser?.Id ?? 1}";                                             
+        var uniqueDataId = UniqueDataId<string>.New(DataIdPrefix.Album, albumName ?? albumContent.First().ParentAlbumName, AuthenticatedUser?.Id ?? 1);                                             
         return await GetContent(albumName ?? albumContent.First().ParentAlbumName, albumContent, uniqueDataId);
     }
 
-    private async Task<AlbumContentHierarchical> GetContent(string? albumName, List<GalleryLib.model.album.AlbumContentHierarchical> albumContent, string uniqueDataId)
+    private async Task<model.AlbumContentHierarchical> GetContent(string? albumName, List<GalleryLib.model.album.AlbumContentHierarchical> albumContent, IUniqueDataId uniqueDataId)
     {
 
         var libAlbum = await _albumRepository.GetAlbumHierarchicalByNameAsync(albumName ?? string.Empty);
@@ -119,15 +119,15 @@ public class AlbumsService: ServiceBase
         {
             throw new AlbumNotFoundException(albumName);
         }    
-        var album = new AlbumContentHierarchical();
+        var album = new model.AlbumContentHierarchical();
         await SetAlbumItemContent(album, albumName, libAlbum);
         var settings = await _albumRepository.GetAlbumSettingsByUniqueDataIdAsync(uniqueDataId);
         album.Settings = settings ?? new GalleryLib.model.album.AlbumSettings
         {
             AlbumId = libAlbum.Id,
-            UniqueDataId = uniqueDataId,
+            UniqueDataId = uniqueDataId.DataId,
             IsVirtual = false,
-            UserId = AuthenticatedUser?.Id ?? 1
+            UserId = uniqueDataId.UserId
         };
 
         

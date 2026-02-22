@@ -144,7 +144,8 @@ public class FacesController : ControllerBase
             }
 
             var content = await _albumRepository.GetAlbumContentByImageIdsAsync(imageIds);
-            var uniqueDataId = $"faces/search/person/id:{personId}:{AuthenticatedUser?.Id ?? 1}";
+            var uniqueDataId = UniqueDataId<long>.New(DataIdPrefix.FaceId, personId, AuthenticatedUser?.Id ?? 1);
+
             var res = await CreateVirtualAlbumResult(content, personName, $"person:{personId}", uniqueDataId);
             return Ok(res);
         }
@@ -170,7 +171,7 @@ public class FacesController : ControllerBase
             }
 
             var content = await _albumRepository.GetAlbumContentByImageIdsAsync(imageIds);
-            var uniqueDataId = $"faces/search/name:{personName}:{AuthenticatedUser?.Id ?? 1}";
+            var uniqueDataId = UniqueDataId<string>.New(DataIdPrefix.FaceName, personName, AuthenticatedUser?.Id ?? 1);
             var res = await CreateVirtualAlbumResult(content, personName, $"name:{personName}", uniqueDataId);
             return Ok(res);
         }
@@ -198,7 +199,7 @@ public class FacesController : ControllerBase
         };
     }
 
-    private async Task<VirtualAlbumContent> CreateVirtualAlbumResult(List<AlbumContentHierarchical> content, string personName, string expression, string uniqueDataId)
+    private async Task<VirtualAlbumContent> CreateVirtualAlbumResult(List<AlbumContentHierarchical> content, string personName, string expression, IUniqueDataId uniqueDataId)
     {
         var baseUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
         var images = content.Select(item => new ImageItemContent
@@ -243,9 +244,9 @@ public class FacesController : ControllerBase
             Settings = settings ?? new GalleryLib.model.album.AlbumSettings
             {
                 AlbumId = 0,
-                UniqueDataId = uniqueDataId,
+                UniqueDataId = uniqueDataId.DataId,
                 IsVirtual = true,
-                UserId = AuthenticatedUser?.Id ?? 1
+                UserId = uniqueDataId.UserId
             }
         };
     }

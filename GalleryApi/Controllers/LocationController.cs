@@ -81,7 +81,7 @@ public class LocationController : ControllerBase
             }
 
             var content = await _albumRepository.GetAlbumContentByImageIdsAsync(imageIds);
-            var uniqueDataId = $"locations/search/cluster/id:{clusterId}:{AuthenticatedUser?.Id ?? 1}";
+            var uniqueDataId = UniqueDataId<long>.New(DataIdPrefix.LocationId, clusterId, AuthenticatedUser?.Id ?? 1);
             var res = await CreateVirtualAlbumResult(content, $"Cluster #{clusterId}", $"cluster:{clusterId}", uniqueDataId);
             return Ok(res);
         }
@@ -106,7 +106,7 @@ public class LocationController : ControllerBase
             }
 
             var content = await _albumRepository.GetAlbumContentByImageIdsAsync(imageIds);
-            var uniqueDataId = $"locations/search/name:{clusterName}:{AuthenticatedUser?.Id ?? 1}";
+            var uniqueDataId = UniqueDataId<string>.New(DataIdPrefix.LocationName, clusterName, AuthenticatedUser?.Id ?? 1);
             var res = await CreateVirtualAlbumResult(content, clusterName, $"name:{clusterName}", uniqueDataId);
             return Ok(res);
         }
@@ -133,7 +133,7 @@ public class LocationController : ControllerBase
         };
     }
 
-    private async Task<VirtualAlbumContent> CreateVirtualAlbumResult(List<AlbumContentHierarchical> content, string title, string expression, string uniqueDataId)
+    private async Task<VirtualAlbumContent> CreateVirtualAlbumResult(List<AlbumContentHierarchical> content, string title, string expression, IUniqueDataId uniqueDataId)
     {
         var baseUrl = ServiceBase.GetBaseUrl(_httpContextAccessor);
         var images = content.Select(item => new ImageItemContent
@@ -178,9 +178,9 @@ public class LocationController : ControllerBase
             Settings = settings ?? new GalleryLib.model.album.AlbumSettings
             {
                 AlbumId = 0,
-                UniqueDataId = uniqueDataId,
+                UniqueDataId = uniqueDataId.DataId,
                 IsVirtual = true,
-                UserId = AuthenticatedUser?.Id ?? 1
+                UserId = uniqueDataId.UserId
             }
         };
     }
